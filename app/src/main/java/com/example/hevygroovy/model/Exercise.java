@@ -8,7 +8,15 @@ public class Exercise {
 
     private String description;
 
-    private String[] exerciseLog;
+    private boolean archived;
+
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
+    }
 
     public long getId() {
         return id;
@@ -34,11 +42,5 @@ public class Exercise {
         this.description = description;
     }
 
-    public String[] getExerciseLog() {
-        return exerciseLog;
-    }
 
-    public void setExerciseLog(String[] exerciseLog) {
-        this.exerciseLog = exerciseLog;
-    }
 }

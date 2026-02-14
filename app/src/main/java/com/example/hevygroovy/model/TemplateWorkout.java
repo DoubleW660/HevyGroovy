@@ -1,20 +1,22 @@
 package com.example.hevygroovy.model;
 
 public class TemplateWorkout {
-    private long templateId;
 
+    private long id;
     private String title;
 
-    private Exercise[] exercises;
+    private String description;
 
-    private int position;
+    private long createdAtEpochMillis;
 
-    public long getTemplateId() {
-        return templateId;
+    private boolean archived;
+
+    public long getId() {
+        return id;
     }
 
-    public void setTemplateId(long templateId) {
-        this.templateId = templateId;
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getTitle() {
@@ -25,11 +27,27 @@ public class TemplateWorkout {
         this.title = title;
     }
 
-    public Integer getPosition() {
-        return position;
+    public String getDescription() {
+        return description;
     }
 
-    public void setPosition(Integer position) {
-        this.position = position;
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public long getCreatedAtEpochMillis() {
+        return createdAtEpochMillis;
+    }
+
+    public void setCreatedAtEpochMillis(long createdAtEpochMillis) {
+        this.createdAtEpochMillis = createdAtEpochMillis;
+    }
+
+    public boolean isArchived() {
+        return archived;
+    }
+
+    public void setArchived(boolean archived) {
+        this.archived = archived;
     }
 }

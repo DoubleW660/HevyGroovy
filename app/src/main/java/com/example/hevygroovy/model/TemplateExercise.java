@@ -2,15 +2,7 @@ package com.example.hevygroovy.model;
 
 public class TemplateExercise {
 
-    public long getTemplateExerciseId() {
-        return templateExerciseId;
-    }
-
-    public void setTemplateExerciseId(long templateExerciseId) {
-        this.templateExerciseId = templateExerciseId;
-    }
-
-    private long templateExerciseId;
+    private long id;
 
     private long templateWorkoutId;
 
@@ -18,14 +10,22 @@ public class TemplateExercise {
 
     private int orderIndex;
 
-    private int restTimeSeconds;
+    private Integer restTimeSeconds;
 
-    public long getTemplateWorkoutId() {
-        return templateWorkoutId;
+    public Integer getRestTimeSeconds() {
+        return restTimeSeconds;
     }
 
-    public void setTemplateWorkoutId(long templateWorkoutId) {
-        this.templateWorkoutId = templateWorkoutId;
+    public void setRestTimeSeconds(Integer restTimeSeconds) {
+        this.restTimeSeconds = restTimeSeconds;
+    }
+
+    public int getOrderIndex() {
+        return orderIndex;
+    }
+
+    public void setOrderIndex(int orderIndex) {
+        this.orderIndex = orderIndex;
     }
 
     public long getExerciseId() {
@@ -36,19 +36,19 @@ public class TemplateExercise {
         this.exerciseId = exerciseId;
     }
 
-    public Integer getOrderIndex() {
-        return orderIndex;
+    public long getTemplateWorkoutId() {
+        return templateWorkoutId;
     }
 
-    public void setOrderIndex(Integer orderIndex) {
-        this.orderIndex = orderIndex;
+    public void setTemplateWorkoutId(long templateWorkoutId) {
+        this.templateWorkoutId = templateWorkoutId;
     }
 
-    public Integer getRestTime() {
-        return restTimeSeconds;
+    public long getId() {
+        return id;
     }
 
-    public void setRestTime(Integer restTime) {
-        this.restTimeSeconds = restTime;
+    public void setId(long id) {
+        this.id = id;
     }
 }

@@ -3,10 +3,12 @@ package com.example.hevygroovy.model;
 public class LoggedWorkout {
 
     private long id;
-
     private String nameSnapshot;
-
     private String notes;
+    private long startedAtEpochMillis;
+    private Long endedAtEpochMillis;
+    private Long templateId;
+    private long userId;
 
     public String getNotes() {
         return notes;
@@ -32,7 +34,7 @@ public class LoggedWorkout {
         this.notes = notes;
     }
 
-    private long startedAtEpochMillis;
+
 
     public long getId() {
         return id;
@@ -66,11 +68,6 @@ public class LoggedWorkout {
         this.endedAtEpochMillis = endedAtEpochMillis;
     }
 
-    private Long endedAtEpochMillis;
-
-    private Long templateId;
-
-    private long userId;
 
 
 }

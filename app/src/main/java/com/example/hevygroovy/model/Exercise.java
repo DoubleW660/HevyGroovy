@@ -2,7 +2,7 @@ package com.example.hevygroovy.model;
 
 public class Exercise {
 
-    private long exerciseId;
+    private long id;
 
     private String title;
 
@@ -10,12 +10,12 @@ public class Exercise {
 
     private String[] exerciseLog;
 
-    public long getExerciseId() {
-        return exerciseId;
+    public long getId() {
+        return id;
     }
 
-    public void setExerciseId(long exerciseId) {
-        this.exerciseId = exerciseId;
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getTitle() {

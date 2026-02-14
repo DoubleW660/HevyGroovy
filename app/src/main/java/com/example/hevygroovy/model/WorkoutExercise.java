@@ -10,7 +10,7 @@ public class WorkoutExercise {
     private String notes;
 
 
-    public long id() {
+    public long getId() {
         return id;
     }
 

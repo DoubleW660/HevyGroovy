@@ -11,11 +11,11 @@ public interface TemplateExerciseRepository {
 
     Optional<TemplateExercise> findById(long id);
 
-    List<TemplateExercise> findByTempleteId(long templateWorkoutId);
+    List<TemplateExercise> findByTemplateWorkoutId(long templateWorkoutId);
 
     int findMaxOrderIndex(long templateWorkoutId);
 
     void delete(long templateExerciseId);
 
-
+    boolean existsInTemplate(long templateWorkoutId, long exerciseId);
 }

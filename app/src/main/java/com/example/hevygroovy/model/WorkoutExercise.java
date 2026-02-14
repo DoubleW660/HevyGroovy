@@ -4,10 +4,11 @@ public class WorkoutExercise {
 
     private long id;
     private long loggedWorkoutId;
-
     private long exerciseId;
-
     private String exerciseNameSnapshot;
+    private int orderIndex;
+    private String notes;
+
 
     public long id() {
         return id;
@@ -24,10 +25,6 @@ public class WorkoutExercise {
     public void setExerciseNameSnapshot(String exerciseNameSnapshot) {
         this.exerciseNameSnapshot = exerciseNameSnapshot;
     }
-
-    private int orderIndex;
-
-    private String notes;
 
 
     public String getNotes() {

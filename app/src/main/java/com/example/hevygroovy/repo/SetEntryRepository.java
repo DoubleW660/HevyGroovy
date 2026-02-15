@@ -1,9 +1,8 @@
 package com.example.hevygroovy.repo;
 
-import com.example.hevygroovy.model.SetEntry;
+import com.example.hevygroovy.entity.SetEntry;
 
 import java.util.List;
-import java.util.Optional;
 
 public interface SetEntryRepository {
 

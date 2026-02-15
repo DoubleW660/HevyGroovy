@@ -1,4 +1,4 @@
-package com.example.hevygroovy.model;
+package com.example.hevygroovy.entity;
 
 public class WorkoutExercise {
 

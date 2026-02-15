@@ -1,7 +1,7 @@
-package com.example.hevygroovy.model;
+package com.example.hevygroovy.entity;
 
-import com.example.hevygroovy.model.enums.SetType;
-import com.example.hevygroovy.model.enums.Unit;
+import com.example.hevygroovy.entity.enums.SetType;
+import com.example.hevygroovy.entity.enums.Unit;
 
 public class SetEntry {
 

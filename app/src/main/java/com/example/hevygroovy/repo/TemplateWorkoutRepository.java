@@ -1,6 +1,6 @@
 package com.example.hevygroovy.repo;
 
-import com.example.hevygroovy.model.TemplateWorkout;
+import com.example.hevygroovy.entity.TemplateWorkout;
 
 import java.util.List;
 import java.util.Optional;

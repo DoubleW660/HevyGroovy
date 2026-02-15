@@ -1,6 +1,6 @@
 package com.example.hevygroovy.repo;
 
-import com.example.hevygroovy.model.LoggedWorkout;
+import com.example.hevygroovy.entity.LoggedWorkout;
 
 import java.util.List;
 import java.util.Optional;

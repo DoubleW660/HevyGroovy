@@ -1,4 +1,4 @@
-package com.example.hevygroovy.model.enums;
+package com.example.hevygroovy.entity.enums;
 
 public enum SetType {
     WARMUP,

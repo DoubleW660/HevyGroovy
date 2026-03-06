@@ -1,6 +1,7 @@
 package com.example.hevygroovy.service;
 
 import com.example.hevygroovy.dto.CreateExerciseRequest;
+import com.example.hevygroovy.dto.UpdateExerciseRequest;
 import com.example.hevygroovy.model.ExerciseModel;
 
 import java.util.List;

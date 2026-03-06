@@ -15,11 +15,7 @@ public interface ExerciseRepository {
 
     List<Exercise> searchByTitle(String query, boolean includeArchived);
 
-    void archive(long id);
 
-    void restore(long id);
-
-    boolean existsById(long id);
 
 }
 

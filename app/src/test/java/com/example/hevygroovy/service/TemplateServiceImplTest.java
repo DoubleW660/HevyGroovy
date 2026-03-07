@@ -197,7 +197,7 @@ class TemplateServiceImplTest {
         b.setDescription("Quads");
         b.setArchived(true);
 
-        when(templateWorkoutRepository.findAll(true)).thenReturn(List.of(a, b));
+        when(templateWorkoutRepository.findAll()).thenReturn(List.of(a, b));
 
         List<TemplateSummaryModel> result = templateService.listTemplates(true);
 

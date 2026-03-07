@@ -12,6 +12,7 @@ public class TemplateExercise {
 
     private Integer restTimeSeconds;
 
+
     public Integer getRestTimeSeconds() {
         return restTimeSeconds;
     }

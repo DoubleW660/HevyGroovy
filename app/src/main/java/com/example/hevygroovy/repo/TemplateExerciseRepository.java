@@ -13,7 +13,7 @@ public interface TemplateExerciseRepository {
 
     List<TemplateExercise> findByTemplateWorkoutId(long templateWorkoutId);
 
-    int findMaxOrderIndex(long templateWorkoutId);
+    Integer findMaxOrderIndex(long templateWorkoutId);
 
     void delete(long templateExerciseId);
 

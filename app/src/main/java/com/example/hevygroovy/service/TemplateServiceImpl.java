@@ -6,7 +6,6 @@ import com.example.hevygroovy.dto.UpdateTemplateRequest;
 import com.example.hevygroovy.entity.Exercise;
 import com.example.hevygroovy.entity.TemplateExercise;
 import com.example.hevygroovy.entity.TemplateWorkout;
-import com.example.hevygroovy.model.ExerciseModel;
 import com.example.hevygroovy.model.TemplateDetailModel;
 import com.example.hevygroovy.model.TemplateExerciseItemModel;
 import com.example.hevygroovy.model.TemplateSummaryModel;
@@ -14,7 +13,6 @@ import com.example.hevygroovy.repo.TemplateExerciseRepository;
 import com.example.hevygroovy.repo.TemplateWorkoutRepository;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
@@ -187,8 +185,6 @@ public class TemplateServiceImpl implements TemplateService {
                     templateExerciseRepository.save(current);
                 }
             }
-            templateExercise.setOrderIndex(orderIndex);
-            templateExerciseRepository.save(templateExercise);
         } else {
             for (TemplateExercise current : exercises) {
                 if(current.getId() == templateExerciseId){continue;}
@@ -198,9 +194,9 @@ public class TemplateServiceImpl implements TemplateService {
                     templateExerciseRepository.save(current);
                 }
             }
-            templateExercise.setOrderIndex(orderIndex);
-            templateExerciseRepository.save(templateExercise);
         }
+        templateExercise.setOrderIndex(orderIndex);
+        templateExerciseRepository.save(templateExercise);
 
     }
 

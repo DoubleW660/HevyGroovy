@@ -5,17 +5,17 @@ import com.example.hevygroovy.entity.LoggedWorkout;
 import java.util.List;
 import java.util.Optional;
 
+
+
 public interface LoggedWorkoutRepository {
 
     LoggedWorkout save(LoggedWorkout workout);
 
     Optional<LoggedWorkout> findById(long id);
 
-    List<LoggedWorkout> findByUserId(long userId, int limit, int offset);
+    List<LoggedWorkout> findByUserIdOrderByStartedAtDesc(long userId, int limit, int offset);
 
-    Optional<LoggedWorkout> findActiveWorkout(long userId);
+    Optional<LoggedWorkout> findActiveWorkoutByUserId(long userId);
 
-    void setEndedAt(long workoutId, long endedAtEpochMillis);
 
-    boolean existsById(long id);
 }

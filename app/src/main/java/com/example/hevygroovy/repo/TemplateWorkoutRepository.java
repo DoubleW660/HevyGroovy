@@ -11,11 +11,9 @@ public interface TemplateWorkoutRepository {
 
     Optional<TemplateWorkout> findById(long id);
 
-    List<TemplateWorkout> findAll(boolean includeArchived);
+    List<TemplateWorkout> findAll();
 
-    void archive(long id);
-
-    void restore(long id);
+    List<TemplateWorkout> findByArchive(boolean includeArchived);
 
     boolean existsById(long id);
 }

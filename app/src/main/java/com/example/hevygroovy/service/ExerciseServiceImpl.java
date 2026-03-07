@@ -150,7 +150,7 @@ public class ExerciseServiceImpl implements ExerciseService{
         return model;
     }
 
-    private Exercise requireExercise(long exerciseId){
+    public Exercise requireExercise(long exerciseId){
         if (exerciseId <= 0){
             throw new RuntimeException("Invalid Id Provided");
         }

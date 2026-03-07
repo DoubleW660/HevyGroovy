@@ -13,7 +13,9 @@ import com.example.hevygroovy.model.TemplateSummaryModel;
 import com.example.hevygroovy.repo.TemplateExerciseRepository;
 import com.example.hevygroovy.repo.TemplateWorkoutRepository;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,7 +67,7 @@ public class TemplateServiceImpl implements TemplateService {
             throw new RuntimeException("No Template Update Request Found");
         }
 
-        TemplateWorkout templateWorkout = requireTemplate(templateId);
+        TemplateWorkout templateWorkout = requireActiveTemplate(templateId);
 
         String newTitle = request.getTitle();
         String newDesc = request.getDescription();
@@ -93,7 +95,7 @@ public class TemplateServiceImpl implements TemplateService {
             throw new RuntimeException("No Template Exercise Request Found");
         }
 
-        requireTemplate(request.getTemplateId());
+        requireActiveTemplate(request.getTemplateId());
 
         exerciseService.requireActiveExercise(request.getExerciseId());
 
@@ -123,22 +125,121 @@ public class TemplateServiceImpl implements TemplateService {
 
     @Override
     public void removeExerciseFromTemplate(long templateExerciseId, long templateId) {
+        if(templateId <= 0){
+            throw new RuntimeException("Invalid Template Id");
+        }
 
+        requireActiveTemplate(templateId);
+
+        TemplateExercise templateExercise = requireTemplateExercise(templateExerciseId);
+
+        if (templateExercise.getTemplateWorkoutId() != templateId) {
+            throw new RuntimeException("Template Exercise does not belong to this Template");
+        }
+
+        int removalIndex = templateExercise.getOrderIndex();
+
+        templateExerciseRepository.delete(templateExerciseId);
+
+        List<TemplateExercise> exercises = templateExerciseRepository.findByTemplateWorkoutId(templateId);
+        exercises.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
+
+        for (TemplateExercise current : exercises) {
+            if (current.getOrderIndex() > removalIndex) {
+                current.setOrderIndex(current.getOrderIndex() - 1);
+                templateExerciseRepository.save(current);
+            }
+        }
     }
 
     @Override
     public void moveExerciseInTemplate(long templateExerciseId, int orderIndex) {
+        if(templateExerciseId <= 0){
+            throw new RuntimeException("Invalid Template Id");
+        }
+
+        if(orderIndex < 0){
+            throw new RuntimeException("Invalid New Index");
+        }
+
+        TemplateExercise templateExercise = requireTemplateExercise(templateExerciseId);
+
+        long templateId = templateExercise.getTemplateWorkoutId();
+        requireActiveTemplate(templateId);
+
+        List<TemplateExercise> exercises = templateExerciseRepository.findByTemplateWorkoutId(templateId);
+        exercises.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
+
+        if(orderIndex > exercises.size() - 1){
+            throw new RuntimeException("Position is not available");
+        }
+
+        int previousIndex = templateExercise.getOrderIndex();
+
+        if(previousIndex == orderIndex){return;}
+
+        if(orderIndex < previousIndex){
+            for (TemplateExercise current : exercises) {
+                if(current.getId() == templateExerciseId){continue;}
+
+                if (current.getOrderIndex() >= orderIndex && current.getOrderIndex() < previousIndex) {
+                    current.setOrderIndex(current.getOrderIndex() + 1);
+                    templateExerciseRepository.save(current);
+                }
+            }
+            templateExercise.setOrderIndex(orderIndex);
+            templateExerciseRepository.save(templateExercise);
+        } else {
+            for (TemplateExercise current : exercises) {
+                if(current.getId() == templateExerciseId){continue;}
+
+                if (current.getOrderIndex() > previousIndex && current.getOrderIndex() <= orderIndex) {
+                    current.setOrderIndex(current.getOrderIndex() - 1);
+                    templateExerciseRepository.save(current);
+                }
+            }
+            templateExercise.setOrderIndex(orderIndex);
+            templateExerciseRepository.save(templateExercise);
+        }
 
     }
 
     @Override
     public TemplateDetailModel getTemplateDetail(long templateId) {
-        return null;
+        if(templateId <= 0){
+            throw new RuntimeException("Invalid Template Id");
+        }
+        TemplateWorkout templateWorkout = requireTemplate(templateId);
+
+        List<TemplateExercise> exercises = templateExerciseRepository.findByTemplateWorkoutId(templateId);
+        exercises.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
+
+        List<TemplateExerciseItemModel> templateExerciseItemModels = new ArrayList<>(exercises.size());
+
+        for (TemplateExercise current : exercises) {
+            Exercise exercise = exerciseService.requireExercise(current.getExerciseId());
+
+            templateExerciseItemModels.add(toExerciseItemModel(current, exercise));
+        }
+
+        return toDetailModel(templateWorkout, templateExerciseItemModels);
     }
 
     @Override
     public List<TemplateSummaryModel> listTemplates(boolean includeArchived) {
-        return Collections.emptyList();
+
+        if(includeArchived){
+            return templateWorkoutRepository.findAll()
+                    .stream()
+                    .map(this::toSummaryModel)
+                    .toList();
+        }
+
+        return templateWorkoutRepository.findByArchive(false)
+                .stream()
+                .map(this::toSummaryModel)
+                .toList();
+
     }
 
     @Override
@@ -146,7 +247,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateWorkout templateWorkout = requireTemplate(templateId);
 
         if(templateWorkout.isArchived()){
-            throw new RuntimeException("Template Already Archived")
+            throw new RuntimeException("Template Already Archived");
         }
 
         templateWorkout.setArchived(true);
@@ -159,7 +260,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateWorkout templateWorkout = requireTemplate(templateId);
 
         if(!templateWorkout.isArchived()){
-            throw new RuntimeException("Template Already Active")
+            throw new RuntimeException("Template Already Active");
         }
 
         templateWorkout.setArchived(false);
@@ -215,5 +316,30 @@ public class TemplateServiceImpl implements TemplateService {
         }
 
         return templateWorkoutOptional.get();
+    }
+
+    private TemplateWorkout requireActiveTemplate(long templateId){
+        TemplateWorkout templateWorkout = requireTemplate(templateId);
+
+        if(templateWorkout.isArchived()){
+            throw new RuntimeException("Template is Archived");
+        }
+
+        return templateWorkout;
+    }
+
+    private TemplateExercise requireTemplateExercise(long templateExerciseId){
+
+        if(templateExerciseId <= 0){
+            throw new RuntimeException("Invalid Template Exercise Id");
+        }
+
+        Optional<TemplateExercise> optionalTemplateExercise = templateExerciseRepository.findById(templateExerciseId);
+
+        if(optionalTemplateExercise.isEmpty()){
+            throw new RuntimeException("No Exercise Found");
+        }
+
+        return optionalTemplateExercise.get();
     }
 }

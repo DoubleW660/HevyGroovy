@@ -11,6 +11,8 @@ public class TemplateWorkout {
 
     private boolean archived;
 
+    private long userId;
+
     public long getId() {
         return id;
     }
@@ -49,5 +51,13 @@ public class TemplateWorkout {
 
     public void setArchived(boolean archived) {
         this.archived = archived;
+    }
+
+    public long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(long userId) {
+        this.userId = userId;
     }
 }

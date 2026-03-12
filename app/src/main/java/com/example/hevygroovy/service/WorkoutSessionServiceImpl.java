@@ -11,10 +11,13 @@ import com.example.hevygroovy.repo.TemplateExerciseRepository;
 import com.example.hevygroovy.repo.TemplateWorkoutRepository;
 import com.example.hevygroovy.repo.WorkoutExerciseRepository;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
-public class WorkoutSessionServiceImpl implements WorkoutSessionService{
+public class WorkoutSessionServiceImpl implements WorkoutSessionService {
 
     private final LoggedWorkoutRepository loggedWorkoutRepository;
     private final TemplateWorkoutRepository templateWorkoutRepository;
@@ -23,75 +26,101 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService{
     private final ExerciseRepository exerciseRepository;
 
     private final TemplateService templateService;
+    private final ExerciseService exerciseService;
 
-    public WorkoutSessionServiceImpl(LoggedWorkoutRepository loggedWorkoutRepository){
+    public WorkoutSessionServiceImpl(
+            LoggedWorkoutRepository loggedWorkoutRepository,
+            TemplateWorkoutRepository templateWorkoutRepository,
+            TemplateExerciseRepository templateExerciseRepository,
+            WorkoutExerciseRepository workoutExerciseRepository,
+            ExerciseRepository exerciseRepository,
+            TemplateService templateService,
+            ExerciseService exerciseService
+    ) {
         this.loggedWorkoutRepository = loggedWorkoutRepository;
         this.templateWorkoutRepository = templateWorkoutRepository;
         this.templateExerciseRepository = templateExerciseRepository;
         this.workoutExerciseRepository = workoutExerciseRepository;
         this.exerciseRepository = exerciseRepository;
         this.templateService = templateService;
-
+        this.exerciseService = exerciseService;
     }
-
 
     @Override
     public LoggedWorkout startEmptyWorkout(long userId) {
+        if (userId <= 0) {
+            throw new RuntimeException("Invalid User Id");
+        }
+
         requireNoActiveWorkout(userId);
 
-        LoggedWorkout workout = new LoggedWorkout();
-        workout.setUserId(userId);
-        workout.setStartedAtEpochMillis(System.currentTimeMillis());
-        workout.setEndedAtEpochMillis(null);
-
-        return loggedWorkoutRepository.save(workout);
+        return createActiveWorkout(userId, null, null);
     }
 
     @Override
     public LoggedWorkout startWorkoutFromTemplate(long userId, long templateId) {
-
-        if (userId <= 0){
+        if (userId <= 0) {
             throw new RuntimeException("Invalid User Id");
         }
 
-        if (templateId <= 0){
+        if (templateId <= 0) {
             throw new RuntimeException("Invalid Template Id");
         }
 
         requireNoActiveWorkout(userId);
 
         Optional<TemplateWorkout> optionalTemplateWorkout = templateWorkoutRepository.findById(templateId);
-
-        if (optionalTemplateWorkout.isEmpty()){
+        if (optionalTemplateWorkout.isEmpty()) {
             throw new RuntimeException("Workout Template Not Found");
         }
 
         TemplateWorkout templateWorkout = optionalTemplateWorkout.get();
 
-        if (templateWorkout.getUserId() != userId){
+        if (templateWorkout.getUserId() != userId) {
             throw new RuntimeException("You are not the owner of this template.");
         }
 
-
-        LoggedWorkout loggedWorkout = startEmptyWorkout(userId);
-        List<TemplateExercise> templateExerciseList = templateExerciseRepository.findByTemplateWorkoutId(templateId);
-
-        for (TemplateExercise current : templateExerciseList) {
-            WorkoutExercise workoutExercise = new WorkoutExercise();
-            Optional<Exercise> exercise = exerciseRepository.findById(current.getExerciseId());
-
-            current.getExerciseId()
-
-            workoutExercise.setLoggedWorkoutId(loggedWorkout.getId());
-            workoutExercise.setExerciseId(current.getExerciseId());
-            workoutExercise.setExerciseNameSnapshot(exercise.getTitle());
-
+        if (templateWorkout.isArchived()) {
+            throw new RuntimeException("Archived templates cannot be used to start a workout.");
         }
 
+        List<TemplateExercise> templateExerciseList =
+                templateExerciseRepository.findByTemplateWorkoutId(templateId);
 
+        templateExerciseList.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
 
+        List<Long> exerciseIds = new ArrayList<>();
+        for (TemplateExercise current : templateExerciseList) {
+            exerciseIds.add(current.getExerciseId());
+        }
 
+        Map<Long, String> lastNotesByExerciseId =
+                workoutExerciseRepository.findLastNotesForUserExercises(userId, exerciseIds);
 
+        LoggedWorkout loggedWorkout = createActiveWorkout(
+                userId,
+                templateWorkout.getId(),
+                templateWorkout.getTitle()
+        );
+
+        for (TemplateExercise current : templateExerciseList) {
+            long exerciseId = current.getExerciseId();
+            Exercise exercise = exerciseService.requireExercise(exerciseId);
+
+            WorkoutExercise workoutExercise = new WorkoutExercise();
+            workoutExercise.setLoggedWorkoutId(loggedWorkout.getId());
+            workoutExercise.setExerciseId(exerciseId);
+            workoutExercise.setExerciseNameSnapshot(exercise.getTitle());
+            workoutExercise.setOrderIndex(current.getOrderIndex());
+            workoutExercise.setRestTimeSeconds(current.getRestTimeSeconds());
+
+            String lastNote = lastNotesByExerciseId.get(exerciseId);
+            if (lastNote != null) {
+                workoutExercise.setNotes(lastNote);
+            }
+
+            workoutExerciseRepository.save(workoutExercise);
+        }
 
         return loggedWorkout;
     }
@@ -101,35 +130,20 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService{
         return null;
     }
 
-
     private void requireNoActiveWorkout(long userId) {
         if (loggedWorkoutRepository.findActiveWorkoutByUserId(userId).isPresent()) {
             throw new RuntimeException("User already has an active workout");
         }
     }
 
-    private LoggedWorkout requireWorkout(long workoutId){
-        if (workoutId <= 0){
+    private LoggedWorkout requireWorkout(long workoutId) {
+        if (workoutId <= 0) {
             throw new RuntimeException("Invalid Id Provided");
         }
 
         Optional<LoggedWorkout> loggedWorkoutOptional = loggedWorkoutRepository.findById(workoutId);
 
-        if(loggedWorkoutOptional.isEmpty()){
-            throw new RuntimeException("Workout Not Found");
-        }
-
-        return loggedWorkoutOptional.get();
-    }
-
-    private LoggedWorkout requireWorkoutNotEmpty(long workoutId){
-        if (workoutId <= 0){
-            throw new RuntimeException("Invalid Id Provided");
-        }
-
-        Optional<LoggedWorkout> loggedWorkoutOptional = loggedWorkoutRepository.findById(workoutId);
-
-        if(loggedWorkoutOptional.isEmpty()){
+        if (loggedWorkoutOptional.isEmpty()) {
             throw new RuntimeException("Workout Not Found");
         }
 
@@ -137,19 +151,21 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService{
     }
 
     private void requireActiveWorkout(long workoutId) {
-        if(workoutId < 0){
-            throw new RuntimeException("Workout Id is Invalid")
-        }
-        Optional<LoggedWorkout> optionalLoggedWorkout = loggedWorkoutRepository.findById(workoutId);
+        LoggedWorkout loggedWorkout = requireWorkout(workoutId);
 
-        if(optionalLoggedWorkout.isEmpty()){
-            throw new RuntimeException("No workout found with provided Id");
-        }
-
-        LoggedWorkout loggedWorkout = optionalLoggedWorkout.get();
-
-        if(loggedWorkout.getEndedAtEpochMillis() != null){
+        if (loggedWorkout.getEndedAtEpochMillis() != null) {
             throw new RuntimeException("This workout has been completed");
         }
+    }
+
+    private LoggedWorkout createActiveWorkout(long userId, Long templateId, String nameSnapshot) {
+        LoggedWorkout workout = new LoggedWorkout();
+        workout.setUserId(userId);
+        workout.setStartedAtEpochMillis(System.currentTimeMillis());
+        workout.setEndedAtEpochMillis(null);
+        workout.setTemplateId(templateId);
+        workout.setNameSnapshot(nameSnapshot);
+
+        return loggedWorkoutRepository.save(workout);
     }
 }

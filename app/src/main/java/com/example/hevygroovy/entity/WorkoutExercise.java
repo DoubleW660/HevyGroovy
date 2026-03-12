@@ -9,6 +9,7 @@ public class WorkoutExercise {
     private int orderIndex;
     private String notes;
 
+    private int restTimeSeconds;
 
     public long getId() {
         return id;
@@ -57,5 +58,13 @@ public class WorkoutExercise {
 
     public void setLoggedWorkoutId(long loggedWorkoutId) {
         this.loggedWorkoutId = loggedWorkoutId;
+    }
+
+    public int getRestTimeSeconds() {
+        return restTimeSeconds;
+    }
+
+    public void setRestTimeSeconds(int restSeconds) {
+        this.restTimeSeconds = restSeconds;
     }
 }

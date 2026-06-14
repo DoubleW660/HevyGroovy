@@ -14,4 +14,6 @@ public interface SetEntryRepository {
 
     List<SetEntry> findByLoggedWorkoutId(long loggedWorkoutId);
 
+    boolean existsByLoggedWorkoutId(long loggedWorkoutId);
+
 }

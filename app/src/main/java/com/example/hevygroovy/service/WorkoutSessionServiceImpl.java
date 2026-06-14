@@ -2,11 +2,13 @@ package com.example.hevygroovy.service;
 
 import com.example.hevygroovy.entity.Exercise;
 import com.example.hevygroovy.entity.LoggedWorkout;
+import com.example.hevygroovy.entity.SetEntry;
 import com.example.hevygroovy.entity.TemplateExercise;
 import com.example.hevygroovy.entity.TemplateWorkout;
 import com.example.hevygroovy.entity.WorkoutExercise;
 import com.example.hevygroovy.repo.ExerciseRepository;
 import com.example.hevygroovy.repo.LoggedWorkoutRepository;
+import com.example.hevygroovy.repo.SetEntryRepository;
 import com.example.hevygroovy.repo.TemplateExerciseRepository;
 import com.example.hevygroovy.repo.TemplateWorkoutRepository;
 import com.example.hevygroovy.repo.WorkoutExerciseRepository;
@@ -23,17 +25,17 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     private final TemplateWorkoutRepository templateWorkoutRepository;
     private final TemplateExerciseRepository templateExerciseRepository;
     private final WorkoutExerciseRepository workoutExerciseRepository;
-    private final ExerciseRepository exerciseRepository;
-
+    private final SetEntryRepository setEntryRepository;
     private final TemplateService templateService;
     private final ExerciseService exerciseService;
+
 
     public WorkoutSessionServiceImpl(
             LoggedWorkoutRepository loggedWorkoutRepository,
             TemplateWorkoutRepository templateWorkoutRepository,
             TemplateExerciseRepository templateExerciseRepository,
             WorkoutExerciseRepository workoutExerciseRepository,
-            ExerciseRepository exerciseRepository,
+            SetEntryRepository setEntryRepository,
             TemplateService templateService,
             ExerciseService exerciseService
     ) {
@@ -41,7 +43,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
         this.templateWorkoutRepository = templateWorkoutRepository;
         this.templateExerciseRepository = templateExerciseRepository;
         this.workoutExerciseRepository = workoutExerciseRepository;
-        this.exerciseRepository = exerciseRepository;
+        this.setEntryRepository = setEntryRepository;
         this.templateService = templateService;
         this.exerciseService = exerciseService;
     }
@@ -127,18 +129,31 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
 
     @Override
     public LoggedWorkout finishWorkout(long userId, long workoutId) {
-        return null;
+
+        LoggedWorkout workout = requireOwnedWorkout(userId, workoutId);
+
+        requireActiveWorkout(workout);
+
+        requireWorkoutNotEmpty(workout.getId());
+
+        workout.setEndedAtEpochMillis(System.currentTimeMillis());
+
+        return loggedWorkoutRepository.save(workout);
     }
 
     private void requireNoActiveWorkout(long userId) {
+
         if (loggedWorkoutRepository.findActiveWorkoutByUserId(userId).isPresent()) {
             throw new RuntimeException("User already has an active workout");
         }
     }
 
-    private LoggedWorkout requireWorkout(long workoutId) {
+    private LoggedWorkout requireOwnedWorkout(long userId,  long workoutId) {
         if (workoutId <= 0) {
             throw new RuntimeException("Invalid Id Provided");
+        }
+        if (userId <= 0) {
+            throw new RuntimeException("Invalid User Id");
         }
 
         Optional<LoggedWorkout> loggedWorkoutOptional = loggedWorkoutRepository.findById(workoutId);
@@ -147,17 +162,26 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
             throw new RuntimeException("Workout Not Found");
         }
 
-        return loggedWorkoutOptional.get();
+        LoggedWorkout workout = loggedWorkoutOptional.get();
+
+        if (userId != workout.getUserId() ){
+            throw new RuntimeException("Workout does not belong to user");
+        }
+
+        return workout;
     }
 
-    private void requireActiveWorkout(long workoutId) {
-        LoggedWorkout loggedWorkout = requireWorkout(workoutId);
-
-        if (loggedWorkout.getEndedAtEpochMillis() != null) {
+    private void requireActiveWorkout(LoggedWorkout workout) {
+        if (workout.getEndedAtEpochMillis() != null) {
             throw new RuntimeException("This workout has been completed");
         }
     }
 
+    private void requireWorkoutNotEmpty(long workoutId){
+        if (!setEntryRepository.existsByLoggedWorkoutId(workoutId)) {
+            throw new RuntimeException("Cannot finish an empty workout");
+        }
+    }
     private LoggedWorkout createActiveWorkout(long userId, Long templateId, String nameSnapshot) {
         LoggedWorkout workout = new LoggedWorkout();
         workout.setUserId(userId);

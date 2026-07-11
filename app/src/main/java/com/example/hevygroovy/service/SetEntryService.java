@@ -9,5 +9,5 @@ public interface SetEntryService {
 
     SetEntry updateSet(long userId, long setEntryId, UpdateSetEntryRequest request);
 
-    SetEntry deleteSet(long userId, long setEntryId);
+    void deleteSet(long userId, long setEntryId);
 }

@@ -6,13 +6,13 @@ import com.example.hevygroovy.entity.SetEntry;
 import com.example.hevygroovy.entity.WorkoutExercise;
 import com.example.hevygroovy.entity.enums.SetType;
 import com.example.hevygroovy.entity.enums.Unit;
-import com.example.hevygroovy.repo.ExerciseRepository;
 import com.example.hevygroovy.repo.LoggedWorkoutRepository;
 import com.example.hevygroovy.repo.SetEntryRepository;
 import com.example.hevygroovy.repo.WorkoutExerciseRepository;
 
+import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
+
 
 public class SetEntryServiceImpl implements SetEntryService{
     private final SetEntryRepository setEntryRepository;
@@ -52,20 +52,9 @@ public class SetEntryServiceImpl implements SetEntryService{
         long loggedWorkoutId = workoutExercise.getLoggedWorkoutId();
 
         // use loggedWorkoutId to load LoggedWorkout or throw
-        LoggedWorkout workout = loggedWorkoutRepository
-                .findById(loggedWorkoutId)
-                .orElseThrow(() ->
-                        new RuntimeException("Logged Workout Not Found"));
+        LoggedWorkout workout = requireOwnedWorkout(userId, loggedWorkoutId);
 
-        //Check if userId matches logged workout owner
-        if (userId != workout.getUserId()) {
-            throw new RuntimeException("Workout does not belong to user");
-        }
-
-        //Check if workout has an end time
-        if (workout.getEndedAtEpochMillis() != null) {
-            throw new RuntimeException("Cannot add set to finished workout");
-        }
+        requireActiveWorkout(workout);
 
         //
         List<SetEntry> existingSets =
@@ -82,40 +71,10 @@ public class SetEntryServiceImpl implements SetEntryService{
         return setEntryRepository.save(setEntry);
     }
 
+    @Override
     public SetEntry updateSet(long userId, long setEntryId, UpdateSetEntryRequest request){
-        //Check the passed variables are not invalid Ids <= 0
-        if (userId <= 0) {
-            throw new RuntimeException("Invalid User Id Provided");
-        }
 
-        if (setEntryId <= 0) {
-            throw new RuntimeException("Invalid Set Entry Id Provided");
-        }
-
-        SetEntry setEntry = setEntryRepository
-                .findById(setEntryId)
-                .orElseThrow(() ->
-                        new RuntimeException("Set Entry Not Found"));
-
-        long workoutExerciseId = setEntry.getWorkoutExerciseId();
-
-        WorkoutExercise workoutExercise = workoutExerciseRepository
-                .findById(workoutExerciseId)
-                .orElseThrow(() ->
-                        new RuntimeException("Workout Exercise Not Found"));
-
-        long loggedWorkoutId = workoutExercise.getLoggedWorkoutId();
-
-        LoggedWorkout loggedWorkout = loggedWorkoutRepository
-                .findById(loggedWorkoutId)
-                .orElseThrow(() ->
-                        new RuntimeException("Logged Workout Not Found"));
-
-        if (userId != loggedWorkout.getUserId()) {
-            throw new RuntimeException("Logged Workout does not belong to user");
-        }
-
-        requireActiveWorkout(loggedWorkout);
+        SetEntry setEntry = requireOwnedActiveSet(userId, setEntryId);
 
         if (request.getReps() != null){
             if (request.getReps() < 0) {
@@ -159,17 +118,27 @@ public class SetEntryServiceImpl implements SetEntryService{
         return setEntryRepository.save(setEntry);
     }
 
-    public SetEntry deleteSet(long userId, long setEntryId){
-        //Check the passed variables are not invalid Ids <= 0
-        if (userId <= 0) {
-            throw new RuntimeException("Invalid User Id Provided");
+    @Override
+    public void deleteSet(long userId, long setEntryId) {
+
+        SetEntry setEntry = requireOwnedActiveSet(userId, setEntryId);
+
+        long workoutExerciseId = setEntry.getWorkoutExerciseId();
+
+        setEntryRepository.delete(setEntryId);
+
+        List<SetEntry> sets =
+                setEntryRepository.findByWorkoutExerciseId(workoutExerciseId);
+
+        sets.sort(Comparator.comparingInt(SetEntry::getSetNumber));
+
+        for (int i = 0; i < sets.size(); i++) {
+            SetEntry current = sets.get(i);
+
+            current.setSetNumber(i + 1);
+
+            setEntryRepository.save(current);
         }
-
-        if (setEntryId <= 0) {
-            throw new RuntimeException("Invalid Set Entry Id Provided");
-        }
-
-
     }
 
 

@@ -3,6 +3,7 @@ package com.example.hevygroovy.repo;
 import com.example.hevygroovy.entity.SetEntry;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface SetEntryRepository {
 
@@ -12,6 +13,7 @@ public interface SetEntryRepository {
 
     void delete(long id);
 
+    Optional<SetEntry> findById(long id);
     List<SetEntry> findByLoggedWorkoutId(long loggedWorkoutId);
 
     boolean existsByLoggedWorkoutId(long loggedWorkoutId);

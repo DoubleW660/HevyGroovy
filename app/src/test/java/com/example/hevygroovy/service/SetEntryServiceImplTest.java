@@ -286,13 +286,280 @@ public class SetEntryServiceImplTest {
         Assertions.assertEquals(LB, result.getUnit());
     }
     void updateSet_setNotFound_throwsException(){
+        long userId = 1L;
+        long setEntryId = 50L;
 
+        when(setEntryRepository.findById(setEntryId))
+                .thenReturn(Optional.empty());
+
+        UpdateSetEntryRequest request = new UpdateSetEntryRequest();
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> setEntryService.updateSet(userId, setEntryId, request)
+        );
+
+        Assertions.assertEquals(
+                "Set Entry Not Found",
+                exception.getMessage()
+        );
     }
     void updateSet_setDoesNotBelongToUser_throwsException(){
+        long userId = 1L;
+        long workoutExerciseId = 10L;
+        long loggedWorkoutId = 20L;
+        long setEntryId = 50L;
 
+        LoggedWorkout loggedWorkout = new LoggedWorkout();
+        loggedWorkout.setStartedAtEpochMillis(1000L);
+        loggedWorkout.setUserId(2L);
+        loggedWorkout.setId(loggedWorkoutId);
+
+        WorkoutExercise current = new WorkoutExercise();
+        current.setId(workoutExerciseId);
+        current.setExerciseId(workoutExerciseId);
+        current.setLoggedWorkoutId(loggedWorkoutId);
+        current.setOrderIndex(1);
+
+        SetEntry setEntry = new SetEntry();
+        setEntry.setId(setEntryId);
+        setEntry.setSetNumber(1);
+        setEntry.setWorkoutExerciseId(workoutExerciseId);
+        setEntry.setCreatedAtEpochMillis(1000L);
+
+        when(loggedWorkoutRepository.findById(loggedWorkoutId))
+                .thenReturn(Optional.of(loggedWorkout));
+
+        when(workoutExerciseRepository.findById(workoutExerciseId))
+                .thenReturn(Optional.of(current));
+
+        when(setEntryRepository.findById(setEntryId))
+                .thenReturn(Optional.of(setEntry));
+
+        UpdateSetEntryRequest request = new UpdateSetEntryRequest();
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> setEntryService.updateSet(userId, setEntryId, request)
+        );
+
+        Assertions.assertEquals(
+                "Workout does not belong to user",
+                exception.getMessage()
+        );
     }
     void updateSet_finishedWorkout_throwsException(){
+        long userId = 1L;
+        long workoutExerciseId = 10L;
+        long loggedWorkoutId = 20L;
+        long setEntryId = 50L;
 
+        LoggedWorkout loggedWorkout = new LoggedWorkout();
+        loggedWorkout.setStartedAtEpochMillis(1000L);
+        loggedWorkout.setEndedAtEpochMillis(1004L);
+        loggedWorkout.setUserId(userId);
+        loggedWorkout.setId(loggedWorkoutId);
+
+        WorkoutExercise current = new WorkoutExercise();
+        current.setId(workoutExerciseId);
+        current.setExerciseId(workoutExerciseId);
+        current.setLoggedWorkoutId(loggedWorkoutId);
+        current.setOrderIndex(1);
+
+        SetEntry setEntry = new SetEntry();
+        setEntry.setId(setEntryId);
+        setEntry.setSetNumber(1);
+        setEntry.setWorkoutExerciseId(workoutExerciseId);
+        setEntry.setCreatedAtEpochMillis(1000L);
+
+        when(loggedWorkoutRepository.findById(loggedWorkoutId))
+                .thenReturn(Optional.of(loggedWorkout));
+
+        when(workoutExerciseRepository.findById(workoutExerciseId))
+                .thenReturn(Optional.of(current));
+
+        when(setEntryRepository.findById(setEntryId))
+                .thenReturn(Optional.of(setEntry));
+
+        UpdateSetEntryRequest request = new UpdateSetEntryRequest();
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> setEntryService.updateSet(userId, setEntryId, request)
+        );
+
+        Assertions.assertEquals(
+                "This workout has been completed",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void updateSet_negativeReps_throwsException() {
+        long userId = 1L;
+        long workoutExerciseId = 10L;
+        long loggedWorkoutId = 20L;
+        long setEntryId = 50L;
+
+        LoggedWorkout loggedWorkout = new LoggedWorkout();
+        loggedWorkout.setUserId(userId);
+        loggedWorkout.setId(loggedWorkoutId);
+
+        WorkoutExercise current = new WorkoutExercise();
+        current.setId(workoutExerciseId);
+        current.setLoggedWorkoutId(loggedWorkoutId);
+
+        SetEntry setEntry = new SetEntry();
+        setEntry.setId(setEntryId);
+        setEntry.setWorkoutExerciseId(workoutExerciseId);
+
+        when(setEntryRepository.findById(setEntryId))
+                .thenReturn(Optional.of(setEntry));
+
+        when(workoutExerciseRepository.findById(workoutExerciseId))
+                .thenReturn(Optional.of(current));
+
+        when(loggedWorkoutRepository.findById(loggedWorkoutId))
+                .thenReturn(Optional.of(loggedWorkout));
+
+        UpdateSetEntryRequest request = new UpdateSetEntryRequest();
+        request.setReps(-1);
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> setEntryService.updateSet(userId, setEntryId, request)
+        );
+
+        Assertions.assertEquals(
+                "Reps cannot be negative",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void updateSet_negativeWeight_throwsException() {
+        long userId = 1L;
+        long workoutExerciseId = 10L;
+        long loggedWorkoutId = 20L;
+        long setEntryId = 50L;
+
+        LoggedWorkout loggedWorkout = new LoggedWorkout();
+        loggedWorkout.setUserId(userId);
+        loggedWorkout.setId(loggedWorkoutId);
+
+        WorkoutExercise current = new WorkoutExercise();
+        current.setId(workoutExerciseId);
+        current.setLoggedWorkoutId(loggedWorkoutId);
+
+        SetEntry setEntry = new SetEntry();
+        setEntry.setId(setEntryId);
+        setEntry.setWorkoutExerciseId(workoutExerciseId);
+
+        when(setEntryRepository.findById(setEntryId))
+                .thenReturn(Optional.of(setEntry));
+
+        when(workoutExerciseRepository.findById(workoutExerciseId))
+                .thenReturn(Optional.of(current));
+
+        when(loggedWorkoutRepository.findById(loggedWorkoutId))
+                .thenReturn(Optional.of(loggedWorkout));
+
+        UpdateSetEntryRequest request = new UpdateSetEntryRequest();
+        request.setWeight(-1D);
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> setEntryService.updateSet(userId, setEntryId, request)
+        );
+
+        Assertions.assertEquals(
+                "Weight cannot be negative",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void updateSet_invalidRpe_throwsException() {
+        long userId = 1L;
+        long workoutExerciseId = 10L;
+        long loggedWorkoutId = 20L;
+        long setEntryId = 50L;
+
+        LoggedWorkout loggedWorkout = new LoggedWorkout();
+        loggedWorkout.setUserId(userId);
+        loggedWorkout.setId(loggedWorkoutId);
+
+        WorkoutExercise current = new WorkoutExercise();
+        current.setId(workoutExerciseId);
+        current.setLoggedWorkoutId(loggedWorkoutId);
+
+        SetEntry setEntry = new SetEntry();
+        setEntry.setId(setEntryId);
+        setEntry.setWorkoutExerciseId(workoutExerciseId);
+
+        when(setEntryRepository.findById(setEntryId))
+                .thenReturn(Optional.of(setEntry));
+
+        when(workoutExerciseRepository.findById(workoutExerciseId))
+                .thenReturn(Optional.of(current));
+
+        when(loggedWorkoutRepository.findById(loggedWorkoutId))
+                .thenReturn(Optional.of(loggedWorkout));
+
+        UpdateSetEntryRequest request = new UpdateSetEntryRequest();
+        request.setRpe(11F);
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> setEntryService.updateSet(userId, setEntryId, request)
+        );
+
+        Assertions.assertEquals(
+                "RPE must be between 0 and 10",
+                exception.getMessage()
+        );
+    }
+
+    @Test
+    void updateSet_negativeRestSeconds_throwsException() {
+        long userId = 1L;
+        long workoutExerciseId = 10L;
+        long loggedWorkoutId = 20L;
+        long setEntryId = 50L;
+
+        LoggedWorkout loggedWorkout = new LoggedWorkout();
+        loggedWorkout.setUserId(userId);
+        loggedWorkout.setId(loggedWorkoutId);
+
+        WorkoutExercise current = new WorkoutExercise();
+        current.setId(workoutExerciseId);
+        current.setLoggedWorkoutId(loggedWorkoutId);
+
+        SetEntry setEntry = new SetEntry();
+        setEntry.setId(setEntryId);
+        setEntry.setWorkoutExerciseId(workoutExerciseId);
+
+        when(setEntryRepository.findById(setEntryId))
+                .thenReturn(Optional.of(setEntry));
+
+        when(workoutExerciseRepository.findById(workoutExerciseId))
+                .thenReturn(Optional.of(current));
+
+        when(loggedWorkoutRepository.findById(loggedWorkoutId))
+                .thenReturn(Optional.of(loggedWorkout));
+
+        UpdateSetEntryRequest request = new UpdateSetEntryRequest();
+        request.setRestSeconds(-1);
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> setEntryService.updateSet(userId, setEntryId, request)
+        );
+
+        Assertions.assertEquals(
+                "Rest seconds cannot be negative",
+                exception.getMessage()
+        );
     }
 
     void deleteSet_middleSet_reordersFollowingSets(){

@@ -3,9 +3,11 @@ package com.example.hevygroovy.service;
 import com.example.hevygroovy.dto.CreateExerciseRequest;
 import com.example.hevygroovy.dto.UpdateExerciseRequest;
 import com.example.hevygroovy.entity.Exercise;
+import com.example.hevygroovy.entity.enums.MuscleGroup;
 import com.example.hevygroovy.model.ExerciseModel;
 import com.example.hevygroovy.repo.ExerciseRepository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -28,6 +30,9 @@ public class ExerciseServiceImpl implements ExerciseService{
         if (title == null || title.isBlank()){
             throw new RuntimeException("Exercise Title is Required");
         }
+        if (request.getPrimaryMuscleGroup() == null) {
+            throw new RuntimeException("Primary Muscle Group is Required");
+        }
         title = title.trim().replaceAll("\\s+"," ");
         String description = request.getDescription();
         if (description != null) {
@@ -38,6 +43,8 @@ public class ExerciseServiceImpl implements ExerciseService{
         exercise.setTitle(title);
         exercise.setDescription(description);
         exercise.setArchived(false);
+        exercise.setPrimaryMuscleGroup(request.getPrimaryMuscleGroup());
+        exercise.setSecondaryMuscleGroups(request.getSecondaryMuscleGroups());
 
         Exercise saved = exerciseRepository.save(exercise);
 
@@ -56,6 +63,8 @@ public class ExerciseServiceImpl implements ExerciseService{
 
         String newTitle = request.getTitle();
         String newDesc = request.getDescription();
+        MuscleGroup primary = request.getPrimaryMuscleGroup();
+        List<MuscleGroup> secondary = request.getSecondaryMuscleGroups();
 
         if (newTitle != null && !newTitle.isBlank()){
 
@@ -67,6 +76,15 @@ public class ExerciseServiceImpl implements ExerciseService{
             newDesc = newDesc.trim();
             exercise.setDescription(newDesc);
         }
+
+        if (primary != null){
+            exercise.setPrimaryMuscleGroup(primary);
+        }
+
+        if (secondary != null){
+            exercise.setSecondaryMuscleGroups(secondary);
+        }
+
 
         Exercise saved = exerciseRepository.save(exercise);
 
@@ -146,6 +164,10 @@ public class ExerciseServiceImpl implements ExerciseService{
         model.setTitle(exercise.getTitle());
         model.setDescription(exercise.getDescription());
         model.setArchived(exercise.isArchived());
+        model.setPrimaryMuscleGroup(exercise.getPrimaryMuscleGroup());
+        model.setSecondaryMuscleGroups(
+                new ArrayList<>(exercise.getSecondaryMuscleGroups())
+        );
 
         return model;
     }

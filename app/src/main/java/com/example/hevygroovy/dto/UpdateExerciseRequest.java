@@ -13,7 +13,7 @@ public class UpdateExerciseRequest {
 
     private MuscleGroup primaryMuscleGroup;
 
-    private List<MuscleGroup> secondaryMuscleGroups = new ArrayList<>();
+    private List<MuscleGroup> secondaryMuscleGroups;
 
     public String getTitle() {
         return title;

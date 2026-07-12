@@ -36,6 +36,7 @@ class ExerciseServiceImplTest {
         CreateExerciseRequest request = new CreateExerciseRequest();
         request.setTitle("  Bench   Press  ");
         request.setDescription("  Chest exercise  ");
+        request.setPrimaryMuscleGroup(MuscleGroup.CHEST);
 
         when(exerciseRepository.save(any(Exercise.class)))
                 .thenAnswer(invocation -> {
@@ -381,5 +382,23 @@ class ExerciseServiceImplTest {
         );
 
         verify(exerciseRepository).save(exercise);
+    }
+
+    @Test
+    void createExercise_missingPrimaryMuscleGroup_throwsException() {
+        CreateExerciseRequest request = new CreateExerciseRequest();
+        request.setTitle("Bench Press");
+
+        RuntimeException exception = assertThrows(
+                RuntimeException.class,
+                () -> exerciseService.createExercise(request)
+        );
+
+        assertEquals(
+                "Primary Muscle Group is Required",
+                exception.getMessage()
+        );
+
+        verifyNoInteractions(exerciseRepository);
     }
 }

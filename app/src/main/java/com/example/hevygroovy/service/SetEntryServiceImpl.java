@@ -135,9 +135,12 @@ public class SetEntryServiceImpl implements SetEntryService{
         for (int i = 0; i < sets.size(); i++) {
             SetEntry current = sets.get(i);
 
-            current.setSetNumber(i + 1);
+            int newSetNumber = i + 1;
 
-            setEntryRepository.save(current);
+            if (current.getSetNumber() != newSetNumber) {
+                current.setSetNumber(newSetNumber);
+                setEntryRepository.save(current);
+            }
         }
     }
 

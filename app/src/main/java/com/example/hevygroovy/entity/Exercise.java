@@ -1,5 +1,10 @@
 package com.example.hevygroovy.entity;
 
+import com.example.hevygroovy.entity.enums.MuscleGroup;
+
+import java.util.ArrayList;
+import java.util.List;
+
 public class Exercise {
 
     private long id;
@@ -7,6 +12,12 @@ public class Exercise {
     private String title;
 
     private String description;
+
+
+
+    private MuscleGroup primaryMuscleGroup;
+
+    private List<MuscleGroup> secondaryMuscleGroups = new ArrayList<>();
 
     private boolean archived;
 
@@ -43,4 +54,19 @@ public class Exercise {
     }
 
 
+    public List<MuscleGroup> getSecondaryMuscleGroups() {
+        return secondaryMuscleGroups;
+    }
+
+    public void setSecondaryMuscleGroups(List<MuscleGroup> secondaryMuscleGroups) {
+        this.secondaryMuscleGroups = secondaryMuscleGroups;
+    }
+
+    public MuscleGroup getPrimaryMuscleGroup() {
+        return primaryMuscleGroup;
+    }
+
+    public void setPrimaryMuscleGroup(MuscleGroup primaryMuscleGroup) {
+        this.primaryMuscleGroup = primaryMuscleGroup;
+    }
 }

@@ -17,5 +17,7 @@ public interface LoggedWorkoutRepository {
 
     Optional<LoggedWorkout> findActiveWorkoutByUserId(long userId);
 
+    List<LoggedWorkout> findByUserId(long userId);
+
 
 }

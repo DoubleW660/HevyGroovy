@@ -5,6 +5,8 @@ import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.entity.TemplateExercise;
 import com.example.hevygroovy.entity.TemplateWorkout;
 import com.example.hevygroovy.entity.WorkoutExercise;
+import com.example.hevygroovy.entity.SetEntry;
+import com.example.hevygroovy.model.ExerciseModel;
 import com.example.hevygroovy.repo.LoggedWorkoutRepository;
 import com.example.hevygroovy.repo.SetEntryRepository;
 import com.example.hevygroovy.repo.TemplateExerciseRepository;
@@ -82,7 +84,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
         }
 
         List<TemplateExercise> templateExerciseList =
-                templateExerciseRepository.findByTemplateWorkoutId(templateId);
+                new ArrayList<>(templateExerciseRepository.findByTemplateWorkoutId(templateId));
 
         templateExerciseList.sort(
                 Comparator.comparingInt(TemplateExercise::getOrderIndex));
@@ -140,6 +142,116 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
         workout.setEndedAtEpochMillis(System.currentTimeMillis());
 
         return loggedWorkoutRepository.save(workout);
+    }
+
+    @Override
+    public WorkoutExercise addExerciseToWorkout(long userId, long workoutId, long exerciseId) {
+        LoggedWorkout workout = requireOwnedWorkout(userId, workoutId);
+        requireActiveWorkout(workout);
+        if (exerciseId <= 0) {
+            throw new RuntimeException("Invalid Exercise Id");
+        }
+        ExerciseModel exercise = exerciseService.requireActiveExercise(exerciseId);
+        List<WorkoutExercise> rows = orderedWorkoutExercises(workoutId);
+        int nextIndex = rows.isEmpty() ? 0 : rows.get(rows.size() - 1).getOrderIndex() + 1;
+        Map<Long, String> notes = workoutExerciseRepository.findLastNotesForUserExercises(
+                userId, java.util.Collections.singletonList(exerciseId));
+        WorkoutExercise row = new WorkoutExercise();
+        row.setLoggedWorkoutId(workoutId);
+        row.setExerciseId(exerciseId);
+        row.setExerciseNameSnapshot(exercise.getTitle());
+        row.setOrderIndex(nextIndex);
+        row.setRestTimeSeconds(0);
+        row.setNotes(notes.get(exerciseId));
+        return workoutExerciseRepository.save(row);
+    }
+
+    @Override
+    public void removeExerciseFromWorkout(long userId, long workoutExerciseId) {
+        WorkoutExercise row = requireOwnedActiveExercise(userId, workoutExerciseId);
+        // Persistence must eventually wrap deletion and reindexing in one transaction.
+        for (SetEntry set :
+                setEntryRepository.findByWorkoutExerciseId(workoutExerciseId)) {
+            setEntryRepository.delete(set.getId());
+        }
+        workoutExerciseRepository.delete(workoutExerciseId);
+        List<WorkoutExercise> remaining = orderedWorkoutExercises(row.getLoggedWorkoutId());
+        remaining.removeIf(current -> current.getId() == workoutExerciseId);
+        saveOrder(remaining);
+    }
+
+    @Override
+    public void moveExerciseInWorkout(long userId, long workoutExerciseId, int orderIndex) {
+        WorkoutExercise row = requireOwnedActiveExercise(userId, workoutExerciseId);
+        List<WorkoutExercise> rows = orderedWorkoutExercises(row.getLoggedWorkoutId());
+        if (orderIndex < 0 || orderIndex >= rows.size()) {
+            throw new RuntimeException("Position is not available");
+        }
+        int currentPosition = -1;
+        for (int i = 0; i < rows.size(); i++) {
+            if (rows.get(i).getId() == workoutExerciseId) {
+                currentPosition = i;
+                break;
+            }
+        }
+        if (currentPosition < 0) {
+            throw new RuntimeException("Workout Exercise Not Found");
+        }
+        if (currentPosition == orderIndex) {
+            return;
+        }
+        WorkoutExercise moving = rows.remove(currentPosition);
+        rows.add(orderIndex, moving);
+        saveOrder(rows);
+    }
+
+    @Override
+    public WorkoutExercise updateExerciseNotes(long userId, long workoutExerciseId, String notes) {
+        WorkoutExercise row = requireOwnedActiveExercise(userId, workoutExerciseId);
+        row.setNotes(notes);
+        return workoutExerciseRepository.save(row);
+    }
+
+    @Override
+    public WorkoutExercise updateExerciseRestTime(long userId, long workoutExerciseId,
+                                                   int restTimeSeconds) {
+        WorkoutExercise row = requireOwnedActiveExercise(userId, workoutExerciseId);
+        if (restTimeSeconds < 0) {
+            throw new RuntimeException("Rest seconds cannot be negative");
+        }
+        row.setRestTimeSeconds(restTimeSeconds);
+        return workoutExerciseRepository.save(row);
+    }
+
+    private WorkoutExercise requireOwnedActiveExercise(long userId, long workoutExerciseId) {
+        if (userId <= 0) {
+            throw new RuntimeException("Invalid User Id");
+        }
+        if (workoutExerciseId <= 0) {
+            throw new RuntimeException("Invalid Workout Exercise Id Provided");
+        }
+        WorkoutExercise row = workoutExerciseRepository.findById(workoutExerciseId)
+                .orElseThrow(() -> new RuntimeException("Workout Exercise Not Found"));
+        LoggedWorkout workout = requireOwnedWorkout(userId, row.getLoggedWorkoutId());
+        requireActiveWorkout(workout);
+        return row;
+    }
+
+    private List<WorkoutExercise> orderedWorkoutExercises(long workoutId) {
+        List<WorkoutExercise> rows = new ArrayList<>(
+                workoutExerciseRepository.findByLoggedWorkoutId(workoutId));
+        rows.sort(Comparator.comparingInt(WorkoutExercise::getOrderIndex));
+        return rows;
+    }
+
+    private void saveOrder(List<WorkoutExercise> rows) {
+        for (int i = 0; i < rows.size(); i++) {
+            WorkoutExercise row = rows.get(i);
+            if (row.getOrderIndex() != i) {
+                row.setOrderIndex(i);
+                workoutExerciseRepository.save(row);
+            }
+        }
     }
 
     private void requireNoActiveWorkout(long userId) {

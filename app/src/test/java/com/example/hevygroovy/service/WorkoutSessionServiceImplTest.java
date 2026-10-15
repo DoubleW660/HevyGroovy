@@ -3,11 +3,8 @@ package com.example.hevygroovy.service;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,8 +13,6 @@ import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.mock;
 
 import com.example.hevygroovy.entity.LoggedWorkout;
-import com.example.hevygroovy.entity.SetEntry;
-import com.example.hevygroovy.entity.User;
 import com.example.hevygroovy.repo.LoggedWorkoutRepository;
 import com.example.hevygroovy.repo.SetEntryRepository;
 import com.example.hevygroovy.repo.TemplateExerciseRepository;
@@ -85,10 +80,15 @@ class WorkoutSessionServiceImplTest {
         when(loggedWorkoutRepository.save(any()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
+        long beforeFinish = System.currentTimeMillis();
         LoggedWorkout result =
                 workoutSessionService.finishWorkout(userId, workoutId);
+        long afterFinish = System.currentTimeMillis();
 
+        assertSame(workout, result);
         assertNotNull(result.getEndedAtEpochMillis());
+        assertTrue(result.getEndedAtEpochMillis() >= beforeFinish);
+        assertTrue(result.getEndedAtEpochMillis() <= afterFinish);
         verify(loggedWorkoutRepository).save(workout);
         verify(loggedWorkoutRepository).findById(workoutId);
         verify(setEntryRepository)
@@ -124,6 +124,9 @@ class WorkoutSessionServiceImplTest {
                 "This workout has been completed",
                 exception.getMessage()
         );
+        assertEquals(Long.valueOf(1001L), workout.getEndedAtEpochMillis());
+        verifyNoInteractions(setEntryRepository);
+        verify(loggedWorkoutRepository, never()).save(any());
     }
 
     @Test
@@ -146,6 +149,8 @@ class WorkoutSessionServiceImplTest {
                 "Workout Not Found",
                 exception.getMessage()
         );
+        verifyNoInteractions(setEntryRepository);
+        verify(loggedWorkoutRepository, never()).save(any());
 
     }
 
@@ -175,6 +180,9 @@ class WorkoutSessionServiceImplTest {
                 "Workout does not belong to user",
                 exception.getMessage()
         );
+        assertNull(workout.getEndedAtEpochMillis());
+        verifyNoInteractions(setEntryRepository);
+        verify(loggedWorkoutRepository, never()).save(any());
 
     }
 
@@ -209,5 +217,50 @@ class WorkoutSessionServiceImplTest {
                 "Cannot finish an empty workout",
                 exception.getMessage()
         );
+        assertNull(workout.getEndedAtEpochMillis());
+        verify(loggedWorkoutRepository, never()).save(any());
+    }
+
+    @Test
+    void finishWorkout_rejectsInvalidUserIdsBeforeRepositoryAccess() {
+        for (long userId : new long[]{0L, -1L}) {
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> workoutSessionService.finishWorkout(userId, 100L));
+            assertEquals("Invalid User Id", exception.getMessage());
+        }
+        verifyNoInteractions(loggedWorkoutRepository, setEntryRepository);
+    }
+
+    @Test
+    void finishWorkout_rejectsInvalidWorkoutIdsBeforeRepositoryAccess() {
+        for (long workoutId : new long[]{0L, -1L}) {
+            RuntimeException exception = assertThrows(RuntimeException.class,
+                    () -> workoutSessionService.finishWorkout(1L, workoutId));
+            assertEquals("Invalid Id Provided", exception.getMessage());
+        }
+        verifyNoInteractions(loggedWorkoutRepository, setEntryRepository);
+    }
+
+    @Test
+    void finishWorkout_rejectsSecondFinishWithoutChangingCompletionTime() {
+        LoggedWorkout workout = new LoggedWorkout();
+        workout.setId(100L);
+        workout.setUserId(1L);
+        workout.setStartedAtEpochMillis(1000L);
+        when(loggedWorkoutRepository.findById(100L)).thenReturn(Optional.of(workout));
+        when(setEntryRepository.existsByLoggedWorkoutId(100L)).thenReturn(true);
+        when(loggedWorkoutRepository.save(any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+
+        workoutSessionService.finishWorkout(1L, 100L);
+        Long originalCompletionTime = workout.getEndedAtEpochMillis();
+
+        RuntimeException exception = assertThrows(RuntimeException.class,
+                () -> workoutSessionService.finishWorkout(1L, 100L));
+
+        assertEquals("This workout has been completed", exception.getMessage());
+        assertEquals(originalCompletionTime, workout.getEndedAtEpochMillis());
+        verify(loggedWorkoutRepository, times(1)).save(workout);
+        verify(setEntryRepository, times(1)).existsByLoggedWorkoutId(100L);
     }
 }

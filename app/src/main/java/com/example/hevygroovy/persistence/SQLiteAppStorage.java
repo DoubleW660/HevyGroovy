@@ -13,7 +13,12 @@ public final class SQLiteAppStorage implements AutoCloseable {
     private final WorkoutHistoryQueryService history;
 
     public SQLiteAppStorage(Context context) {
-        helper = new WorkoutDatabase(context);
+        this(context, "hevy_groovy.db");
+    }
+
+    /** Named storage also supports isolated integration tests and local profiles. */
+    public SQLiteAppStorage(Context context, String databaseName) {
+        helper = new WorkoutDatabase(context, databaseName);
         SQLiteDatabase db = helper.getWritableDatabase();
         exercises = new ExerciseServiceImpl(new SQLiteExerciseRepository(db));
         SQLiteTemplateWorkoutRepository templateRows = new SQLiteTemplateWorkoutRepository(db);

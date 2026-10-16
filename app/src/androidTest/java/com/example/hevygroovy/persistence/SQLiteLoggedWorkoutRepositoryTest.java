@@ -14,6 +14,25 @@ import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
 public class SQLiteLoggedWorkoutRepositoryTest {
+    @Test
+    public void completedPaginationFiltersBeforeLimitAndOffset() {
+        LoggedWorkout old = repository.save(workout(1L, 1000L, 2000L));
+        LoggedWorkout tiedFirst = repository.save(workout(1L, 3000L, 4000L));
+        LoggedWorkout tiedLast = repository.save(workout(1L, 3000L, 4000L));
+        repository.save(workout(1L, 9000L, null));
+        repository.save(workout(2L, 8000L, 10000L));
+        List<LoggedWorkout> firstPage = repository.findCompletedByUserIdOrderByStartedAtDesc(1L, 2, 0);
+        assertEquals(2, firstPage.size());
+        assertEquals(tiedLast.getId(), firstPage.get(0).getId());
+        assertEquals(tiedFirst.getId(), firstPage.get(1).getId());
+        List<LoggedWorkout> nextPage = repository.findCompletedByUserIdOrderByStartedAtDesc(1L, 2, 2);
+        assertEquals(1, nextPage.size());
+        assertEquals(old.getId(), nextPage.get(0).getId());
+        assertTrue(repository.findCompletedByUserIdOrderByStartedAtDesc(1L, 2, 3).isEmpty());
+        assertTrue(repository.findCompletedByUserIdOrderByStartedAtDesc(1L, 0, 0).isEmpty());
+        assertThrows(IllegalArgumentException.class,
+                () -> repository.findCompletedByUserIdOrderByStartedAtDesc(1L, 10, -1));
+    }
     private SQLiteDatabase db;
     private SQLiteLoggedWorkoutRepository repository;
 

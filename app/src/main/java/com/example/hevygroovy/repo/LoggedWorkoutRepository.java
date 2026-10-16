@@ -15,6 +15,9 @@ public interface LoggedWorkoutRepository {
 
     List<LoggedWorkout> findByUserIdOrderByStartedAtDesc(long userId, int limit, int offset);
 
+    /** Filter completed workouts before applying pagination; order by started time then ID descending. */
+    List<LoggedWorkout> findCompletedByUserIdOrderByStartedAtDesc(long userId, int limit, int offset);
+
     Optional<LoggedWorkout> findActiveWorkoutByUserId(long userId);
 
     List<LoggedWorkout> findByUserId(long userId);

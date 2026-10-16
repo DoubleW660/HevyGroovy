@@ -60,6 +60,15 @@ public final class SQLiteLoggedWorkoutRepository implements LoggedWorkoutReposit
         return query("user_id = ?", new String[]{Long.toString(userId)}, offset + "," + limit);
     }
 
+    @Override
+    public List<LoggedWorkout> findCompletedByUserIdOrderByStartedAtDesc(long userId, int limit, int offset) {
+        if (limit < 0 || offset < 0) {
+            throw new IllegalArgumentException("Limit and offset cannot be negative");
+        }
+        return query("user_id = ? AND ended_at IS NOT NULL",
+                new String[]{Long.toString(userId)}, offset + "," + limit);
+    }
+
     private List<LoggedWorkout> query(String selection, String[] args, String limit) {
         List<LoggedWorkout> result = new ArrayList<>();
         try (Cursor cursor = db.query("logged_workout", null, selection, args,

@@ -1,0 +1,156 @@
+package com.example.hevygroovy.persistence;
+
+import android.database.sqlite.SQLiteConstraintException;
+import android.database.sqlite.SQLiteDatabase;
+import androidx.test.ext.junit.runners.AndroidJUnit4;
+import androidx.test.platform.app.InstrumentationRegistry;
+import com.example.hevygroovy.dto.*;
+import com.example.hevygroovy.entity.*;
+import com.example.hevygroovy.entity.enums.MuscleGroup;
+import com.example.hevygroovy.entity.enums.Unit;
+import com.example.hevygroovy.service.*;
+import org.junit.*;
+import org.junit.runner.RunWith;
+import java.util.List;
+import static org.junit.Assert.*;
+
+/** Uses real services, repositories, transactions, and an isolated SQLite database. */
+@RunWith(AndroidJUnit4.class)
+public class SQLiteWorkoutFlowTest {
+    private SQLiteDatabase db;
+    private WorkoutDatabase helper;
+    private ExerciseService exerciseService;
+    private TemplateService templateService;
+    private WorkoutSessionService sessions;
+    private SetEntryService setService;
+    private WorkoutHistoryQueryService history;
+    private SQLiteWorkoutExerciseRepository exercises;
+    private SQLiteSetEntryRepository sets;
+    private SQLiteLoggedWorkoutRepository workouts;
+
+    @Before
+    public void setUp() {
+        db = SQLiteDatabase.create(null);
+        helper = new WorkoutDatabase(InstrumentationRegistry.getInstrumentation().getTargetContext());
+        helper.onConfigure(db);
+        helper.onCreate(db);
+        exerciseService = new ExerciseServiceImpl(new SQLiteExerciseRepository(db));
+        SQLiteTemplateWorkoutRepository templates = new SQLiteTemplateWorkoutRepository(db);
+        SQLiteTemplateExerciseRepository templateExercises = new SQLiteTemplateExerciseRepository(db);
+        templateService = new TransactionalTemplateService(db,
+                new TemplateServiceImpl(templates, templateExercises, exerciseService));
+        SQLiteWorkoutServices services = new SQLiteWorkoutServices(db, templates, templateExercises, exerciseService);
+        sessions = services.getWorkoutSessions();
+        setService = services.getSetEntries();
+        exercises = new SQLiteWorkoutExerciseRepository(db);
+        sets = new SQLiteSetEntryRepository(db);
+        workouts = new SQLiteLoggedWorkoutRepository(db);
+        history = new TransactionalWorkoutHistoryService(db,
+                new WorkoutHistoryQueryServiceImpl(workouts, exercises, sets));
+    }
+
+    @After
+    public void tearDown() { db.close(); helper.close(); }
+
+    @Test
+    public void templateToCompletedWorkoutToHistoryAndNextSessionNotes() {
+        long exerciseId = createExercise("Bench press");
+        long templateId = createTemplate(exerciseId);
+        LoggedWorkout workout = sessions.startWorkoutFromTemplate(1L, templateId);
+        WorkoutExercise row = exercises.findByLoggedWorkoutId(workout.getId()).get(0);
+        SetEntry set = setService.addSet(1L, row.getId());
+        assertFalse(set.isCompleted());
+        assertThrows(RuntimeException.class, () -> sessions.finishWorkout(1L, workout.getId()));
+        assertFalse(db.inTransaction());
+        assertNull(workouts.findById(workout.getId()).get().getEndedAtEpochMillis());
+
+        sessions.updateExerciseNotes(1L, row.getId(), "Pause at chest");
+        UpdateSetEntryRequest update = new UpdateSetEntryRequest();
+        update.setWeight(60D);
+        update.setReps(8);
+        update.setUnit(Unit.KG);
+        update.setCompleted(true);
+        setService.updateSet(1L, set.getId(), update);
+        sessions.finishWorkout(1L, workout.getId());
+
+        WorkoutHistoryDetail detail = history.getWorkoutHistoryDetail(1L, workout.getId());
+        assertEquals("Upper body", detail.getNameSnapshot());
+        assertEquals("Bench press", detail.getExercises().get(0).getExerciseName());
+        assertEquals("Pause at chest", detail.getExercises().get(0).getNotes());
+        assertEquals(1, detail.getTotalSets());
+        assertEquals(8, detail.getTotalReps());
+        assertEquals(480D, detail.getTotalVolume(), 0D);
+        assertEquals(1, history.getWorkoutHistory(1L, 10, 0).size());
+        assertTrue(history.getWorkoutHistory(2L, 10, 0).isEmpty());
+        assertThrows(RuntimeException.class, () -> setService.updateSet(1L, set.getId(), update));
+        assertThrows(RuntimeException.class, () -> sessions.removeExerciseFromWorkout(1L, row.getId()));
+
+        // Historical notes also seed an exercise added to an unrelated, empty workout.
+        LoggedWorkout next = sessions.startEmptyWorkout(1L);
+        WorkoutExercise added = sessions.addExerciseToWorkout(1L, next.getId(), exerciseId);
+        assertEquals("Pause at chest", added.getNotes());
+    }
+
+    @Test
+    public void templateSeedingFailureRollsBackParentAndPreviouslySavedChildren() {
+        long first = createExercise("Bench");
+        long second = createExercise("Row");
+        long template = createTemplate(first, second);
+        db.execSQL("CREATE TRIGGER fail_seed BEFORE INSERT ON workout_exercise "
+                + "WHEN NEW.exercise_id = " + second + " BEGIN SELECT RAISE(ABORT, 'Simulated child failure'); END");
+
+        assertThrows(SQLiteConstraintException.class,
+                () -> sessions.startWorkoutFromTemplate(1L, template));
+
+        assertFalse(db.inTransaction());
+        assertTrue(workouts.findByUserId(1L).isEmpty());
+        try (android.database.Cursor cursor = db.rawQuery("SELECT COUNT(*) FROM workout_exercise", null)) {
+            cursor.moveToFirst();
+            assertEquals(0, cursor.getInt(0));
+        }
+        db.execSQL("DROP TRIGGER fail_seed");
+        LoggedWorkout retry = sessions.startWorkoutFromTemplate(1L, template);
+        assertEquals(2, exercises.findByLoggedWorkoutId(retry.getId()).size());
+    }
+
+    @Test
+    public void failedExerciseDeletionRestoresAlreadyDeletedSets() {
+        long exerciseId = createExercise("Squat");
+        LoggedWorkout workout = sessions.startEmptyWorkout(1L);
+        WorkoutExercise row = sessions.addExerciseToWorkout(1L, workout.getId(), exerciseId);
+        SetEntry set = setService.addSet(1L, row.getId());
+        db.execSQL("CREATE TRIGGER fail_remove BEFORE DELETE ON workout_exercise "
+                + "BEGIN SELECT RAISE(ABORT, 'Simulated deletion failure'); END");
+
+        assertThrows(SQLiteConstraintException.class,
+                () -> sessions.removeExerciseFromWorkout(1L, row.getId()));
+
+        assertTrue(exercises.findById(row.getId()).isPresent());
+        assertTrue(sets.findById(set.getId()).isPresent());
+        assertFalse(db.inTransaction());
+        db.execSQL("DROP TRIGGER fail_remove");
+        sessions.removeExerciseFromWorkout(1L, row.getId());
+        assertFalse(sets.findById(set.getId()).isPresent());
+        assertTrue(exercises.findByLoggedWorkoutId(workout.getId()).isEmpty());
+    }
+
+    private long createExercise(String name) {
+        CreateExerciseRequest request = new CreateExerciseRequest();
+        request.setTitle(name);
+        request.setPrimaryMuscleGroup(MuscleGroup.OTHER);
+        return exerciseService.createExercise(request).getExerciseId();
+    }
+
+    private long createTemplate(long... exerciseIds) {
+        CreateTemplateRequest request = new CreateTemplateRequest();
+        request.setTitle("Upper body");
+        long id = templateService.createTemplate(1L, request).getTemplateWorkoutId();
+        for (long exerciseId : exerciseIds) {
+            AddTemplateExerciseRequest add = new AddTemplateExerciseRequest();
+            add.setTemplateId(id);
+            add.setExerciseId(exerciseId);
+            templateService.addExerciseToTemplate(1L, add);
+        }
+        return id;
+    }
+}

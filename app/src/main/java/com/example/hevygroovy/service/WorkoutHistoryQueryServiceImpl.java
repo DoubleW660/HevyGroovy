@@ -42,6 +42,25 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
         List<LoggedWorkout> workouts =
                 loggedWorkoutRepository.findByUserId(userId);
 
+        return buildHistory(userId, workouts);
+    }
+
+    @Override
+    public List<WorkoutHistory> getWorkoutHistory(long userId, int limit, int offset) {
+        if (userId <= 0) {
+            throw new IllegalArgumentException("Invalid user ID");
+        }
+        if (limit < 0 || offset < 0) {
+            throw new IllegalArgumentException("Limit and offset cannot be negative");
+        }
+        if (limit == 0) {
+            return List.of();
+        }
+        return buildHistory(userId, loggedWorkoutRepository
+                .findCompletedByUserIdOrderByStartedAtDesc(userId, limit, offset));
+    }
+
+    private List<WorkoutHistory> buildHistory(long userId, List<LoggedWorkout> workouts) {
         List<WorkoutHistory> workoutHistoryList = new ArrayList<>();
 
         workouts = new ArrayList<>(workouts);

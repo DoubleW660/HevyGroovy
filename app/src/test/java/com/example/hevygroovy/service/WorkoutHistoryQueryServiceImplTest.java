@@ -17,6 +17,35 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class WorkoutHistoryQueryServiceImplTest {
     @Test
+    void pageLoadsOnlyRequestedCompletedWorkoutsAndTheirChildren() {
+        LoggedWorkout workout = workout(100L, 1L, 1000L, 2000L);
+        when(workouts.findCompletedByUserIdOrderByStartedAtDesc(1L, 20, 40))
+                .thenReturn(List.of(workout));
+        List<WorkoutHistory> page = service.getWorkoutHistory(1L, 20, 40);
+        assertEquals(1, page.size());
+        assertEquals(100L, page.get(0).getWorkoutId());
+        verify(workouts).findCompletedByUserIdOrderByStartedAtDesc(1L, 20, 40);
+        verify(workouts, never()).findByUserId(anyLong());
+        verify(exercises).findByLoggedWorkoutId(100L);
+        verify(sets).findByLoggedWorkoutId(100L);
+    }
+
+    @Test
+    void zeroLimitAndInvalidPaginationAvoidRepositoryAccess() {
+        assertTrue(service.getWorkoutHistory(1L, 0, 100).isEmpty());
+        assertThrows(IllegalArgumentException.class, () -> service.getWorkoutHistory(1L, -1, 0));
+        assertThrows(IllegalArgumentException.class, () -> service.getWorkoutHistory(1L, 10, -1));
+        assertThrows(IllegalArgumentException.class, () -> service.getWorkoutHistory(0L, 10, 0));
+        verifyNoInteractions(workouts, exercises, sets);
+    }
+
+    @Test
+    void emptyPageDoesNotLoadChildRows() {
+        when(workouts.findCompletedByUserIdOrderByStartedAtDesc(1L, 10, 100)).thenReturn(List.of());
+        assertTrue(service.getWorkoutHistory(1L, 10, 100).isEmpty());
+        verifyNoInteractions(exercises, sets);
+    }
+    @Test
     void placeholdersAreExcludedFromSummaryDetailAndExerciseStatistics() {
         LoggedWorkout workout = workout(100L, 1L, 1000L, 2000L);
         when(workouts.findByUserId(1L)).thenReturn(List.of(workout));

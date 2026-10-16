@@ -99,6 +99,11 @@ public class TemplateServiceImpl implements TemplateService {
 
         exerciseService.requireActiveExercise(request.getExerciseId());
 
+        Integer restTime = request.getRestTimeSeconds();
+        if (restTime == null) { restTime = 0; }
+        if (restTime < 0) {
+            throw new RuntimeException("Rest seconds cannot be negative");
+        }
         Integer newIndex = request.getOrderIndex();
         if(newIndex == null){
             Integer maxIndex = templateExerciseRepository.findMaxOrderIndex(request.getTemplateId());
@@ -107,10 +112,23 @@ public class TemplateServiceImpl implements TemplateService {
             } else {
                 newIndex = maxIndex + 1;
             }
+        } else {
+            List<TemplateExercise> existing = new ArrayList<>(
+                    templateExerciseRepository.findByTemplateWorkoutId(request.getTemplateId()));
+            if (newIndex < 0 || newIndex > existing.size()) {
+                throw new RuntimeException("Position is not available");
+            }
+            existing.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex)
+                    .thenComparingLong(TemplateExercise::getId));
+            for (int i = 0; i < existing.size(); i++) {
+                TemplateExercise current = existing.get(i);
+                int shiftedIndex = i < newIndex ? i : i + 1;
+                if (current.getOrderIndex() != shiftedIndex) {
+                    current.setOrderIndex(shiftedIndex);
+                    templateExerciseRepository.save(current);
+                }
+            }
         }
-
-        Integer restTime = request.getRestTimeSeconds();
-        if(restTime == null){restTime = 0;}
 
 
         TemplateExercise templateExercise = new TemplateExercise();
@@ -141,7 +159,7 @@ public class TemplateServiceImpl implements TemplateService {
 
         templateExerciseRepository.delete(templateExerciseId);
 
-        List<TemplateExercise> exercises = templateExerciseRepository.findByTemplateWorkoutId(templateId);
+        List<TemplateExercise> exercises = new ArrayList<>(templateExerciseRepository.findByTemplateWorkoutId(templateId));
         exercises.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
 
         for (TemplateExercise current : exercises) {
@@ -168,7 +186,7 @@ public class TemplateServiceImpl implements TemplateService {
         long templateId = templateExercise.getTemplateWorkoutId();
         requireActiveTemplate(userId, templateId);
 
-        List<TemplateExercise> exercises = templateExerciseRepository.findByTemplateWorkoutId(templateId);
+        List<TemplateExercise> exercises = new ArrayList<>(templateExerciseRepository.findByTemplateWorkoutId(templateId));
         exercises.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
 
         if(orderIndex > exercises.size() - 1){
@@ -210,7 +228,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
         TemplateWorkout templateWorkout = requireOwnedTemplate(userId, templateId);
 
-        List<TemplateExercise> exercises = templateExerciseRepository.findByTemplateWorkoutId(templateId);
+        List<TemplateExercise> exercises = new ArrayList<>(templateExerciseRepository.findByTemplateWorkoutId(templateId));
         exercises.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
 
         List<TemplateExerciseItemModel> templateExerciseItemModels = new ArrayList<>(exercises.size());

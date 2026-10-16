@@ -26,6 +26,57 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class TemplateServiceImplTest {
+    @Test
+    void insertionAtExplicitPositionShiftsLaterExercisesAndPreservesRepositoryList() {
+        TemplateWorkout template = new TemplateWorkout();
+        template.setId(5L);
+        template.setUserId(1L);
+        when(templateWorkoutRepository.findById(5L)).thenReturn(Optional.of(template));
+        TemplateExercise first = new TemplateExercise();
+        first.setId(10L);
+        first.setOrderIndex(0);
+        TemplateExercise second = new TemplateExercise();
+        second.setId(20L);
+        second.setOrderIndex(1);
+        List<TemplateExercise> repositoryRows = List.of(second, first);
+        when(templateExerciseRepository.findByTemplateWorkoutId(5L)).thenReturn(repositoryRows);
+        AddTemplateExerciseRequest request = new AddTemplateExerciseRequest();
+        request.setTemplateId(5L);
+        request.setExerciseId(30L);
+        request.setOrderIndex(1);
+
+        templateService.addExerciseToTemplate(1L, request);
+
+        assertEquals(0, first.getOrderIndex());
+        assertEquals(2, second.getOrderIndex());
+        assertSame(second, repositoryRows.get(0));
+        ArgumentCaptor<TemplateExercise> captor = ArgumentCaptor.forClass(TemplateExercise.class);
+        verify(templateExerciseRepository, times(2)).save(captor.capture());
+        TemplateExercise inserted = captor.getAllValues().get(1);
+        assertEquals(30L, inserted.getExerciseId());
+        assertEquals(1, inserted.getOrderIndex());
+        verify(templateExerciseRepository, never()).save(first);
+    }
+
+    @Test
+    void invalidInsertionPositionOrRestTimeCausesNoWrites() {
+        TemplateWorkout template = new TemplateWorkout();
+        template.setId(5L);
+        template.setUserId(1L);
+        when(templateWorkoutRepository.findById(5L)).thenReturn(Optional.of(template));
+        when(templateExerciseRepository.findByTemplateWorkoutId(5L)).thenReturn(List.of());
+        AddTemplateExerciseRequest request = new AddTemplateExerciseRequest();
+        request.setTemplateId(5L);
+        request.setExerciseId(30L);
+        for (int position : new int[]{-1, 1}) {
+            request.setOrderIndex(position);
+            assertThrows(RuntimeException.class, () -> templateService.addExerciseToTemplate(1L, request));
+        }
+        request.setOrderIndex(null);
+        request.setRestTimeSeconds(-1);
+        assertThrows(RuntimeException.class, () -> templateService.addExerciseToTemplate(1L, request));
+        verify(templateExerciseRepository, never()).save(any());
+    }
 
     private TemplateWorkoutRepository templateWorkoutRepository;
     private TemplateExerciseRepository templateExerciseRepository;

@@ -4,6 +4,11 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import com.example.hevygroovy.entity.WorkoutExercise;
+import com.example.hevygroovy.entity.SetEntry;
+import com.example.hevygroovy.entity.enums.SetType;
+import com.example.hevygroovy.entity.enums.Unit;
+import com.example.hevygroovy.dto.ActiveSetEntry;
+import com.example.hevygroovy.dto.PreviousExercisePerformance;
 import com.example.hevygroovy.repo.WorkoutExerciseRepository;
 import java.util.*;
 
@@ -90,6 +95,71 @@ public final class SQLiteWorkoutExerciseRepository implements WorkoutExerciseRep
             }
         }
         return result;
+    }
+
+    @Override
+    public Map<Long, PreviousExercisePerformance> findPreviousPerformancesForUserExercises(
+            long userId, List<Long> exerciseIds) {
+        Map<Long, PreviousExercisePerformance> result = new HashMap<>();
+        List<Long> distinct = new ArrayList<>(new LinkedHashSet<>(exerciseIds));
+        for (int start = 0; start < distinct.size(); start += 500) {
+            List<Long> batch = distinct.subList(start, Math.min(start + 500, distinct.size()));
+            String placeholders = String.join(",", Collections.nCopies(batch.size(), "?"));
+            String[] args = new String[batch.size() + 1];
+            args[0] = Long.toString(userId);
+            for (int i = 0; i < batch.size(); i++) args[i + 1] = Long.toString(batch.get(i));
+            String sql = "WITH performances AS (SELECT DISTINCT we.exercise_id, w.id AS workout_id, w.ended_at "
+                    + "FROM workout_exercise we JOIN logged_workout w ON w.id = we.logged_workout_id "
+                    + "WHERE w.user_id = ? AND w.ended_at IS NOT NULL AND we.exercise_id IN ("
+                    + placeholders + ") AND EXISTS (SELECT 1 FROM set_entry s "
+                    + "WHERE s.workout_exercise_id = we.id AND s.completed = 1)), "
+                    + "ranked AS (SELECT performances.*, ROW_NUMBER() OVER (PARTITION BY exercise_id "
+                    + "ORDER BY ended_at DESC, workout_id DESC) AS rn FROM performances) "
+                    + "SELECT p.exercise_id, p.workout_id, p.ended_at, we.id AS row_id, s.* "
+                    + "FROM ranked p JOIN workout_exercise we ON we.logged_workout_id = p.workout_id "
+                    + "AND we.exercise_id = p.exercise_id LEFT JOIN set_entry s "
+                    + "ON s.workout_exercise_id = we.id AND s.completed = 1 WHERE p.rn = 1 "
+                    + "ORDER BY p.exercise_id, we.order_index, we.id, s.set_number, s.id";
+            Map<Long, LinkedHashMap<Long, List<ActiveSetEntry>>> occurrences = new LinkedHashMap<>();
+            Map<Long, Long> workoutIds = new HashMap<>();
+            Map<Long, Long> endedAt = new HashMap<>();
+            try (Cursor cursor = db.rawQuery(sql, args)) {
+                while (cursor.moveToNext()) {
+                    long exerciseId = cursor.getLong(0);
+                    workoutIds.put(exerciseId, cursor.getLong(1));
+                    endedAt.put(exerciseId, cursor.getLong(2));
+                    List<ActiveSetEntry> previousSets = occurrences
+                            .computeIfAbsent(exerciseId, ignored -> new LinkedHashMap<>())
+                            .computeIfAbsent(cursor.getLong(3), ignored -> new ArrayList<>());
+                    if (!cursor.isNull(cursor.getColumnIndexOrThrow("id"))) {
+                        previousSets.add(new ActiveSetEntry(previousSet(cursor)));
+                    }
+                }
+            }
+            for (Map.Entry<Long, LinkedHashMap<Long, List<ActiveSetEntry>>> entry : occurrences.entrySet()) {
+                result.put(entry.getKey(), new PreviousExercisePerformance(workoutIds.get(entry.getKey()),
+                        endedAt.get(entry.getKey()), new ArrayList<>(entry.getValue().values())));
+            }
+        }
+        return Map.copyOf(result);
+    }
+
+    private SetEntry previousSet(Cursor cursor) {
+        SetEntry set = new SetEntry();
+        set.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));
+        set.setWorkoutExerciseId(cursor.getLong(cursor.getColumnIndexOrThrow("workout_exercise_id")));
+        set.setSetNumber(cursor.getInt(cursor.getColumnIndexOrThrow("set_number")));
+        set.setReps(cursor.getInt(cursor.getColumnIndexOrThrow("reps")));
+        set.setWeight(cursor.getDouble(cursor.getColumnIndexOrThrow("weight")));
+        set.setUnit(Unit.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("unit"))));
+        set.setSetType(SetType.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("set_type"))));
+        set.setCreatedAtEpochMillis(cursor.getLong(cursor.getColumnIndexOrThrow("created_at")));
+        set.setCompleted(true);
+        int rest = cursor.getColumnIndexOrThrow("rest_seconds");
+        set.setRestSeconds(cursor.isNull(rest) ? null : cursor.getInt(rest));
+        int rpe = cursor.getColumnIndexOrThrow("rpe");
+        set.setRpe(cursor.isNull(rpe) ? null : cursor.getFloat(rpe));
+        return set;
     }
 
     private List<WorkoutExercise> query(String selection, long id) {

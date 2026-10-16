@@ -1,6 +1,7 @@
 package com.example.hevygroovy.repo;
 
 import com.example.hevygroovy.entity.WorkoutExercise;
+import com.example.hevygroovy.dto.PreviousExercisePerformance;
 
 import java.util.List;
 import java.util.Map;
@@ -30,6 +31,16 @@ public interface WorkoutExerciseRepository {
      * Returns a non-null map, empty when exerciseIds is empty.
      */
     Map<Long, String> findLastNotesForUserExercises(long userId, List<Long> exerciseIds);
+
+    /**
+     * Latest finished workout with completed sets, by ended-at then workout ID, for each exercise.
+     * Search across all templates and only this user. Retain all repeated exercise rows in that
+     * workout, ordered by order-index/id, including empty occurrences; only completed sets are
+     * returned within each row, ordered by original set-number/id, with original units/types.
+     * Omit exercises without a completed performance. Implement in bounded batches.
+     */
+    Map<Long, PreviousExercisePerformance> findPreviousPerformancesForUserExercises(
+            long userId, List<Long> exerciseIds);
 
 
 }

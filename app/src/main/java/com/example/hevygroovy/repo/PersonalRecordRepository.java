@@ -16,4 +16,7 @@ public interface PersonalRecordRepository {
      */
     List<PersonalRecord> findBestRecords(long userId, List<Long> exerciseIds,
                                         Long beforeEndedAtEpochMillis, long beforeWorkoutId);
+
+    /** Best Epley estimate in KG from finished, completed working sets of 1..10 reps; zero if none. */
+    double findBestEstimatedOneRepMax(long userId, long exerciseId);
 }

@@ -1,13 +1,17 @@
 package com.example.hevygroovy.app;
 
-import java.util.List;
+import com.example.hevygroovy.service.PersonalRecordService;
 
 final class ServiceRecordGateway implements RecordGateway {
     private final AppWorker worker;
     ServiceRecordGateway(AppWorker worker) { this.worker = worker; }
 
     @Override public void loadExercise(long exerciseId, Callback callback) {
-        worker.submit(() -> List.copyOf(worker.services().getPersonalRecords()
-                .getExerciseRecords(worker.userId(), exerciseId)), callback::onSuccess, callback::onFailure);
+        worker.submit(() -> {
+            PersonalRecordService records = worker.services().getPersonalRecords();
+            long userId = worker.userId();
+            return new Snapshot(records.getExerciseRecords(userId, exerciseId),
+                    records.getEstimatedOneRepMax(userId, exerciseId));
+        }, callback::onSuccess, callback::onFailure);
     }
 }

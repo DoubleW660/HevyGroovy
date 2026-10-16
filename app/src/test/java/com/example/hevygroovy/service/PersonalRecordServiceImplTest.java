@@ -46,6 +46,17 @@ class PersonalRecordServiceImplTest {
     }
 
     @Test
+    void estimatedMaxUsesDedicatedAggregateAndRejectsInvalidIds() {
+        when(records.findBestEstimatedOneRepMax(1, 7)).thenReturn(116.6666667);
+        assertEquals(116.6666667, service.getEstimatedOneRepMax(1, 7), 0.000001);
+        assertThrows(IllegalArgumentException.class, () -> service.getEstimatedOneRepMax(0, 7));
+        assertThrows(IllegalArgumentException.class, () -> service.getEstimatedOneRepMax(1, 0));
+        verify(records).findBestEstimatedOneRepMax(1, 7);
+        verifyNoMoreInteractions(records);
+        verifyNoInteractions(workouts, exercises, sets);
+    }
+
+    @Test
     void firstCompletedPerformanceEstablishesFourRecordsAndPreservesSourceUnits() {
         prepare(null, List.of(row(10, 7, 0)), List.of(set(101, 10, 1, 100, 8, Unit.LB)));
         when(records.findBestRecords(1, List.of(7L), null, 100)).thenReturn(List.of());

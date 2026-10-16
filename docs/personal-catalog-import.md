@@ -64,8 +64,9 @@ Keep the upstream license alongside regenerated assets.
 
 ## Record tracking
 
-Personal-record calculation and its UI are not implemented. Existing DTO PR/estimated
-1RM fields are placeholders. The import does not create PRs or past workout history.
+Personal records are now calculated from finished workouts stored in the app; see
+[personal-records.md](personal-records.md) for categories and rules. The catalog
+import does not create PRs or past workout history. Estimated 1RM remains deferred.
 
 ## Verification
 

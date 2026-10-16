@@ -2,7 +2,6 @@ package com.example.hevygroovy.ui
 
 import androidx.lifecycle.SavedStateHandle
 import com.example.hevygroovy.app.RecordGateway
-import com.example.hevygroovy.dto.PersonalRecord
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
@@ -12,11 +11,11 @@ class ExerciseRecordsViewModelTest {
         val model = ExerciseRecordsViewModel(gateway)
         model.refresh(1)
         model.refresh(2)
-        gateway.callbacks[0].onSuccess(emptyList())
+        gateway.callbacks[0].onSuccess(RecordGateway.Snapshot(emptyList(), 65.0))
         assertEquals(2L, model.state.selectedExerciseId)
         assertTrue(model.state.loading)
         model.close()
-        gateway.callbacks[1].onSuccess(emptyList())
+        gateway.callbacks[1].onSuccess(RecordGateway.Snapshot(emptyList(), 80.0))
         assertNull(model.state.selectedExerciseId)
         assertFalse(model.state.loaded)
     }
@@ -29,9 +28,10 @@ class ExerciseRecordsViewModelTest {
         gateway.callbacks[0].onFailure(IllegalStateException("Unavailable"))
         assertNotNull(model.state.error)
         model.retry()
-        gateway.callbacks[1].onSuccess(emptyList())
+        gateway.callbacks[1].onSuccess(RecordGateway.Snapshot(emptyList(), 70.0))
         assertTrue(model.state.loaded)
         assertNull(model.state.error)
+        assertEquals(70.0, model.state.estimatedOneRepMaxKg)
     }
 
     @Test fun savedSelectionRestoresWithoutLoadingUntilTheScreenIsVisible() {

@@ -16,6 +16,7 @@ data class ExerciseRecordsState(
     val loading: Boolean = false,
     val loaded: Boolean = false,
     val records: List<PersonalRecord> = emptyList(),
+    val estimatedOneRepMaxKg: Double = 0.0,
     val error: String? = null,
 )
 
@@ -32,9 +33,10 @@ class ExerciseRecordsViewModel(private val gateway: RecordGateway,
         savedState[SELECTED_ID] = exerciseId
         state = ExerciseRecordsState(selectedExerciseId = exerciseId, loading = true)
         gateway.loadExercise(exerciseId, object : RecordGateway.Callback {
-            override fun onSuccess(records: List<PersonalRecord>) {
+            override fun onSuccess(snapshot: RecordGateway.Snapshot) {
                 if (cleared || request != generation) return
-                state = state.copy(loading = false, loaded = true, records = records.toList())
+                state = state.copy(loading = false, loaded = true, records = snapshot.records.toList(),
+                    estimatedOneRepMaxKg = snapshot.estimatedOneRepMaxKg)
             }
             override fun onFailure(error: Exception) {
                 if (cleared || request != generation) return

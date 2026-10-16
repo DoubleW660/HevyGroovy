@@ -17,11 +17,13 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import com.example.hevygroovy.dto.ActiveWorkoutDetail;
 import com.example.hevygroovy.dto.ActiveWorkoutExercise;
 import com.example.hevygroovy.dto.ActiveSetEntry;
+import com.example.hevygroovy.dto.PreviousExercisePerformance;
 
 public class WorkoutSessionServiceImpl implements WorkoutSessionService {
 
@@ -63,12 +65,24 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
         List<WorkoutExercise> rows = orderedWorkoutExercises(workout.getId());
         Map<Long, List<SetEntry>> setsByExercise = setEntryRepository.findByLoggedWorkoutId(workout.getId())
                 .stream().collect(Collectors.groupingBy(SetEntry::getWorkoutExerciseId));
+        List<Long> exerciseIds = rows.stream().map(WorkoutExercise::getExerciseId).distinct()
+                .collect(Collectors.toList());
+        Map<Long, PreviousExercisePerformance> previous = exerciseIds.isEmpty() ? Map.of()
+                : workoutExerciseRepository.findPreviousPerformancesForUserExercises(userId, exerciseIds);
+        Map<Long, Integer> occurrences = new HashMap<>();
         List<ActiveWorkoutExercise> result = new ArrayList<>();
         for (WorkoutExercise row : rows) {
             List<SetEntry> sets = new ArrayList<>(setsByExercise.getOrDefault(row.getId(), List.of()));
             sets.sort(Comparator.comparingInt(SetEntry::getSetNumber).thenComparingLong(SetEntry::getId));
+            int occurrence = occurrences.merge(row.getExerciseId(), 1, Integer::sum) - 1;
+            PreviousExercisePerformance performance = previous.get(row.getExerciseId());
+            List<ActiveSetEntry> previousSets = performance == null
+                    || occurrence >= performance.getSetsByOccurrence().size() ? List.of()
+                    : performance.getSetsByOccurrence().get(occurrence);
             result.add(new ActiveWorkoutExercise(row,
-                    sets.stream().map(ActiveSetEntry::new).collect(Collectors.toList())));
+                    sets.stream().map(ActiveSetEntry::new).collect(Collectors.toList()), previousSets,
+                    performance == null ? null : performance.getWorkoutId(),
+                    performance == null ? null : performance.getEndedAtEpochMillis()));
         }
         return Optional.of(new ActiveWorkoutDetail(workout, result));
     }
@@ -267,7 +281,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     private List<WorkoutExercise> orderedWorkoutExercises(long workoutId) {
         List<WorkoutExercise> rows = new ArrayList<>(
                 workoutExerciseRepository.findByLoggedWorkoutId(workoutId));
-        rows.sort(Comparator.comparingInt(WorkoutExercise::getOrderIndex));
+        rows.sort(Comparator.comparingInt(WorkoutExercise::getOrderIndex).thenComparingLong(WorkoutExercise::getId));
         return rows;
     }
 

@@ -125,6 +125,19 @@ internal fun ExerciseRecordsDialog(model: ExerciseRecordsViewModel, exerciseName
                         modifier = Modifier.testTag("retry-exercise-records")) { Text("Retry") }
                 }
                 if (state.records.isNotEmpty()) {
+                    if (state.estimatedOneRepMaxKg > 0) {
+                        Card(Modifier.fillMaxWidth().testTag("exercise-estimated-1rm")) {
+                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                Text("Best estimated 1RM", style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text("${recordNumber(state.estimatedOneRepMaxKg)} kg",
+                                    style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
+                                Text("Epley estimate from completed working sets of 1–10 reps.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            }
+                        }
+                    }
                     PersonalRecordSection(state.records, showExerciseName = false, showAchievedDate = true)
                 } else if (state.loaded && !state.loading && state.error == null) {
                     Text("No records yet", style = MaterialTheme.typography.titleMedium)

@@ -4,6 +4,7 @@ import com.example.hevygroovy.dto.*;
 import com.example.hevygroovy.entity.*;
 import com.example.hevygroovy.entity.enums.Unit;
 import com.example.hevygroovy.entity.enums.RecordType;
+import com.example.hevygroovy.entity.enums.SetType;
 import com.example.hevygroovy.repo.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -184,6 +185,27 @@ class WorkoutHistoryQueryServiceImplTest {
         assertEquals(0, detail.getExercises().get(1).getPersonalRecordCount());
         assertThrows(UnsupportedOperationException.class, () -> detail.getPersonalRecords().clear());
         verify(personalRecords).getWorkoutRecords(1L, 100L);
+    }
+
+    @Test
+    void historyEstimateUsesBestCompletedWorkingSetWithinTenRepsInKg() {
+        when(workouts.findById(100L)).thenReturn(Optional.of(workout(100L, 1L, 1000L, 2000L)));
+        when(exercises.findByLoggedWorkoutId(100L)).thenReturn(List.of(exercise(10L, 0)));
+        SetEntry pounds = set(10L, 1, 225, 5, Unit.LB);
+        pounds.setSetType(SetType.NORMAL);
+        SetEntry warmup = set(10L, 2, 500, 5, Unit.KG);
+        warmup.setSetType(SetType.WARMUP);
+        SetEntry highReps = set(10L, 3, 500, 11, Unit.KG);
+        highReps.setSetType(SetType.NORMAL);
+        SetEntry incomplete = set(10L, 4, 500, 5, Unit.KG);
+        incomplete.setSetType(SetType.NORMAL); incomplete.setCompleted(false);
+        when(sets.findByLoggedWorkoutId(100L)).thenReturn(List.of(pounds, warmup, highReps, incomplete));
+
+        WorkoutExerciseHistory result = service.getWorkoutHistoryDetail(1L, 100L).getExercises().get(0);
+
+        assertEquals(225 * 0.45359237 * (1 + 5 / 30.0), result.getEstimatedOneRepMax(), 0.000001);
+        assertEquals(3, result.getTotalSets());
+        assertEquals(500, result.getHeaviestWeight());
     }
 
     private WorkoutHistory summary(long id, int count, int reps, double volume) {

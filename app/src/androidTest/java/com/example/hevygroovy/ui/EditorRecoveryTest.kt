@@ -88,13 +88,18 @@ class EditorRecoveryTest {
         val workout = LoggedWorkout().apply { id = 100L; userId = 1L; nameSnapshot = "Session" }
         val row = WorkoutExercise().apply { id = 10L; exerciseNameSnapshot = "Bench" }
         val set = SetEntry().apply { id = 50L; setNumber = 1; reps = 0; weight = 0.0 }
-        val active = ActiveWorkoutDetail(workout, listOf(ActiveWorkoutExercise(row, listOf(ActiveSetEntry(set)))))
-        val snapshot = WorkoutGateway.Snapshot(active, emptyList())
+        fun snapshot() = WorkoutGateway.Snapshot(ActiveWorkoutDetail(workout,
+            listOf(ActiveWorkoutExercise(row, listOf(ActiveSetEntry(set))))), emptyList())
         lateinit var pending: WorkoutGateway.Callback
+        var pendingSet: UpdateSetEntryRequest? = null
         val gateway = Proxy.newProxyInstance(WorkoutGateway::class.java.classLoader, arrayOf(WorkoutGateway::class.java)) { _, method, args ->
             when (method.name) {
-                "load" -> (args!![0] as WorkoutGateway.Callback).onSuccess(snapshot)
-                "updateWorkout", "updateSet" -> pending = args!!.last() as WorkoutGateway.Callback
+                "load" -> (args!![0] as WorkoutGateway.Callback).onSuccess(snapshot())
+                "updateWorkout" -> pending = args!!.last() as WorkoutGateway.Callback
+                "updateSet" -> {
+                    pendingSet = args!![1] as UpdateSetEntryRequest
+                    pending = args.last() as WorkoutGateway.Callback
+                }
                 else -> error("Unexpected ${method.name}")
             }
             null
@@ -110,16 +115,29 @@ class EditorRecoveryTest {
         compose.onNodeWithTag("workout-notes").assertTextContains("Keep these notes")
         compose.onNodeWithText("Save workout").assertIsEnabled()
         compose.onNodeWithText("Cancel").performClick()
-        compose.onNodeWithContentDescription("Edit set 1 for Bench").performScrollTo().performClick()
-        compose.onNodeWithTag("set-weight").performTextReplacement("42.5")
-        compose.onNodeWithTag("set-reps").performTextReplacement("8")
-        compose.onNodeWithText("Save set").performClick()
+        compose.onNodeWithTag("inline-weight-50").performScrollTo().performTextReplacement("42.5")
+        compose.onNodeWithTag("inline-reps-50").performTextReplacement("8")
+        compose.onNodeWithTag("inline-complete-50").performScrollTo().performClick()
+        compose.runOnIdle {
+            assertEquals(42.5, pendingSet!!.weight!!, 0.0)
+            assertEquals(8, pendingSet!!.reps!!.toInt())
+            assertTrue(pendingSet!!.completed!!)
+        }
         compose.runOnIdle { pending.onFailure(IllegalStateException("Write failed")) }
-        compose.onNodeWithTag("set-weight").assertTextContains("42.5")
-        compose.onNodeWithTag("set-reps").assertTextContains("8")
-        compose.onNodeWithText("Save set").assertIsEnabled().performClick()
-        compose.runOnIdle { pending.onSuccess(snapshot) }
-        compose.onNodeWithTag("set-weight").assertDoesNotExist()
+        compose.onNodeWithTag("inline-weight-50").assertTextContains("42.5")
+        compose.onNodeWithTag("inline-reps-50").assertTextContains("8")
+        compose.onNodeWithTag("inline-complete-50").performScrollTo().assertIsOff().assertIsEnabled().performClick()
+        compose.runOnIdle {
+            set.weight = pendingSet!!.weight!!
+            set.reps = pendingSet!!.reps!!
+            set.unit = pendingSet!!.unit
+            set.setType = pendingSet!!.setType
+            set.isCompleted = pendingSet!!.completed!!
+            pending.onSuccess(snapshot())
+        }
+        compose.onNodeWithTag("inline-weight-50").assertTextContains("42.5")
+        compose.onNodeWithTag("inline-reps-50").assertTextContains("8")
+        compose.onNodeWithTag("inline-complete-50").assertIsOn()
     }
 
     private class LibraryFake {

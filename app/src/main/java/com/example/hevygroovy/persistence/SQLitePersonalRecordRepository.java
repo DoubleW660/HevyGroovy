@@ -19,6 +19,21 @@ public final class SQLitePersonalRecordRepository implements PersonalRecordRepos
     public SQLitePersonalRecordRepository(SQLiteDatabase db) { this.db = db; }
 
     @Override
+    public double findBestEstimatedOneRepMax(long userId, long exerciseId) {
+        String sql = "SELECT COALESCE(MAX(s.weight * CASE s.unit WHEN 'LB' THEN 0.45359237 ELSE 1 END "
+                + "* CASE WHEN s.reps = 1 THEN 1 ELSE (1 + s.reps / 30.0) END), 0) "
+                + "FROM set_entry s JOIN workout_exercise we ON we.id = s.workout_exercise_id "
+                + "JOIN logged_workout w ON w.id = we.logged_workout_id "
+                + "WHERE w.user_id = ? AND we.exercise_id = ? AND w.ended_at IS NOT NULL "
+                + "AND s.completed = 1 AND s.set_type <> 'WARMUP' AND s.weight > 0 AND s.reps BETWEEN 1 AND 10";
+        try (Cursor cursor = db.rawQuery(sql, new String[]{Long.toString(userId), Long.toString(exerciseId)})) {
+            cursor.moveToFirst();
+            double result = cursor.getDouble(0);
+            return Double.isFinite(result) ? result : 0;
+        }
+    }
+
+    @Override
     public List<PersonalRecord> findBestRecords(long userId, List<Long> exerciseIds,
                                                Long beforeEndedAtEpochMillis, long beforeWorkoutId) {
         List<Long> distinct = new ArrayList<>(new LinkedHashSet<>(exerciseIds));

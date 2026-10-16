@@ -44,6 +44,13 @@ public final class PersonalRecordServiceImpl implements PersonalRecordService {
     }
 
     @Override
+    public double getEstimatedOneRepMax(long userId, long exerciseId) {
+        requirePositive(userId, "user");
+        requirePositive(exerciseId, "exercise");
+        return records.findBestEstimatedOneRepMax(userId, exerciseId);
+    }
+
+    @Override
     public List<PersonalRecord> getWorkoutRecords(long userId, long workoutId) {
         requirePositive(userId, "user");
         requirePositive(workoutId, "workout");

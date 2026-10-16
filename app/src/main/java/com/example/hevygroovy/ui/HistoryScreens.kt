@@ -253,6 +253,11 @@ private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<
             PersonalRecordBadge(records)
             Text("${historyCount(exercise.totalSets, "completed set")} · ${historyNumber(exercise.totalVolume)} kg volume",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            if (exercise.estimatedOneRepMax > 0) {
+                Text("Estimated 1RM: ${historyNumber(exercise.estimatedOneRepMax)} kg · Epley",
+                    modifier = Modifier.testTag("history-estimated-1rm-${exercise.workoutExerciseId}"),
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
+            }
             exercise.notes?.takeIf { it.isNotBlank() }?.let { notes ->
                 Text(notes, style = MaterialTheme.typography.bodyMedium)
             }

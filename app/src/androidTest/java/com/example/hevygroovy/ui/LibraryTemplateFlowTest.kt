@@ -4,6 +4,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.hevygroovy.app.AppContainer
+import com.example.hevygroovy.entity.enums.Unit as WeightUnit
 import com.example.hevygroovy.ui.theme.HevyGroovyTheme
 import org.junit.Assert.*
 import org.junit.Rule
@@ -99,13 +100,16 @@ class LibraryTemplateFlowTest {
 
             compose.onNodeWithContentDescription("Add set to Bench revised").performScrollTo().performClick()
             awaitWorkouts(workouts)
-            compose.onNodeWithContentDescription("Edit set 1 for Bench revised").performScrollTo().performClick()
-            compose.onNodeWithTag("set-weight").performTextReplacement("50")
-            compose.onNodeWithTag("set-reps").performTextReplacement("5")
+            val setId = workouts.state.activeWorkout!!.exercises.single().sets.single().id
+            compose.onNodeWithTag("inline-weight-$setId").performScrollTo().performTextReplacement("50")
+            compose.onNodeWithTag("inline-reps-$setId").performTextReplacement("5")
+            compose.onNodeWithTag("inline-unit-$setId").performClick()
             compose.onNodeWithText("KG").performClick()
-            compose.onNodeWithText("Save set").performClick()
+            compose.waitUntil(10_000) {
+                !workouts.state.loading && workouts.state.activeWorkout?.exercises?.single()?.sets?.single()?.unit == WeightUnit.KG
+            }
             awaitWorkouts(workouts)
-            compose.onNodeWithContentDescription("Complete set 1 for Bench revised").performScrollTo().performClick()
+            compose.onNodeWithTag("inline-complete-$setId").performScrollTo().performClick()
             awaitWorkouts(workouts)
 
             // Finish from a session resumed over an already-loaded History tab. The

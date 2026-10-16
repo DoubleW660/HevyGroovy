@@ -47,16 +47,19 @@ class WorkoutEditorFlowTest {
             awaitLoaded(model)
             compose.onNodeWithContentDescription("Add set to Test bench").performScrollTo().performClick()
             awaitLoaded(model)
-            compose.onNodeWithContentDescription("Edit set 1 for Test bench").performScrollTo().performClick()
-            compose.onNodeWithTag("set-weight").performTextReplacement("60")
-            compose.onNodeWithTag("set-reps").performTextReplacement("-1")
-            compose.onNodeWithText("Save set").assertIsNotEnabled()
-            compose.onNodeWithTag("set-reps").performTextReplacement("8")
+            val setId = model.state.activeWorkout!!.exercises.single().sets.single().id
+            compose.onNodeWithTag("inline-weight-$setId").performScrollTo().performTextReplacement("60")
+            compose.onNodeWithTag("inline-reps-$setId").performTextReplacement("-1")
+            compose.onNodeWithTag("inline-complete-$setId").assertIsNotEnabled()
+            compose.onNodeWithTag("inline-reps-$setId").performTextReplacement("8")
             restoration.emulateSavedInstanceStateRestore()
-            compose.onNodeWithTag("set-weight").assertTextContains("60")
-            compose.onNodeWithTag("set-reps").assertTextContains("8")
+            compose.onNodeWithTag("inline-weight-$setId").assertTextContains("60")
+            compose.onNodeWithTag("inline-reps-$setId").assertTextContains("8")
+            compose.onNodeWithTag("inline-unit-$setId").performClick()
             compose.onNodeWithText("KG").performClick()
-            compose.onNodeWithText("Save set").performClick()
+            compose.waitUntil(10_000) {
+                !model.state.loading && model.state.activeWorkout?.exercises?.single()?.sets?.single()?.unit == WeightUnit.KG
+            }
             awaitLoaded(model)
             compose.runOnIdle {
                 val set = model.state.activeWorkout!!.exercises[0].sets[0]
@@ -65,7 +68,7 @@ class WorkoutEditorFlowTest {
                 assertEquals(WeightUnit.KG, set.unit)
                 assertFalse(set.isCompleted)
             }
-            compose.onNodeWithContentDescription("Complete set 1 for Test bench").performScrollTo().performClick()
+            compose.onNodeWithTag("inline-complete-$setId").performScrollTo().performClick()
             awaitLoaded(model)
             compose.onNodeWithText("Finish workout").performScrollTo().performClick()
             compose.onNodeWithText("Finish this workout?").assertIsDisplayed()

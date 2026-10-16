@@ -93,10 +93,13 @@ class PersonalRecordFlowTest {
                     assertNull(records.state.error)
                     assertEquals(4, records.state.records.size)
                     assertTrue(records.state.records.all { it.workoutId == fixture.workoutId })
+                    assertEquals(100.0 * 0.45359237 * (1 + 6 / 30.0),
+                        records.state.estimatedOneRepMaxKg, 0.000001)
                 }
                 compose.onNodeWithTag("exercise-records-dialog").assertIsDisplayed()
                 compose.onNodeWithText("All-time records").assertIsDisplayed()
-                compose.onNodeWithText("100 lb").assertIsDisplayed()
+                compose.onNodeWithTag("exercise-estimated-1rm").assertIsDisplayed()
+                compose.onNodeWithText("100 lb").performScrollTo().assertIsDisplayed()
                 compose.onNodeWithTag("close-exercise-records").performClick()
                 compose.onNodeWithTag("exercise-records-dialog").assertDoesNotExist()
             }

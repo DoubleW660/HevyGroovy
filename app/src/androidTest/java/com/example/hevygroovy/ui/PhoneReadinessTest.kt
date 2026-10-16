@@ -35,7 +35,7 @@ class PhoneReadinessTest {
         try {
             restoration.setContent { HevyGroovyTheme { WorkoutHomeScreen(current.value) } }
             awaitWorkout(current.value)
-            assertUnitRows()
+            assertUnitRows(current.value)
 
             compose.onNodeWithTag("workout-list").performScrollToNode(hasText("Edit workout details"))
             compose.onNodeWithText("Edit workout details").performClick()
@@ -64,7 +64,7 @@ class PhoneReadinessTest {
                 assertEquals(listOf(WeightUnit.KG, WeightUnit.LB), row.sets.map { it.unit })
                 assertEquals(listOf(true, false), row.sets.map { it.isCompleted })
             }
-            assertUnitRows()
+            assertUnitRows(reopened)
         } finally {
             container?.close()
             context.deleteDatabase(database)
@@ -81,12 +81,12 @@ class PhoneReadinessTest {
                 val model = newWorkoutModel(container)
                 compose.setContent { HevyGroovyTheme { WorkoutHomeScreen(model) } }
                 awaitWorkout(model)
-                compose.onNodeWithText("Discard workout").performScrollTo().performClick()
+                compose.onNodeWithTag("cancel-workout").performScrollTo().performClick()
                 compose.onNodeWithText("Discard workout?").assertIsDisplayed()
                 compose.onNodeWithText("Keep workout").performClick()
                 compose.runOnIdle { assertEquals(workoutId, model.state.activeWorkout!!.workoutId) }
 
-                compose.onNodeWithText("Discard workout").performScrollTo().performClick()
+                compose.onNodeWithTag("cancel-workout").performScrollTo().performClick()
                 compose.onNodeWithText("Discard", useUnmergedTree = true).performClick()
                 awaitWorkout(model)
                 compose.onNodeWithText("Start empty workout").assertIsDisplayed()
@@ -224,13 +224,16 @@ class PhoneReadinessTest {
         }
     }
 
-    private fun assertUnitRows() {
-        val kilograms = hasText("60.0 KG × 8 reps") or hasText("60 KG × 8 reps")
-        val pounds = hasText("135.0 LB × 6 reps") or hasText("135 LB × 6 reps")
-        compose.onNodeWithTag("workout-list").performScrollToNode(kilograms)
-        compose.onNode(kilograms).assertIsDisplayed()
-        compose.onNodeWithTag("workout-list").performScrollToNode(pounds)
-        compose.onNode(pounds).assertIsDisplayed()
+    private fun assertUnitRows(model: WorkoutHomeViewModel) {
+        val sets = model.state.activeWorkout!!.exercises.single().sets
+        val kilograms = sets.single { it.unit == WeightUnit.KG }
+        val pounds = sets.single { it.unit == WeightUnit.LB }
+        compose.onNodeWithTag("inline-weight-${kilograms.id}").performScrollTo().assertTextContains("60")
+        compose.onNodeWithTag("inline-reps-${kilograms.id}").assertTextContains("8")
+        compose.onNodeWithTag("inline-unit-${kilograms.id}").assertTextContains("kg")
+        compose.onNodeWithTag("inline-weight-${pounds.id}").performScrollTo().assertTextContains("135")
+        compose.onNodeWithTag("inline-reps-${pounds.id}").assertTextContains("6")
+        compose.onNodeWithTag("inline-unit-${pounds.id}").assertTextContains("lb")
     }
 
     private fun newWorkoutModel(container: AppContainer): WorkoutHomeViewModel {

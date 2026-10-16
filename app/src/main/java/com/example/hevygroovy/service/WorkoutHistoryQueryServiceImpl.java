@@ -11,6 +11,7 @@ import com.example.hevygroovy.entity.WorkoutExercise;
 import com.example.hevygroovy.repo.LoggedWorkoutRepository;
 import com.example.hevygroovy.repo.SetEntryRepository;
 import com.example.hevygroovy.repo.WorkoutExerciseRepository;
+import com.example.hevygroovy.util.OneRepMaxEstimator;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -110,6 +111,7 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
             double volume = 0;
             double heaviest = 0;
             double bestVolume = 0;
+            double estimatedOneRepMax = 0;
             for (SetEntry set : sets) {
                 double weight = weightInKg(set);
                 double setVolume = weight * set.getReps();
@@ -117,11 +119,14 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
                 volume += setVolume;
                 heaviest = Math.max(heaviest, weight);
                 bestVolume = Math.max(bestVolume, setVolume);
+                estimatedOneRepMax = Math.max(estimatedOneRepMax, OneRepMaxEstimator.estimateKg(
+                        set.getWeight(), set.getUnit(), set.getReps(), set.getSetType(), set.isCompleted()));
             }
             int recordCount = awardCounts.getOrDefault(row.getId(), 0L).intValue();
             details.add(new WorkoutExerciseHistory(row.getId(), row.getExerciseId(),
                     row.getExerciseNameSnapshot(), row.getOrderIndex(), row.getNotes(),
-                    sets.size(), reps, volume, heaviest, 0, bestVolume, recordCount > 0, recordCount, sets));
+                    sets.size(), reps, volume, heaviest, estimatedOneRepMax, bestVolume,
+                    recordCount > 0, recordCount, sets));
             totalSets += sets.size();
             totalReps += reps;
             totalVolume += volume;

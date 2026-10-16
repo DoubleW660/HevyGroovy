@@ -19,15 +19,18 @@ class ServiceRecordGatewayTest {
         List<PersonalRecord> source = new ArrayList<>();
         source.add(new PersonalRecord(RecordType.MOST_REPS, 9, "Bench", 3, 4, 5, 12, 100, Unit.LB, 12, 1000));
         when(records.getExerciseRecords(42, 9)).thenReturn(source);
-        AtomicReference<List<PersonalRecord>> result = new AtomicReference<>();
+        when(records.getEstimatedOneRepMax(42, 9)).thenReturn(70.0);
+        AtomicReference<RecordGateway.Snapshot> result = new AtomicReference<>();
         new ServiceRecordGateway(new AppWorker(Runnable::run, Runnable::run, () -> services, () -> 42))
                 .loadExercise(9, new RecordGateway.Callback() {
-                    public void onSuccess(List<PersonalRecord> value) { result.set(value); }
+                    public void onSuccess(RecordGateway.Snapshot value) { result.set(value); }
                     public void onFailure(Exception error) { fail(error); }
                 });
         source.clear();
         verify(records).getExerciseRecords(42, 9);
-        assertEquals(1, result.get().size());
-        assertThrows(UnsupportedOperationException.class, () -> result.get().clear());
+        verify(records).getEstimatedOneRepMax(42, 9);
+        assertEquals(70.0, result.get().getEstimatedOneRepMaxKg());
+        assertEquals(1, result.get().getRecords().size());
+        assertThrows(UnsupportedOperationException.class, () -> result.get().getRecords().clear());
     }
 }

@@ -11,6 +11,8 @@ import com.example.hevygroovy.dto.ActiveWorkoutDetail
 import com.example.hevygroovy.dto.WorkoutHistory
 import com.example.hevygroovy.dto.ExerciseOption
 import com.example.hevygroovy.dto.UpdateSetEntryRequest
+import com.example.hevygroovy.dto.PersonalRecord
+import com.example.hevygroovy.entity.enums.RecordType
 import com.example.hevygroovy.entity.enums.MuscleGroup
 
 data class WorkoutHomeState(
@@ -19,6 +21,9 @@ data class WorkoutHomeState(
     val activeWorkout: ActiveWorkoutDetail? = null,
     val history: List<WorkoutHistory> = emptyList(),
     val exercises: List<ExerciseOption> = emptyList(),
+    val activeRecords: List<PersonalRecord> = emptyList(),
+    val recordNotice: List<PersonalRecord> = emptyList(),
+    val recordNoticeVersion: Long = 0,
     val savedChanges: Long = 0,
     val refreshRequired: Boolean = false,
     val error: String? = null,
@@ -32,6 +37,7 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
         private set
     private var cleared = false
     private var requestInFlight = false
+    private val observedRecords = mutableMapOf<Pair<Long, RecordType>, Double>()
 
     init { refresh() }
 
@@ -100,8 +106,10 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
 
     fun updateSet(setId: Long, request: UpdateSetEntryRequest) {
         if (state.activeWorkout?.exercises?.none { row -> row.sets.any { it.id == setId } } != false) return
-        execute(traceName = "set_save") { gateway.updateSet(setId, request, it) }
+        execute(traceName = "set_save", announceRecords = true) { gateway.updateSet(setId, request, it) }
     }
+
+    fun dismissRecordNotice() { state = state.copy(recordNotice = emptyList()) }
 
     fun deleteSet(setId: Long) {
         if (state.activeWorkout?.exercises?.none { row -> row.sets.any { it.id == setId } } != false) return
@@ -114,6 +122,7 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
     }
 
     private fun execute(mutation: Boolean = true, traceName: String = if (mutation) "workout_update" else "workout_load",
+        announceRecords: Boolean = false,
         operation: (WorkoutGateway.Callback) -> Unit) {
         if (requestInFlight || cleared || (mutation && state.refreshRequired)) return
         performanceTiming.begin(traceName)
@@ -123,12 +132,26 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
             override fun onSuccess(snapshot: WorkoutGateway.Snapshot) {
                 requestInFlight = false
                 if (cleared) return
+                val sameWorkout = state.activeWorkout?.workoutId == snapshot.activeWorkout?.workoutId
+                if (!sameWorkout) observedRecords.clear()
+                val notices = if (announceRecords && sameWorkout && snapshot.activeWorkout != null) {
+                    snapshot.activeRecords.filter { record ->
+                        record.value > (observedRecords[record.exerciseId to record.type] ?: 0.0) + 0.000001
+                    }
+                } else emptyList()
+                snapshot.activeRecords.forEach { record ->
+                    val key = record.exerciseId to record.type
+                    observedRecords[key] = maxOf(observedRecords[key] ?: 0.0, record.value)
+                }
                 state = WorkoutHomeState(
                     loading = false,
                     loaded = true,
                     activeWorkout = snapshot.activeWorkout,
                     history = snapshot.history.toList(),
                     exercises = snapshot.exercises.toList(),
+                    activeRecords = snapshot.activeRecords.toList(),
+                    recordNotice = notices,
+                    recordNoticeVersion = state.recordNoticeVersion + if (notices.isNotEmpty()) 1 else 0,
                     savedChanges = state.savedChanges + if (mutation) 1 else 0,
                 )
                 performanceTiming.ready()

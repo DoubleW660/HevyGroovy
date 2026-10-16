@@ -3,6 +3,7 @@ package com.example.hevygroovy.service;
 import com.example.hevygroovy.dto.WorkoutHistory;
 import com.example.hevygroovy.dto.WorkoutHistoryDetail;
 import com.example.hevygroovy.dto.WorkoutExerciseHistory;
+import com.example.hevygroovy.dto.PersonalRecord;
 import com.example.hevygroovy.entity.enums.Unit;
 import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.entity.SetEntry;
@@ -22,15 +23,24 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
     private final LoggedWorkoutRepository loggedWorkoutRepository;
     private final WorkoutExerciseRepository workoutExerciseRepository;
     private final SetEntryRepository setEntryRepository;
+    private final PersonalRecordService personalRecords;
 
     public WorkoutHistoryQueryServiceImpl(
             LoggedWorkoutRepository loggedWorkoutRepository,
             WorkoutExerciseRepository workoutExerciseRepository,
             SetEntryRepository setEntryRepository
     ){
+        this(loggedWorkoutRepository, workoutExerciseRepository, setEntryRepository, null);
+    }
+
+    public WorkoutHistoryQueryServiceImpl(LoggedWorkoutRepository loggedWorkoutRepository,
+                                         WorkoutExerciseRepository workoutExerciseRepository,
+                                         SetEntryRepository setEntryRepository,
+                                         PersonalRecordService personalRecords) {
         this.loggedWorkoutRepository = loggedWorkoutRepository;
         this.workoutExerciseRepository = workoutExerciseRepository;
         this.setEntryRepository = setEntryRepository;
+        this.personalRecords = personalRecords;
     }
 
     @Override
@@ -85,6 +95,10 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
         Map<Long, List<SetEntry>> setsByExercise = setEntryRepository.findByLoggedWorkoutId(workoutId)
                 .stream().filter(SetEntry::isCompleted)
                 .collect(Collectors.groupingBy(SetEntry::getWorkoutExerciseId));
+        List<PersonalRecord> awards = personalRecords == null ? List.of()
+                : personalRecords.getWorkoutRecords(userId, workoutId);
+        Map<Long, Long> awardCounts = awards.stream().collect(Collectors.groupingBy(
+                PersonalRecord::getWorkoutExerciseId, Collectors.counting()));
         List<WorkoutExerciseHistory> details = new ArrayList<>();
         int totalSets = 0;
         int totalReps = 0;
@@ -104,10 +118,10 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
                 heaviest = Math.max(heaviest, weight);
                 bestVolume = Math.max(bestVolume, setVolume);
             }
-            // Estimated 1RM and personal-record evaluation remain deferred.
+            int recordCount = awardCounts.getOrDefault(row.getId(), 0L).intValue();
             details.add(new WorkoutExerciseHistory(row.getId(), row.getExerciseId(),
                     row.getExerciseNameSnapshot(), row.getOrderIndex(), row.getNotes(),
-                    sets.size(), reps, volume, heaviest, 0, bestVolume, false, 0, sets));
+                    sets.size(), reps, volume, heaviest, 0, bestVolume, recordCount > 0, recordCount, sets));
             totalSets += sets.size();
             totalReps += reps;
             totalVolume += volume;
@@ -116,7 +130,7 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
                 workout.getStartedAtEpochMillis(), workout.getEndedAtEpochMillis(),
                 Duration.ofMillis(workout.getEndedAtEpochMillis() - workout.getStartedAtEpochMillis()),
                 rows.size(), totalSets, totalReps, totalVolume);
-        return new WorkoutHistoryDetail(summary, workout.getNotes(), details);
+        return new WorkoutHistoryDetail(summary, workout.getNotes(), details, awards);
     }
     private double weightInKg(SetEntry set) {
         if (set.getUnit() == null) {

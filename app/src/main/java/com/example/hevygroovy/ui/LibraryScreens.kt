@@ -43,7 +43,7 @@ private fun LibraryPage(title: String, model: LibraryViewModel, readyTag: String
 }
 
 @Composable
-fun ExerciseLibraryScreen(model: LibraryViewModel) {
+fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewModel? = null) {
     val state = model.state
     var search by rememberSaveable { mutableStateOf("") }
     var includeArchived by rememberSaveable { mutableStateOf(false) }
@@ -51,6 +51,13 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var archiveId by rememberSaveable { mutableStateOf<Long?>(null) }
     var guideId by rememberSaveable { mutableStateOf<Long?>(null) }
+    // Restore a selected records sheet after recreation without issuing reads while scrolling.
+    val recordExerciseId = records?.state?.selectedExerciseId
+    LaunchedEffect(recordExerciseId) {
+        if (recordExerciseId != null && !records.state.loaded && !records.state.loading && records.state.error == null) {
+            records.refresh(recordExerciseId)
+        }
+    }
     val filtered = state.exercises.filter { (includeArchived || !it.isArchived) && it.title.contains(search, true) }
     LibraryPage("Exercise library", model) {
         item(key = "controls") {
@@ -73,6 +80,12 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
                     if (!exercise.description.isNullOrBlank()) Text(exercise.description,
                         maxLines = 3, overflow = TextOverflow.Ellipsis)
                     if (exercise.isArchived) Text("Archived")
+                    if (records != null) {
+                        TextButton(onClick = { records.refresh(exercise.id) },
+                            modifier = Modifier.testTag("records-exercise-${exercise.id}").semantics {
+                                contentDescription = "View records for ${exercise.title}"
+                            }) { Text("Records") }
+                    }
                     Row {
                         if (!exercise.description.isNullOrBlank()) {
                             TextButton(onClick = { guideId = exercise.id },
@@ -94,6 +107,11 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
     }
     state.exercises.find { it.id == guideId && !it.description.isNullOrBlank() }?.let { exercise ->
         ExerciseGuideDialog(exercise, onDismiss = { guideId = null })
+    }
+    if (recordExerciseId != null) {
+        val title = state.exercises.find { it.id == recordExerciseId }?.title
+            ?: records.state.records.firstOrNull()?.exerciseName ?: "Exercise"
+        ExerciseRecordsDialog(records, title)
     }
     val editing = state.exercises.find { it.id == editingId }
     if (creating || editing != null) {

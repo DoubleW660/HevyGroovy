@@ -1,0 +1,158 @@
+{
+  "schemaVersion": 1,
+  "since": "2026-08-01",
+  "templates": [
+    {
+      "catalogKey": "personal-routine/lower-1",
+      "title": "Lower 1",
+      "description": "Based on your latest logged session: 14 Oct 2026, 19:01.",
+      "sourceSession": "14 Oct 2026, 19:01",
+      "exercises": [
+        {
+          "exerciseKey": "personal/leg-press-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/single-leg-press-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/african-curls",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/bicep-curl-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "restTimeSeconds": null
+        }
+      ]
+    },
+    {
+      "catalogKey": "personal-routine/lower-2",
+      "title": "Lower 2",
+      "description": "Based on your latest logged session: 11 Oct 2026, 07:44.",
+      "sourceSession": "11 Oct 2026, 07:44",
+      "exercises": [
+        {
+          "exerciseKey": "personal/leg-extension-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/single-leg-romanian-deadlift-dumbbell",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/hack-squat-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/hammer-curl-dumbbell",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "restTimeSeconds": null
+        }
+      ]
+    },
+    {
+      "catalogKey": "personal-routine/upper-1",
+      "title": "Upper 1",
+      "description": "Based on your latest logged session: 12 Oct 2026, 19:00.",
+      "sourceSession": "12 Oct 2026, 19:00",
+      "exercises": [
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/triceps-rope-pushdown",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/incline-bench-press-dumbbell",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/seated-shoulder-press-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/butterfly-pec-deck",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/rear-delt-reverse-fly-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "restTimeSeconds": null
+        }
+      ]
+    },
+    {
+      "catalogKey": "personal-routine/upper-2",
+      "title": "Upper 2",
+      "description": "Based on your latest logged session: 9 Oct 2026, 18:55.",
+      "sourceSession": "9 Oct 2026, 18:55",
+      "exercises": [
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/triceps-extension-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/iso-lateral-chest-press-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/butterfly-pec-deck",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/seated-shoulder-press-machine",
+          "restTimeSeconds": null
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "restTimeSeconds": null
+        }
+      ]
+    }
+  ]
+}

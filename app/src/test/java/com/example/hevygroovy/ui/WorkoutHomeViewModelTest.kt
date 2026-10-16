@@ -8,6 +8,63 @@ import org.junit.jupiter.api.Test
 
 class WorkoutHomeViewModelTest {
     @Test
+    fun recordsAnnounceOnlyHigherSuccessfulSetSavesAndDoNotRepeatAfterUndo() {
+        val gateway = FakeGateway()
+        val model = WorkoutHomeViewModel(gateway)
+        gateway.succeed(activeWithSet(false))
+        val request = com.example.hevygroovy.dto.UpdateSetEntryRequest().apply { completed = true }
+        model.updateSet(50, request)
+        gateway.succeed(activeWithSet(true), listOf(record(100.0)))
+        assertEquals(1L, model.state.recordNoticeVersion)
+        assertEquals(100.0, model.state.recordNotice.single().value)
+        model.dismissRecordNotice()
+        model.updateSet(50, request)
+        gateway.succeed(activeWithSet(false))
+        assertTrue(model.state.activeRecords.isEmpty())
+        model.updateSet(50, request)
+        gateway.succeed(activeWithSet(true), listOf(record(100.0)))
+        assertEquals(1L, model.state.recordNoticeVersion)
+        assertTrue(model.state.recordNotice.isEmpty())
+        model.updateSet(50, request)
+        gateway.succeed(activeWithSet(true), listOf(record(102.5)))
+        assertEquals(2L, model.state.recordNoticeVersion)
+        assertEquals(102.5, model.state.recordNotice.single().value)
+    }
+
+    @Test
+    fun loadingExistingRecordsAndResavingAnUnchangedSetNeverReplaysACelebration() {
+        val gateway = FakeGateway()
+        val model = WorkoutHomeViewModel(gateway)
+        gateway.succeed(activeWithSet(true), listOf(record(100.0)))
+        assertEquals(0L, model.state.recordNoticeVersion)
+        assertTrue(model.state.recordNotice.isEmpty())
+        model.refresh()
+        gateway.succeed(activeWithSet(true), listOf(record(100.0)))
+        model.updateSet(50, com.example.hevygroovy.dto.UpdateSetEntryRequest().apply { completed = true })
+        gateway.succeed(activeWithSet(true), listOf(record(100.0)))
+        assertEquals(0L, model.state.recordNoticeVersion)
+        assertTrue(model.state.recordNotice.isEmpty())
+    }
+
+    @Test
+    fun failedSaveDoesNotAnnounceOrAdvanceTheRecordWatermark() {
+        val gateway = FakeGateway()
+        val model = WorkoutHomeViewModel(gateway)
+        gateway.succeed(activeWithSet(false))
+        val request = com.example.hevygroovy.dto.UpdateSetEntryRequest().apply { completed = true }
+        model.updateSet(50, request); gateway.fail()
+        assertEquals(0L, model.state.recordNoticeVersion)
+        assertTrue(model.state.activeRecords.isEmpty())
+        model.updateSet(50, request); gateway.succeed(activeWithSet(true), listOf(record(100.0)))
+        assertEquals(1L, model.state.recordNoticeVersion)
+    }
+
+    private fun record(value: Double) = com.example.hevygroovy.dto.PersonalRecord(
+        com.example.hevygroovy.entity.enums.RecordType.HEAVIEST_WEIGHT,
+        1L, "Bench", 100L, 10L, 50L, value, value,
+        com.example.hevygroovy.entity.enums.Unit.KG, 8, 1000L)
+
+    @Test
     fun committedWriteClosesFormOnceAndBlocksMutationsUntilReadRecoverySucceeds() {
         val gateway = FakeGateway()
         val model = WorkoutHomeViewModel(gateway)
@@ -188,8 +245,8 @@ class WorkoutHomeViewModelTest {
         override fun discard(workoutId: Long, callback: WorkoutGateway.Callback) {
             calls += "discard:$workoutId"; this.callback = callback
         }
-        fun succeed(active: ActiveWorkoutDetail? = null) {
-            callback.onSuccess(WorkoutGateway.Snapshot(active, emptyList()))
+        fun succeed(active: ActiveWorkoutDetail? = null, records: List<com.example.hevygroovy.dto.PersonalRecord> = emptyList()) {
+            callback.onSuccess(WorkoutGateway.Snapshot(active, emptyList(), emptyList(), records))
         }
         fun fail(error: Exception = IllegalStateException("Test failure")) { callback.onFailure(error) }
     }

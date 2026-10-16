@@ -2,6 +2,8 @@ package com.example.hevygroovy.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -16,6 +18,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.hevygroovy.dto.PersonalRecord
 
 private enum class AppTab(val title: String, val icon: NavigationIcon, val tag: String) {
     Home("Home", NavigationIcon.Home, "home-tab"),
@@ -27,7 +30,8 @@ private enum class AppTab(val title: String, val icon: NavigationIcon, val tag: 
 
 @Composable
 @OptIn(ExperimentalComposeUiApi::class)
-fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, history: HistoryViewModel, profile: ProfileViewModel) {
+fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, history: HistoryViewModel,
+    profile: ProfileViewModel, records: ExerciseRecordsViewModel? = null) {
     ReportOperationDrawn(workouts.performanceTiming)
     ReportOperationDrawn(library.performanceTiming)
     var tab by rememberSaveable(key = "main-destination-v2") { mutableStateOf(AppTab.Home) }
@@ -36,6 +40,21 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
     val savedScreens = rememberSaveableStateHolder()
     val active = workouts.state.activeWorkout
     val showSession = sessionOpen && (active != null || workouts.state.loading)
+    val snackbar = remember { SnackbarHostState() }
+    var recordDetails by remember { mutableStateOf<List<PersonalRecord>>(emptyList()) }
+    LaunchedEffect(workouts.state.recordNoticeVersion) {
+        val notices = workouts.state.recordNotice
+        if (notices.isNotEmpty()) {
+            // Consume before showing: rotation must not announce the same achievement again.
+            workouts.dismissRecordNotice()
+            val names = notices.map { it.exerciseName }.distinct().joinToString(", ")
+            val message = if (notices.size == 1) "New record · $names" else "${notices.size} new records · $names"
+            if (snackbar.showSnackbar(message, actionLabel = "View", withDismissAction = true,
+                    duration = SnackbarDuration.Short) == SnackbarResult.ActionPerformed) {
+                recordDetails = notices
+            }
+        }
+    }
 
     fun selectTab(destination: AppTab) {
         if (tab == destination) return
@@ -83,6 +102,7 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
     Scaffold(
         modifier = Modifier.semantics { testTagsAsResourceId = true }
             .testTag(if (workouts.performanceTiming.idle && library.performanceTiming.idle) "benchmark-idle" else "benchmark-busy"),
+        snackbarHost = { SnackbarHost(snackbar, modifier = Modifier.testTag("new-record-snackbar")) },
         bottomBar = {
             if (!showSession) Column {
                 if (active != null) Surface(
@@ -154,7 +174,7 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                         AppTab.Home -> DashboardScreen(workouts,
                             onWorkout = { selectTab(AppTab.Workout) }, onResume = { sessionOpen = true },
                             onHistory = ::showHistoryList, onOpenWorkout = ::openHistory)
-                        AppTab.Exercises -> ExerciseLibraryScreen(library)
+                        AppTab.Exercises -> ExerciseLibraryScreen(library, records)
                         AppTab.Workout -> TemplateLibraryScreen(library,
                             workoutBlocked = active != null || workouts.state.busy,
                             onStart = { id -> workouts.startFromTemplate(id); sessionOpen = true },
@@ -170,5 +190,17 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                 }
             }
         }
+    }
+    if (recordDetails.isNotEmpty()) {
+        AlertDialog(onDismissRequest = { recordDetails = emptyList() },
+            modifier = Modifier.testTag("record-notice-dialog"), title = { Text("New personal records") },
+            text = {
+                Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
+                    PersonalRecordSection(recordDetails, provisional = workouts.state.activeWorkout != null)
+                }
+            },
+            confirmButton = {
+                TextButton(onClick = { recordDetails = emptyList() }, modifier = Modifier.testTag("record-notice-close")) { Text("Close") }
+            })
     }
 }

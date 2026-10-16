@@ -12,6 +12,7 @@ public final class SQLiteAppStorage implements AppServices {
     private final TemplateService templates;
     private final SQLiteWorkoutServices workouts;
     private final WorkoutHistoryQueryService history;
+    private final PersonalRecordService personalRecords;
 
     public SQLiteAppStorage(Context context) {
         this(context, "hevy_groovy.db", true);
@@ -24,19 +25,33 @@ public final class SQLiteAppStorage implements AppServices {
 
     /** Explicit catalog opt-in keeps isolated test/profile databases free of bundled fixtures. */
     public SQLiteAppStorage(Context context, String databaseName, boolean seedCatalog) {
+        this(context, databaseName, seedCatalog, 1L);
+    }
+
+    public SQLiteAppStorage(Context context, String databaseName, boolean seedCatalog, long userId) {
         helper = new WorkoutDatabase(context, databaseName);
         try {
             SQLiteDatabase db = helper.getWritableDatabase();
-            if (seedCatalog) { BundledExerciseCatalog.seed(context, db); }
+            if (seedCatalog) {
+                db.beginTransaction();
+                try {
+                    BundledExerciseCatalog.seed(context, db);
+                    BundledTemplateCatalog.seed(context, db, userId);
+                    db.setTransactionSuccessful();
+                } finally { db.endTransaction(); }
+            }
             exercises = new ExerciseServiceImpl(new SQLiteExerciseRepository(db));
             SQLiteTemplateWorkoutRepository templateRows = new SQLiteTemplateWorkoutRepository(db);
             SQLiteTemplateExerciseRepository templateExercises = new SQLiteTemplateExerciseRepository(db);
             templates = new TransactionalTemplateService(db,
                     new TemplateServiceImpl(templateRows, templateExercises, exercises));
             workouts = new SQLiteWorkoutServices(db, templateRows, templateExercises, exercises);
+            personalRecords = new PersonalRecordServiceImpl(new SQLitePersonalRecordRepository(db),
+                    new SQLiteLoggedWorkoutRepository(db), new SQLiteWorkoutExerciseRepository(db),
+                    new SQLiteSetEntryRepository(db));
             history = new TransactionalWorkoutHistoryService(db, new WorkoutHistoryQueryServiceImpl(
                     new SQLiteLoggedWorkoutRepository(db), new SQLiteWorkoutExerciseRepository(db),
-                    new SQLiteSetEntryRepository(db)));
+                    new SQLiteSetEntryRepository(db), personalRecords));
         } catch (RuntimeException | Error failure) {
             try { helper.close(); } catch (RuntimeException closeFailure) { failure.addSuppressed(closeFailure); }
             throw failure;
@@ -48,6 +63,7 @@ public final class SQLiteAppStorage implements AppServices {
     public WorkoutSessionService getWorkoutSessions() { return workouts.getWorkoutSessions(); }
     public SetEntryService getSetEntries() { return workouts.getSetEntries(); }
     public WorkoutHistoryQueryService getHistory() { return history; }
+    public PersonalRecordService getPersonalRecords() { return personalRecords; }
 
     @Override
     public void close() { helper.close(); }

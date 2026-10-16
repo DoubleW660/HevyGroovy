@@ -9,5 +9,6 @@ public interface AppServices extends AutoCloseable {
     WorkoutSessionService getWorkoutSessions();
     SetEntryService getSetEntries();
     WorkoutHistoryQueryService getHistory();
+    PersonalRecordService getPersonalRecords();
     @Override void close();
 }

@@ -3,6 +3,7 @@ package com.example.hevygroovy.service;
 import com.example.hevygroovy.dto.*;
 import com.example.hevygroovy.entity.*;
 import com.example.hevygroovy.entity.enums.Unit;
+import com.example.hevygroovy.entity.enums.RecordType;
 import com.example.hevygroovy.repo.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -156,6 +157,33 @@ class WorkoutHistoryQueryServiceImplTest {
         assertEquals(summary.getTotalVolume(), detail.getTotalVolume(), 0.000001);
         assertEquals(summary.getTotalReps(), detail.getTotalReps());
         assertEquals(summary.getVolumeUnit(), detail.getVolumeUnit());
+    }
+
+    @Test
+    void historyIncludesImmutableAwardsAndCountsThemOnlyOnTheirSourceRows() {
+        PersonalRecordService personalRecords = mock(PersonalRecordService.class);
+        WorkoutHistoryQueryService withRecords = new WorkoutHistoryQueryServiceImpl(
+                workouts, exercises, sets, personalRecords);
+        when(workouts.findById(100L)).thenReturn(Optional.of(workout(100L, 1L, 1000L, 2000L)));
+        when(exercises.findByLoggedWorkoutId(100L)).thenReturn(List.of(exercise(10L, 0), exercise(20L, 1)));
+        when(sets.findByLoggedWorkoutId(100L)).thenReturn(List.of(set(10L, 1, 50, 10, Unit.KG)));
+        PersonalRecord award = new PersonalRecord(RecordType.WORKOUT_VOLUME, 9, "Saved exercise name",
+                100, 10, 0, 500, 0, Unit.KG, 10, 2000);
+        List<PersonalRecord> source = new java.util.ArrayList<>(List.of(award));
+        when(personalRecords.getWorkoutRecords(1L, 100L)).thenReturn(source);
+
+        WorkoutHistoryDetail detail = withRecords.getWorkoutHistoryDetail(1L, 100L);
+
+        source.clear();
+        assertEquals(1, detail.getPersonalRecords().size());
+        assertEquals(1, detail.getPersonalRecordCount());
+        assertEquals(0, summary(100L, 1, 10, 500).getPersonalRecordCount());
+        assertTrue(detail.getExercises().get(0).isPersonalRecord());
+        assertEquals(1, detail.getExercises().get(0).getPersonalRecordCount());
+        assertFalse(detail.getExercises().get(1).isPersonalRecord());
+        assertEquals(0, detail.getExercises().get(1).getPersonalRecordCount());
+        assertThrows(UnsupportedOperationException.class, () -> detail.getPersonalRecords().clear());
+        verify(personalRecords).getWorkoutRecords(1L, 100L);
     }
 
     private WorkoutHistory summary(long id, int count, int reps, double volume) {

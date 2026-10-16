@@ -1,0 +1,393 @@
+{
+  "source": {
+    "repository": "https://github.com/yuhonas/free-exercise-db",
+    "commit": "f00c92c7dcf1216a928a52c3706c7ce8e2f71ed5",
+    "license": "Unlicense"
+  },
+  "exercises": [
+    {
+      "title": "African Curls",
+      "sourceId": null,
+      "status": "custom",
+      "note": "User requested a custom curl with wrist rotation at the top; details to be filled in later.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "BICEPS"
+    },
+    {
+      "title": "Back Extension (Hyperextension)",
+      "sourceId": "Hyperextensions_Back_Extensions",
+      "status": "alias",
+      "note": "Same prone hyperextension-bench movement; source also permits a held plate.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Bent Over Row (Barbell)",
+      "sourceId": "Bent_Over_Barbell_Row",
+      "status": "alias",
+      "note": "Same bent-over pronated barbell row.",
+      "shoulderMuscle": "REAR_DELTS",
+      "primaryMuscle": null
+    },
+    {
+      "title": "Bicep Curl (Cable)",
+      "sourceId": "Standing_Biceps_Cable_Curl",
+      "status": "alias",
+      "note": "Same standing low-pulley cable curl with a curl-bar attachment.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Bicep Curl (Machine)",
+      "sourceId": "Machine_Bicep_Curl",
+      "status": "alias",
+      "note": "Same padded machine biceps curl.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Butterfly (Pec Deck)",
+      "sourceId": "Butterfly",
+      "status": "alias",
+      "note": "Same seated machine chest fly / pec deck.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Cable Crunch",
+      "sourceId": "Cable_Crunch",
+      "status": "exact",
+      "note": "Same kneeling high-pulley rope crunch.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Chest Dip (Assisted)",
+      "sourceId": "Dips_-_Chest_Version",
+      "status": "variant",
+      "note": "Source demonstrates the unassisted movement only. Preserve a distinct assisted exercise and do not present unassisted instructions/images as an exact assisted-machine demonstration.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "CHEST"
+    },
+    {
+      "title": "Chest Dip (Weighted)",
+      "sourceId": "Dips_-_Chest_Version",
+      "status": "variant",
+      "note": "Source demonstrates the unweighted movement only. Preserve a distinct weighted exercise; the source has no added-weight setup instructions.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "CHEST"
+    },
+    {
+      "title": "Crunch (Machine)",
+      "sourceId": "Ab_Crunch_Machine",
+      "status": "alias",
+      "note": "Same seated abdominal crunch machine.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Deadlift (Barbell)",
+      "sourceId": "Barbell_Deadlift",
+      "status": "alias",
+      "note": "Same conventional barbell deadlift.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Dumbbell Row",
+      "sourceId": "One-Arm_Dumbbell_Row",
+      "status": "variant",
+      "note": "Source is specifically a one-arm bench-supported row. User title does not establish one-arm versus two-arm or support setup; retain related base only.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "UPPER_BACK"
+    },
+    {
+      "title": "Face Pull",
+      "sourceId": "Face_Pull",
+      "status": "exact",
+      "note": "Same high-pulley face pull with rope or dual handles.",
+      "shoulderMuscle": "REAR_DELTS",
+      "primaryMuscle": null
+    },
+    {
+      "title": "Good Morning (Barbell)",
+      "sourceId": "Good_Morning",
+      "status": "alias",
+      "note": "Same standing barbell good morning.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Hack Squat",
+      "sourceId": "Hack_Squat",
+      "status": "variant",
+      "note": "Source is a machine hack squat. User also has a separate Hack Squat (Machine) title; keep this title distinct and do not assume its equipment.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "QUADRICEPS"
+    },
+    {
+      "title": "Hack Squat (Machine)",
+      "sourceId": "Hack_Squat",
+      "status": "alias",
+      "note": "Same shoulder-pad machine hack squat. Preserve separately from the user's other Hack Squat title.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Hammer Curl (Dumbbell)",
+      "sourceId": "Hammer_Curls",
+      "status": "alias",
+      "note": "Same standing neutral-grip dumbbell hammer curl.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Hip Thrust (Barbell)",
+      "sourceId": "Barbell_Hip_Thrust",
+      "status": "alias",
+      "note": "Same bench-supported barbell hip thrust.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Incline Bench Press (Dumbbell)",
+      "sourceId": "Incline_Dumbbell_Press",
+      "status": "alias",
+      "note": "Same incline dumbbell press with palms facing forward.",
+      "shoulderMuscle": "FRONT_DELTS",
+      "primaryMuscle": null
+    },
+    {
+      "title": "Incline Chest Fly (Dumbbell)",
+      "sourceId": "Incline_Dumbbell_Flyes",
+      "status": "variant",
+      "note": "Source explicitly includes rotating wrists throughout the fly; ordinary incline chest fly need not. Do not present its rotating variation as an exact instruction match.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "CHEST"
+    },
+    {
+      "title": "Iso-Lateral Chest Press (Machine)",
+      "sourceId": "Leverage_Chest_Press",
+      "status": "variant",
+      "note": "Source is a plate-loaded leverage chest press; instructions do not establish independent iso-lateral arms. Related base only.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "CHEST"
+    },
+    {
+      "title": "Kelso Shrug",
+      "sourceId": "Middle_Back_Shrug",
+      "status": "variant",
+      "note": "Source is a chest-supported incline-bench dumbbell scapular-retraction shrug. User title does not specify equipment or bench angle; retain as related base only.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "UPPER_BACK"
+    },
+    {
+      "title": "Lat Pulldown (Cable)",
+      "sourceId": "Wide-Grip_Lat_Pulldown",
+      "status": "alias",
+      "note": "Source instructions explicitly describe wide, medium and close grip widths; matches the generic cable movement.",
+      "shoulderMuscle": "REAR_DELTS",
+      "primaryMuscle": null
+    },
+    {
+      "title": "Lat Pulldown (Machine)",
+      "sourceId": null,
+      "status": "unmatched",
+      "note": "No dedicated machine lat-pulldown entry; cable pulldowns and leverage high rows are different exercises/equipment.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "LATS"
+    },
+    {
+      "title": "Lateral Raise (Dumbbell)",
+      "sourceId": "Side_Lateral_Raise",
+      "status": "alias",
+      "note": "Standing dumbbell side lateral raise; same movement and equipment.",
+      "shoulderMuscle": "SIDE_DELTS",
+      "primaryMuscle": null
+    },
+    {
+      "title": "Leg Extension (Machine)",
+      "sourceId": "Leg_Extensions",
+      "status": "alias",
+      "note": "Machine leg extension; singular/plural naming only.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Leg Press (Machine)",
+      "sourceId": "Leg_Press",
+      "status": "alias",
+      "note": "Standard machine leg press.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Lunge (Dumbbell)",
+      "sourceId": "Dumbbell_Lunges",
+      "status": "alias",
+      "note": "Dumbbell forward lunge; source describes stepping forward and returning.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Overhead Press (Barbell)",
+      "sourceId": "Standing_Military_Press",
+      "status": "alias",
+      "note": "Standing barbell press from collarbone to overhead; source is not the seated Barbell Shoulder Press entry.",
+      "shoulderMuscle": "FRONT_DELTS",
+      "primaryMuscle": null
+    },
+    {
+      "title": "Preacher Curl (Machine)",
+      "sourceId": "Machine_Preacher_Curls",
+      "status": "alias",
+      "note": "Same machine preacher curl.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Pull Up (Assisted)",
+      "sourceId": null,
+      "status": "ambiguous",
+      "note": "Assistance method is unspecified. Free Exercise DB has band-assisted pull-ups, which must not be substituted for a counterweighted assistance machine.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "LATS"
+    },
+    {
+      "title": "Rear Delt Reverse Fly (Machine)",
+      "sourceId": "Reverse_Machine_Flyes",
+      "status": "alias",
+      "note": "Same rear-delt reverse fly on a machine.",
+      "shoulderMuscle": "REAR_DELTS",
+      "primaryMuscle": null
+    },
+    {
+      "title": "Romanian Deadlift (Smith Machine)",
+      "sourceId": "Smith_Machine_Stiff-Legged_Deadlift",
+      "status": "variant",
+      "note": "Source is explicitly stiff-legged, not Romanian; knee position and movement must not be silently substituted.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "HAMSTRINGS"
+    },
+    {
+      "title": "Seated Calf Raise",
+      "sourceId": "Seated_Calf_Raise",
+      "status": "exact",
+      "note": "Same seated calf raise machine.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Seated Incline Curl (Dumbbell)",
+      "sourceId": "Incline_Dumbbell_Curl",
+      "status": "alias",
+      "note": "Source instructions specify sitting back on an incline bench with dumbbells.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Seated Leg Curl (Machine)",
+      "sourceId": "Seated_Leg_Curl",
+      "status": "alias",
+      "note": "Same seated machine leg curl, not lying or standing leg curl.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Seated Row (Machine)",
+      "sourceId": "Leverage_Iso_Row",
+      "status": "alias",
+      "note": "Source is a seated horizontal machine row with handles at chest level.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Seated Shoulder Press (Machine)",
+      "sourceId": "Leverage_Shoulder_Press",
+      "status": "alias",
+      "note": "Same seated shoulder press machine.",
+      "shoulderMuscle": "FRONT_DELTS",
+      "primaryMuscle": null
+    },
+    {
+      "title": "Shoulder Press (Dumbbell)",
+      "sourceId": "Dumbbell_Shoulder_Press",
+      "status": "alias",
+      "note": "Same dumbbell shoulder press.",
+      "shoulderMuscle": "FRONT_DELTS",
+      "primaryMuscle": null
+    },
+    {
+      "title": "Single Arm Lat Pulldown",
+      "sourceId": "One_Arm_Lat_Pulldown",
+      "status": "alias",
+      "note": "Same single-arm cable lat pulldown.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Single Leg Press (Machine)",
+      "sourceId": "Leg_Press",
+      "status": "variant",
+      "note": "Source describes both feet on platform; unilateral version must remain a distinct entry and must not inherit bilateral instructions as exact.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "QUADRICEPS"
+    },
+    {
+      "title": "Single Leg Romanian Deadlift (Barbell)",
+      "sourceId": "Romanian_Deadlift",
+      "status": "variant",
+      "note": "Same barbell hinge base, but source is bilateral. No exact single-leg barbell Romanian deadlift exists.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "HAMSTRINGS"
+    },
+    {
+      "title": "Single Leg Romanian Deadlift (Dumbbell)",
+      "sourceId": null,
+      "status": "unmatched",
+      "note": "No single-leg dumbbell Romanian deadlift found; the one-legged source entry uses a kettlebell, which is different equipment.",
+      "shoulderMuscle": null,
+      "primaryMuscle": "HAMSTRINGS"
+    },
+    {
+      "title": "Squat (Barbell)",
+      "sourceId": "Barbell_Squat",
+      "status": "alias",
+      "note": "Standard barbell squat.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Standing Calf Raise (Barbell)",
+      "sourceId": "Standing_Barbell_Calf_Raise",
+      "status": "alias",
+      "note": "Same standing barbell calf raise; not the rocking or machine variation.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Triceps Extension (Machine)",
+      "sourceId": "Machine_Triceps_Extension",
+      "status": "alias",
+      "note": "Same machine triceps extension.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Triceps Pushdown",
+      "sourceId": "Triceps_Pushdown",
+      "status": "exact",
+      "note": "Same cable triceps pushdown; source uses straight or angled bar.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    },
+    {
+      "title": "Triceps Rope Pushdown",
+      "sourceId": "Triceps_Pushdown_-_Rope_Attachment",
+      "status": "alias",
+      "note": "Same rope-attachment triceps cable pushdown.",
+      "shoulderMuscle": null,
+      "primaryMuscle": null
+    }
+  ]
+}

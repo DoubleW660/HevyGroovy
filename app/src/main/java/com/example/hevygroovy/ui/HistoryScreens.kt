@@ -19,6 +19,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.hevygroovy.dto.ActiveSetEntry
+import com.example.hevygroovy.dto.PersonalRecord
 import com.example.hevygroovy.dto.WorkoutExerciseHistory
 import com.example.hevygroovy.dto.WorkoutHistory
 import com.example.hevygroovy.dto.WorkoutHistoryDetail
@@ -178,6 +179,13 @@ private fun HistoryDetailScreen(model: HistoryViewModel) {
                 }
             }
             item(key = "totals") { HistoryDetailTotals(detail) }
+            if (detail.personalRecords.isNotEmpty()) {
+                item(key = "records") {
+                    Box(Modifier.testTag("history-personal-records")) {
+                        PersonalRecordSection(detail.personalRecords, title = "Records set in this workout")
+                    }
+                }
+            }
             detail.notes?.takeIf { it.isNotBlank() }?.let { notes ->
                 item(key = "notes") {
                     Card(Modifier.fillMaxWidth().testTag("history-detail-notes"), shape = RoundedCornerShape(18.dp)) {
@@ -198,7 +206,7 @@ private fun HistoryDetailScreen(model: HistoryViewModel) {
                 }
             }
             items(detail.exercises, key = { "exercise-${it.workoutExerciseId}" }) { exercise ->
-                HistoryExerciseCard(exercise)
+                HistoryExerciseCard(exercise, detail.personalRecords.filter { it.workoutExerciseId == exercise.workoutExerciseId })
             }
         }
     }
@@ -234,7 +242,7 @@ private fun HistoryMetric(label: String, value: String, modifier: Modifier = Mod
 }
 
 @Composable
-private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory) {
+private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<PersonalRecord>) {
     Card(Modifier.fillMaxWidth().testTag("history-exercise-${exercise.workoutExerciseId}"),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -242,6 +250,7 @@ private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(exercise.exerciseName, style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+            PersonalRecordBadge(records)
             Text("${historyCount(exercise.totalSets, "completed set")} · ${historyNumber(exercise.totalVolume)} kg volume",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             exercise.notes?.takeIf { it.isNotBlank() }?.let { notes ->

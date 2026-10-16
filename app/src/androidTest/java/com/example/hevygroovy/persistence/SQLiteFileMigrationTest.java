@@ -42,7 +42,7 @@ public class SQLiteFileMigrationTest {
         assertEquals(0, completed(db, 1));
         assertEquals(1, completed(db, 2));
         assertEquals("0", completionDefault(db));
-        assertEquals(4, db.getVersion());
+        assertEquals(6, db.getVersion());
     }
 
     @Test
@@ -84,6 +84,8 @@ public class SQLiteFileMigrationTest {
         // Use production workout/library tables, then restore the exact legacy set schema.
         WorkoutDatabase seed = new WorkoutDatabase(context, name);
         SQLiteDatabase db = seed.getWritableDatabase();
+        db.execSQL("DROP TABLE template_catalog_entry");
+        db.execSQL("DROP TABLE exercise_catalog_entry");
         db.execSQL("DROP TABLE set_entry");
         db.execSQL("CREATE TABLE set_entry (id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "workout_exercise_id INTEGER NOT NULL REFERENCES workout_exercise(id), "
@@ -106,6 +108,51 @@ public class SQLiteFileMigrationTest {
         }
         db.setVersion(version);
         seed.close();
+    }
+
+    @Test
+    public void versionFourAddsCatalogsWithoutChangingExistingLibraryOrSession() {
+        helper = new WorkoutDatabase(context, name);
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.execSQL("INSERT INTO exercise(id,title,description,archived) VALUES(1,'My custom curl','Keep my notes',1)");
+        db.execSQL("INSERT INTO logged_workout(id,user_id,started_at,notes) VALUES(1,1,100,'Still active')");
+        db.execSQL("DROP TABLE template_catalog_entry");
+        db.execSQL("DROP TABLE exercise_catalog_entry");
+        db.setVersion(4);
+        helper.close();
+        db = openCurrent();
+        assertEquals(6, db.getVersion());
+        try (Cursor row = db.rawQuery("SELECT description,archived FROM exercise WHERE id=1", null)) {
+            assertTrue(row.moveToFirst()); assertEquals("Keep my notes", row.getString(0)); assertEquals(1, row.getInt(1));
+        }
+        try (Cursor row = db.rawQuery("SELECT notes,ended_at FROM logged_workout WHERE id=1", null)) {
+            assertTrue(row.moveToFirst()); assertEquals("Still active", row.getString(0)); assertTrue(row.isNull(1));
+        }
+        db.execSQL("INSERT INTO exercise_catalog_entry VALUES('test',1,NULL)");
+        helper.close();
+        db = openCurrent();
+        try (Cursor row = db.rawQuery("SELECT exercise_id FROM exercise_catalog_entry WHERE catalog_key='test'", null)) {
+            assertTrue(row.moveToFirst()); assertEquals(1, row.getLong(0));
+        }
+    }
+
+    @Test
+    public void versionFiveRetainsExerciseMappingsWhileAddingRoutineMappings() {
+        helper = new WorkoutDatabase(context, name);
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.execSQL("INSERT INTO exercise(id,title) VALUES(1,'Existing')");
+        db.execSQL("INSERT INTO exercise_catalog_entry VALUES('existing',1,'source')");
+        db.execSQL("DROP TABLE template_catalog_entry");
+        db.setVersion(5);
+        helper.close();
+        db = openCurrent();
+        assertEquals(6, db.getVersion());
+        try (Cursor row = db.rawQuery("SELECT source_id FROM exercise_catalog_entry WHERE catalog_key='existing'", null)) {
+            assertTrue(row.moveToFirst()); assertEquals("source", row.getString(0));
+        }
+        try (Cursor row = db.rawQuery("SELECT COUNT(*) FROM template_catalog_entry", null)) {
+            assertTrue(row.moveToFirst()); assertEquals(0, row.getInt(0));
+        }
     }
 
     private int completed(SQLiteDatabase db, long id) {

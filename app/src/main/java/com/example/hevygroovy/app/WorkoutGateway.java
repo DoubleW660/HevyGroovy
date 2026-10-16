@@ -3,6 +3,7 @@ package com.example.hevygroovy.app;
 import com.example.hevygroovy.dto.ActiveWorkoutDetail;
 import com.example.hevygroovy.dto.WorkoutHistory;
 import com.example.hevygroovy.dto.ExerciseOption;
+import com.example.hevygroovy.dto.PersonalRecord;
 import com.example.hevygroovy.dto.UpdateSetEntryRequest;
 import com.example.hevygroovy.entity.enums.MuscleGroup;
 import java.util.List;
@@ -19,20 +20,28 @@ public interface WorkoutGateway {
         private final ActiveWorkoutDetail activeWorkout;
         private final List<WorkoutHistory> history;
         private final List<ExerciseOption> exercises;
+        private final List<PersonalRecord> activeRecords;
 
         public Snapshot(ActiveWorkoutDetail activeWorkout, List<WorkoutHistory> history) {
             this(activeWorkout, history, List.of());
         }
 
         public Snapshot(ActiveWorkoutDetail activeWorkout, List<WorkoutHistory> history, List<ExerciseOption> exercises) {
+            this(activeWorkout, history, exercises, List.of());
+        }
+
+        public Snapshot(ActiveWorkoutDetail activeWorkout, List<WorkoutHistory> history,
+                        List<ExerciseOption> exercises, List<PersonalRecord> activeRecords) {
             this.activeWorkout = activeWorkout;
             this.history = List.copyOf(history);
             this.exercises = List.copyOf(exercises);
+            this.activeRecords = List.copyOf(activeRecords);
         }
 
         public ActiveWorkoutDetail getActiveWorkout() { return activeWorkout; }
         public List<WorkoutHistory> getHistory() { return history; }
         public List<ExerciseOption> getExercises() { return exercises; }
+        public List<PersonalRecord> getActiveRecords() { return activeRecords; }
     }
 
     void load(Callback callback);

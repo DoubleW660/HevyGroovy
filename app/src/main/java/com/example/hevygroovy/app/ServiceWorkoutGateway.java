@@ -35,8 +35,10 @@ final class ServiceWorkoutGateway implements WorkoutGateway {
                 if (history == null) history = worker.services().getHistory().getWorkoutHistory(worker.userId(), 20, 0);
                 if (exercises == null) exercises = worker.services().getExercises().listExercises(null, false).stream()
                         .map(ExerciseOption::new).collect(Collectors.toUnmodifiableList());
-                return new Snapshot(worker.services().getWorkoutSessions().getActiveWorkout(worker.userId()).orElse(null),
-                        history, exercises);
+                ActiveWorkoutDetail active = worker.services().getWorkoutSessions().getActiveWorkout(worker.userId()).orElse(null);
+                List<PersonalRecord> records = active == null ? List.of() : worker.services().getPersonalRecords()
+                        .getWorkoutRecords(worker.userId(), active.getWorkoutId());
+                return new Snapshot(active, history, exercises, records);
             } catch (Exception error) {
                 if (mutation != null) throw new CommittedRefreshException(error, null);
                 throw error;

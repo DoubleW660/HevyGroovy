@@ -11,7 +11,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
     }
 
     public WorkoutDatabase(Context context, String name) {
-        super(context.getApplicationContext(), name, null, 5);
+        super(context.getApplicationContext(), name, null, 6);
         setWriteAheadLoggingEnabled(true);
     }
 
@@ -45,6 +45,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
         db.execSQL("CREATE INDEX set_exercise_number ON set_entry(workout_exercise_id, set_number, id)");
         createLibraryTables(db);
         createCatalogTable(db);
+        createTemplateCatalogTable(db);
     }
 
     private void createSetTable(SQLiteDatabase db, String table) {
@@ -62,7 +63,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 1 || newVersion > 5 || oldVersion >= newVersion) {
+        if (oldVersion < 1 || newVersion > 6 || oldVersion >= newVersion) {
             throw new IllegalStateException("Missing database migration from " + oldVersion + " to " + newVersion);
         }
         if (oldVersion < 2 && newVersion >= 2) {
@@ -92,6 +93,17 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
         if (oldVersion < 5 && newVersion >= 5) {
             createCatalogTable(db);
         }
+        if (oldVersion < 6 && newVersion >= 6) {
+            createTemplateCatalogTable(db);
+        }
+    }
+
+    private void createTemplateCatalogTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE template_catalog_entry ("
+                + "user_id INTEGER NOT NULL CHECK(user_id > 0), catalog_key TEXT NOT NULL, "
+                + "template_id INTEGER NOT NULL REFERENCES template_workout(id) ON DELETE CASCADE, "
+                + "PRIMARY KEY(user_id, catalog_key))");
+        db.execSQL("CREATE INDEX catalog_template ON template_catalog_entry(template_id)");
     }
 
     private void createCatalogTable(SQLiteDatabase db) {

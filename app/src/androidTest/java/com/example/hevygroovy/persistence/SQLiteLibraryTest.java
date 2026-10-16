@@ -140,6 +140,8 @@ public class SQLiteLibraryTest {
         workout.setStartedAtEpochMillis(10L);
         workouts.save(workout);
         // Remove only the v2 tables to reproduce the original v1 schema.
+        db.execSQL("DROP TABLE template_catalog_entry");
+        db.execSQL("DROP TABLE exercise_catalog_entry");
         db.execSQL("DROP TABLE template_exercise");
         db.execSQL("DROP TABLE template_workout");
         db.execSQL("DROP TABLE exercise");

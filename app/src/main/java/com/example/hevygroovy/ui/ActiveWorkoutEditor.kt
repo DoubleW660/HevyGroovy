@@ -143,9 +143,18 @@ fun WorkoutExerciseCard(model: WorkoutHomeViewModel, row: ActiveWorkoutExercise,
     var editDetails by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
     var remove by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
     var editingSetId by rememberSaveable(row.workoutExerciseId) { mutableStateOf<Long?>(null) }
+    var showRecords by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
+    val records = model.state.activeRecords.filter { it.workoutExerciseId == row.workoutExerciseId }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(name, style = MaterialTheme.typography.titleLarge)
+            if (records.isNotEmpty()) {
+                Text("★ ${records.size} provisional ${if (records.size == 1) "record" else "records"}",
+                    color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
+                TextButton(onClick = { showRecords = true }, modifier = Modifier.testTag("active-records-${row.workoutExerciseId}")) {
+                    Text("View records")
+                }
+            }
             if (!row.notes.isNullOrBlank()) Text(row.notes)
             Text("Rest: ${row.restTimeSeconds} seconds")
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -177,6 +186,14 @@ fun WorkoutExerciseCard(model: WorkoutHomeViewModel, row: ActiveWorkoutExercise,
                 Text("Remove exercise", color = MaterialTheme.colorScheme.error)
             }
         }
+    }
+    if (showRecords && records.isNotEmpty()) {
+        AlertDialog(onDismissRequest = { showRecords = false }, title = { Text("$name records") },
+            text = {
+                Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState())) {
+                    PersonalRecordSection(records, provisional = true, showExerciseName = false)
+                }
+            }, confirmButton = { TextButton(onClick = { showRecords = false }) { Text("Close") } })
     }
     if (remove) {
         AlertDialog(

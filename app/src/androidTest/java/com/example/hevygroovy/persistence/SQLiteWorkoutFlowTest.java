@@ -18,6 +18,40 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class SQLiteWorkoutFlowTest {
     @Test
+    public void metadataPersistsAndDiscardRemovesChildrenAndFreesActiveSlot() {
+        long exerciseId = createExercise("Squat");
+        LoggedWorkout workout = sessions.startEmptyWorkout(1L);
+        sessions.renameWorkout(1L, workout.getId(), "  Leg   day  ");
+        sessions.updateWorkoutNotes(1L, workout.getId(), "Take it easy");
+        WorkoutExercise row = sessions.addExerciseToWorkout(1L, workout.getId(), exerciseId);
+        SetEntry set = setService.addSet(1L, row.getId());
+        ActiveWorkoutDetail state = sessions.getActiveWorkout(1L).get();
+        assertEquals("Leg day", state.getNameSnapshot());
+        assertEquals("Take it easy", state.getNotes());
+        sessions.discardWorkout(1L, workout.getId());
+        assertFalse(workouts.findById(workout.getId()).isPresent());
+        assertFalse(exercises.findById(row.getId()).isPresent());
+        assertFalse(sets.findById(set.getId()).isPresent());
+        assertTrue(sessions.getActiveWorkout(1L).isEmpty());
+        assertTrue(history.getWorkoutHistory(1L).isEmpty());
+        assertTrue(sessions.startEmptyWorkout(1L).getId() > 0);
+    }
+
+    @Test
+    public void failedDiscardRestoresParentExercisesAndSets() {
+        long exerciseId = createExercise("Squat");
+        LoggedWorkout workout = sessions.startEmptyWorkout(1L);
+        WorkoutExercise row = sessions.addExerciseToWorkout(1L, workout.getId(), exerciseId);
+        SetEntry set = setService.addSet(1L, row.getId());
+        db.execSQL("CREATE TRIGGER fail_discard BEFORE DELETE ON logged_workout "
+                + "BEGIN SELECT RAISE(ABORT, 'Simulated discard failure'); END");
+        assertThrows(SQLiteConstraintException.class, () -> sessions.discardWorkout(1L, workout.getId()));
+        assertTrue(workouts.findById(workout.getId()).isPresent());
+        assertTrue(exercises.findById(row.getId()).isPresent());
+        assertTrue(sets.findById(set.getId()).isPresent());
+        assertFalse(db.inTransaction());
+    }
+    @Test
     public void reconstructedServicesRecoverOrderedSessionIncludingIncompleteSets() {
         long exerciseId = createExercise("Squat");
         LoggedWorkout workout = sessions.startEmptyWorkout(1L);

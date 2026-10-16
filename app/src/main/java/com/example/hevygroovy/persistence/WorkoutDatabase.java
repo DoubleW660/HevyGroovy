@@ -7,7 +7,12 @@ import android.database.sqlite.SQLiteOpenHelper;
 /** Local workout storage. Use one shared instance and access it off the UI thread. */
 public final class WorkoutDatabase extends SQLiteOpenHelper {
     public WorkoutDatabase(Context context) {
-        super(context.getApplicationContext(), "hevy_groovy.db", null, 3);
+        this(context, "hevy_groovy.db");
+    }
+
+    public WorkoutDatabase(Context context, String name) {
+        super(context.getApplicationContext(), name, null, 4);
+        setWriteAheadLoggingEnabled(true);
     }
 
     @Override
@@ -36,7 +41,13 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
         db.execSQL("CREATE INDEX exercise_workout_order "
                 + "ON workout_exercise(logged_workout_id, order_index, id)");
         db.execSQL("CREATE INDEX exercise_history ON workout_exercise(exercise_id, logged_workout_id)");
-        db.execSQL("CREATE TABLE set_entry ("
+        createSetTable(db, "set_entry");
+        db.execSQL("CREATE INDEX set_exercise_number ON set_entry(workout_exercise_id, set_number, id)");
+        createLibraryTables(db);
+    }
+
+    private void createSetTable(SQLiteDatabase db, String table) {
+        db.execSQL("CREATE TABLE " + table + " ("
                 + "id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "workout_exercise_id INTEGER NOT NULL REFERENCES workout_exercise(id), "
                 + "set_number INTEGER NOT NULL CHECK(set_number > 0), "
@@ -46,22 +57,36 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
                 + "rpe REAL CHECK(rpe >= 0 AND rpe <= 10), "
                 + "set_type TEXT NOT NULL CHECK(set_type IN ('WARMUP', 'NORMAL', 'FAILURE', 'DROP')), "
                 + "created_at INTEGER NOT NULL, completed INTEGER NOT NULL DEFAULT 0 CHECK(completed IN (0,1)))");
-        db.execSQL("CREATE INDEX set_exercise_number ON set_entry(workout_exercise_id, set_number, id)");
-        createLibraryTables(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 1 || newVersion > 3 || oldVersion >= newVersion) {
+        if (oldVersion < 1 || newVersion > 4 || oldVersion >= newVersion) {
             throw new IllegalStateException("Missing database migration from " + oldVersion + " to " + newVersion);
         }
         if (oldVersion < 2 && newVersion >= 2) {
             createLibraryTables(db);
         }
         if (oldVersion < 3 && newVersion >= 3) {
-            // Preserve the pre-v3 meaning of existing rows as recorded sets.
-            db.execSQL("ALTER TABLE set_entry ADD COLUMN completed INTEGER NOT NULL DEFAULT 1 "
+            db.execSQL("ALTER TABLE set_entry ADD COLUMN completed INTEGER NOT NULL DEFAULT 0 "
                     + "CHECK(completed IN (0,1))");
+            // Preserve finished history; active rows require evidence of performed reps.
+            db.execSQL("UPDATE set_entry SET completed = 1 WHERE reps > 0 OR workout_exercise_id IN "
+                    + "(SELECT we.id FROM workout_exercise we JOIN logged_workout w "
+                    + "ON w.id = we.logged_workout_id WHERE w.ended_at IS NOT NULL)");
+        }
+        if (oldVersion < 4 && newVersion >= 4) {
+            // v3 upgrades used DEFAULT 1. Rebuild to match new installs without
+            // changing explicit completion decisions already saved by v3 clients.
+            createSetTable(db, "set_entry_v4");
+            String columns = "id, workout_exercise_id, set_number, reps, weight, unit, "
+                    + "rest_seconds, rpe, set_type, created_at, completed";
+            db.execSQL("INSERT INTO set_entry_v4 (" + columns + ") SELECT " + columns + " FROM set_entry");
+            db.execSQL("DROP TABLE set_entry");
+            db.execSQL("ALTER TABLE set_entry_v4 RENAME TO set_entry");
+            db.execSQL("CREATE INDEX set_exercise_number ON set_entry(workout_exercise_id, set_number, id)");
+            db.execSQL("CREATE INDEX IF NOT EXISTS template_user_created "
+                    + "ON template_workout(user_id, created_at DESC, id DESC)");
         }
     }
 
@@ -79,6 +104,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
                 + "exercise_id INTEGER NOT NULL REFERENCES exercise(id), "
                 + "order_index INTEGER NOT NULL CHECK(order_index >= 0), "
                 + "rest_time_seconds INTEGER CHECK(rest_time_seconds >= 0))");
+        db.execSQL("CREATE INDEX template_user_created ON template_workout(user_id, created_at DESC, id DESC)");
         db.execSQL("CREATE INDEX template_exercise_order "
                 + "ON template_exercise(template_workout_id, order_index, id)");
     }

@@ -20,6 +20,47 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class WorkoutSessionEditingTest {
+    @Test
+    void renameNormalizesNameAndRejectsBlankWithoutMutation() {
+        LoggedWorkout workout = ownedWorkout();
+        workout.setNameSnapshot("Original");
+        for (String name : new String[]{null, "", "  "}) {
+            assertThrows(RuntimeException.class, () -> service.renameWorkout(1L, 100L, name));
+            assertEquals("Original", workout.getNameSnapshot());
+        }
+        verify(workouts, never()).save(any());
+        when(workouts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        assertSame(workout, service.renameWorkout(1L, 100L, "  Upper   body  "));
+        assertEquals("Upper body", workout.getNameSnapshot());
+    }
+
+    @Test
+    void workoutNotesCanBeUpdatedAndCleared() {
+        LoggedWorkout workout = ownedWorkout();
+        when(workouts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        assertSame(workout, service.updateWorkoutNotes(1L, 100L, "Good session"));
+        assertEquals("Good session", workout.getNotes());
+        service.updateWorkoutNotes(1L, 100L, "");
+        assertEquals("", workout.getNotes());
+        service.updateWorkoutNotes(1L, 100L, null);
+        assertNull(workout.getNotes());
+    }
+
+    @Test
+    void discardDeletesSetsThenExercisesThenWorkout() {
+        ownedWorkout();
+        WorkoutExercise row = row(10L, 0);
+        SetEntry set = new SetEntry();
+        set.setId(50L);
+        when(sets.findByLoggedWorkoutId(100L)).thenReturn(List.of(set));
+        when(rows.findByLoggedWorkoutId(100L)).thenReturn(List.of(row));
+        service.discardWorkout(1L, 100L);
+        org.mockito.InOrder order = inOrder(sets, rows, workouts);
+        order.verify(sets).delete(50L);
+        order.verify(rows).delete(10L);
+        order.verify(workouts).delete(100L);
+        verify(workouts, never()).save(any());
+    }
     @Mock private LoggedWorkoutRepository workouts;
     @Mock private WorkoutExerciseRepository rows;
     @Mock private SetEntryRepository sets;
@@ -41,7 +82,7 @@ class WorkoutSessionEditingTest {
         ExerciseModel exercise = new ExerciseModel();
         exercise.setTitle("Squat");
         when(exercises.requireActiveExercise(9L)).thenReturn(exercise);
-        when(rows.findByLoggedWorkoutId(100L)).thenReturn(List.of(row(2L, 4)));
+        when(rows.findMaxOrderIndex(100L)).thenReturn(4);
         when(rows.findLastNotesForUserExercises(1L, List.of(9L)))
                 .thenReturn(Map.of(9L, "Brace"));
         when(rows.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
@@ -54,6 +95,7 @@ class WorkoutSessionEditingTest {
         assertEquals("Brace", added.getNotes());
         assertEquals(5, added.getOrderIndex());
         assertEquals(0, added.getRestTimeSeconds());
+        verify(rows, never()).findByLoggedWorkoutId(anyLong());
         verifyNoInteractions(sets);
     }
 
@@ -61,7 +103,7 @@ class WorkoutSessionEditingTest {
     void appendToEmptyWorkoutStartsAtZeroWithoutNotes() {
         ownedWorkout();
         when(exercises.requireActiveExercise(9L)).thenReturn(new ExerciseModel());
-        when(rows.findByLoggedWorkoutId(100L)).thenReturn(List.of());
+        when(rows.findMaxOrderIndex(100L)).thenReturn(-1);
         when(rows.findLastNotesForUserExercises(1L, List.of(9L))).thenReturn(Map.of());
         when(rows.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         WorkoutExercise added = service.addExerciseToWorkout(1L, 100L, 9L);
@@ -183,6 +225,9 @@ class WorkoutSessionEditingTest {
     }
 
     private void assertEditsRejected() {
+        assertThrows(RuntimeException.class, () -> service.renameWorkout(1L, 100L, "Legs"));
+        assertThrows(RuntimeException.class, () -> service.updateWorkoutNotes(1L, 100L, "note"));
+        assertThrows(RuntimeException.class, () -> service.discardWorkout(1L, 100L));
         assertThrows(RuntimeException.class, () -> service.addExerciseToWorkout(1L, 100L, 9L));
         assertThrows(RuntimeException.class, () -> service.removeExerciseFromWorkout(1L, 10L));
         assertThrows(RuntimeException.class, () -> service.moveExerciseInWorkout(1L, 10L, 0));
@@ -191,6 +236,7 @@ class WorkoutSessionEditingTest {
         verify(rows, never()).save(any());
         verify(rows, never()).delete(anyLong());
         verify(workouts, never()).save(any());
+        verify(workouts, never()).delete(anyLong());
         verifyNoInteractions(sets, exercises);
     }
 

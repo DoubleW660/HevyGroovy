@@ -31,7 +31,7 @@ public class WorkoutExerciseHistory {
 
     private int personalRecordCount;
 
-    private List<SetEntry> sets;
+    private final List<ActiveSetEntry> sets;
 
     public WorkoutExerciseHistory(
             long workoutExerciseId,
@@ -61,7 +61,8 @@ public class WorkoutExerciseHistory {
         this.bestSetVolume = bestSetVolume;
         this.personalRecord = personalRecord;
         this.personalRecordCount = personalRecordCount;
-        this.sets = List.copyOf(sets);
+        this.sets = sets.stream().map(ActiveSetEntry::new)
+                .collect(java.util.stream.Collectors.toUnmodifiableList());
     }
 
     public long getWorkoutExerciseId() {
@@ -119,7 +120,7 @@ public class WorkoutExerciseHistory {
         return personalRecordCount;
     }
 
-    public List<SetEntry> getSets() {
+    public List<ActiveSetEntry> getSets() {
         return sets;
     }
 }

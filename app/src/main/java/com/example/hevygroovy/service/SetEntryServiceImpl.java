@@ -97,7 +97,7 @@ public class SetEntryServiceImpl implements SetEntryService{
 
             setEntry.setUnit(request.getUnit());
         }
-        if (request.getRpe() != null){
+        if (request.hasRpe()){
 
             setEntry.setRpe(request.getRpe());
         }
@@ -107,7 +107,7 @@ public class SetEntryServiceImpl implements SetEntryService{
             setEntry.setSetType(request.getSetType());
         }
 
-        if (request.getRestSeconds() != null){
+        if (request.hasRestSeconds()){
 
             setEntry.setRestSeconds(request.getRestSeconds());
         }

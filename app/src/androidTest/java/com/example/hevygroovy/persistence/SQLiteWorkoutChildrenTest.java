@@ -15,6 +15,48 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class SQLiteWorkoutChildrenTest {
     @Test
+    public void summaryQueryAggregatesOnlyPageAndCompletedSetsWithoutMultiplyingExerciseCounts() {
+        long old = workout(1L, 100L);
+        long current = workout(1L, 200L);
+        WorkoutExercise row = exercise(current, 9L, 0, null, false);
+        exercise(current, 10L, 1, null, false);
+        SetEntry pounds = set(row.getId(), 1);
+        SetEntry kilos = set(row.getId(), 2);
+        kilos.setWeight(50);
+        kilos.setReps(10);
+        kilos.setUnit(Unit.KG);
+        sets.save(kilos);
+        SetEntry placeholder = set(row.getId(), 3);
+        placeholder.setCompleted(false);
+        placeholder.setWeight(999);
+        sets.save(placeholder);
+        exercise(workout(2L, 900L), 9L, 0, "other user", true);
+        exercise(workout(1L, null), 9L, 0, "active", true);
+        List<com.example.hevygroovy.dto.WorkoutHistory> summaries = workouts.findCompletedSummaries(1L, 1, 0);
+        assertEquals(1, summaries.size());
+        com.example.hevygroovy.dto.WorkoutHistory summary = summaries.get(0);
+        assertEquals(current, summary.getWorkoutId());
+        assertEquals(2, summary.getTotalExercises());
+        assertEquals(2, summary.getTotalSets());
+        assertEquals(15, summary.getTotalReps());
+        assertEquals(726.796185, summary.getTotalVolume(), 0.000001);
+        assertEquals(old, workouts.findCompletedSummaries(1L, 1, 1).get(0).getWorkoutId());
+        assertEquals(0, workouts.findCompletedSummaries(1L, 1, 1).get(0).getTotalSets());
+        assertTrue(workouts.findCompletedSummaries(1L, 1, 2).isEmpty());
+    }
+
+    @Test
+    public void latestNotesQueryHandlesMultipleParameterBatchesAndNullLatestNote() {
+        exercise(workout(1L, 100L), 9L, 0, "old", true);
+        exercise(workout(1L, 200L), 9L, 0, null, true);
+        java.util.ArrayList<Long> ids = new java.util.ArrayList<>();
+        for (long i = 1; i <= 510; i++) { ids.add(i); }
+        Map<Long, String> notes = exercises.findLastNotesForUserExercises(1L, ids);
+        assertEquals(1, notes.size());
+        assertTrue(notes.containsKey(9L));
+        assertNull(notes.get(9L));
+    }
+    @Test
     public void placeholdersDoNotQualifyForFinishOrHistoricalNotes() {
         long workout = workout(1L, 100L);
         WorkoutExercise row = exercise(workout, 9L, 0, "Placeholder note", false);

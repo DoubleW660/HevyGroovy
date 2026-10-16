@@ -5,11 +5,15 @@ import com.example.hevygroovy.entity.enums.MuscleGroup;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Omit the description setter to preserve it; pass null or blank to clear it. */
 public class UpdateExerciseRequest {
 
     private String title;
 
     private String description;
+    private boolean descriptionProvided;
+
+    public boolean hasDescription() { return descriptionProvided; }
 
     private MuscleGroup primaryMuscleGroup;
 
@@ -28,6 +32,7 @@ public class UpdateExerciseRequest {
     }
 
     public void setDescription(String description) {
+        descriptionProvided = true;
         this.description = description;
     }
 

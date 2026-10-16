@@ -27,6 +27,23 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class TemplateServiceImplTest {
     @Test
+    void templateDescriptionCanBeOmittedBlankOrCleared() {
+        TemplateWorkout existing = new TemplateWorkout();
+        existing.setUserId(1L);
+        existing.setDescription("Original");
+        when(templateWorkoutRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(templateWorkoutRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        templateService.updateTemplate(1L, 1L, new UpdateTemplateRequest());
+        assertEquals("Original", existing.getDescription());
+        UpdateTemplateRequest request = new UpdateTemplateRequest();
+        request.setDescription("  ");
+        templateService.updateTemplate(1L, 1L, request);
+        assertEquals("", existing.getDescription());
+        request.setDescription(null);
+        templateService.updateTemplate(1L, 1L, request);
+        assertNull(existing.getDescription());
+    }
+    @Test
     void insertionAtExplicitPositionShiftsLaterExercisesAndPreservesRepositoryList() {
         TemplateWorkout template = new TemplateWorkout();
         template.setId(5L);
@@ -170,8 +187,8 @@ class TemplateServiceImplTest {
         mine.setTitle("Mine");
         TemplateWorkout other = new TemplateWorkout();
         other.setUserId(2L);
-        when(templateWorkoutRepository.findAll()).thenReturn(List.of(other, mine));
-        when(templateWorkoutRepository.findByArchive(false)).thenReturn(List.of(other, mine));
+        when(templateWorkoutRepository.findByUserId(1L, true)).thenReturn(List.of(other, mine));
+        when(templateWorkoutRepository.findByUserId(1L, false)).thenReturn(List.of(other, mine));
         assertEquals(1, templateService.listTemplates(1L, true).size());
         assertEquals("Mine", templateService.listTemplates(1L, false).get(0).getTitle());
     }
@@ -312,7 +329,7 @@ class TemplateServiceImplTest {
         b.setDescription("Quads");
         b.setArchived(true);
 
-        when(templateWorkoutRepository.findAll()).thenReturn(List.of(a, b));
+        when(templateWorkoutRepository.findByUserId(1L, true)).thenReturn(List.of(a, b));
 
         List<TemplateSummaryModel> result = templateService.listTemplates(1L, true);
 

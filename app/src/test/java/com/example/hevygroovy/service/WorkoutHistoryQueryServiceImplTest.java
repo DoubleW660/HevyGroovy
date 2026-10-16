@@ -17,17 +17,15 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class WorkoutHistoryQueryServiceImplTest {
     @Test
-    void pageLoadsOnlyRequestedCompletedWorkoutsAndTheirChildren() {
-        LoggedWorkout workout = workout(100L, 1L, 1000L, 2000L);
-        when(workouts.findCompletedByUserIdOrderByStartedAtDesc(1L, 20, 40))
-                .thenReturn(List.of(workout));
+    void pageUsesOneSummaryQueryWithoutLoadingChildren() {
+        WorkoutHistory summary = summary(100L, 0, 0, 0);
+        when(workouts.findCompletedSummaries(1L, 20, 40)).thenReturn(List.of(summary));
         List<WorkoutHistory> page = service.getWorkoutHistory(1L, 20, 40);
         assertEquals(1, page.size());
         assertEquals(100L, page.get(0).getWorkoutId());
-        verify(workouts).findCompletedByUserIdOrderByStartedAtDesc(1L, 20, 40);
+        verify(workouts).findCompletedSummaries(1L, 20, 40);
         verify(workouts, never()).findByUserId(anyLong());
-        verify(exercises).findByLoggedWorkoutId(100L);
-        verify(sets).findByLoggedWorkoutId(100L);
+        verifyNoInteractions(exercises, sets);
     }
 
     @Test
@@ -41,14 +39,15 @@ class WorkoutHistoryQueryServiceImplTest {
 
     @Test
     void emptyPageDoesNotLoadChildRows() {
-        when(workouts.findCompletedByUserIdOrderByStartedAtDesc(1L, 10, 100)).thenReturn(List.of());
+        when(workouts.findCompletedSummaries(1L, 10, 100)).thenReturn(List.of());
         assertTrue(service.getWorkoutHistory(1L, 10, 100).isEmpty());
         verifyNoInteractions(exercises, sets);
     }
     @Test
     void placeholdersAreExcludedFromSummaryDetailAndExerciseStatistics() {
         LoggedWorkout workout = workout(100L, 1L, 1000L, 2000L);
-        when(workouts.findByUserId(1L)).thenReturn(List.of(workout));
+        when(workouts.findCompletedSummaries(1L, Integer.MAX_VALUE, 0))
+                .thenReturn(List.of(summary(100L, 1, 5, 250)));
         when(workouts.findById(100L)).thenReturn(Optional.of(workout));
         when(exercises.findByLoggedWorkoutId(100L)).thenReturn(List.of(exercise(10L, 0)));
         SetEntry completed = set(10L, 1, 50, 5, Unit.KG);
@@ -104,6 +103,8 @@ class WorkoutHistoryQueryServiceImplTest {
         assertEquals(Unit.LB, firstDetail.getSets().get(1).getUnit());
         assertEquals(0, detail.getExercises().get(1).getTotalSets());
         assertThrows(UnsupportedOperationException.class, () -> detail.getExercises().clear());
+        pounds.setWeight(999);
+        assertEquals(100D, firstDetail.getSets().get(1).getWeight());
     }
 
     @Test
@@ -131,25 +132,22 @@ class WorkoutHistoryQueryServiceImplTest {
     }
 
     @Test
-    void historyExcludesActiveAndOtherUsersAndSortsNewestFirstWithIdTies() {
-        LoggedWorkout old = workout(100L, 1L, 1000L, 2000L);
-        LoggedWorkout newer = workout(200L, 1L, 3000L, 4000L);
-        LoggedWorkout tied = workout(300L, 1L, 3000L, 4000L);
-        when(workouts.findByUserId(1L)).thenReturn(List.of(old,
-                workout(400L, 1L, 5000L, null), workout(500L, 2L, 6000L, 7000L), newer, tied));
+    void unpagedHistoryUsesRepositoryOrderingWithoutChildQueries() {
+        when(workouts.findCompletedSummaries(1L, Integer.MAX_VALUE, 0))
+                .thenReturn(List.of(summary(300L, 0, 0, 0), summary(200L, 0, 0, 0), summary(100L, 0, 0, 0)));
         List<WorkoutHistory> history = service.getWorkoutHistory(1L);
         assertEquals(3, history.size());
         assertEquals(300L, history.get(0).getWorkoutId());
         assertEquals(200L, history.get(1).getWorkoutId());
         assertEquals(100L, history.get(2).getWorkoutId());
-        verify(exercises, never()).findByLoggedWorkoutId(400L);
-        verify(sets, never()).findByLoggedWorkoutId(500L);
+        verifyNoInteractions(exercises, sets);
     }
 
     @Test
     void summaryAndDetailUseTheSameVolumeUnitAndTotals() {
         LoggedWorkout workout = workout(100L, 1L, 1000L, 2000L);
-        when(workouts.findByUserId(1L)).thenReturn(List.of(workout));
+        when(workouts.findCompletedSummaries(1L, Integer.MAX_VALUE, 0))
+                .thenReturn(List.of(summary(100L, 1, 5, 226.796185)));
         when(workouts.findById(100L)).thenReturn(Optional.of(workout));
         when(exercises.findByLoggedWorkoutId(100L)).thenReturn(List.of(exercise(10L, 0)));
         when(sets.findByLoggedWorkoutId(100L)).thenReturn(List.of(set(10L, 1, 100, 5, Unit.LB)));
@@ -158,6 +156,11 @@ class WorkoutHistoryQueryServiceImplTest {
         assertEquals(summary.getTotalVolume(), detail.getTotalVolume(), 0.000001);
         assertEquals(summary.getTotalReps(), detail.getTotalReps());
         assertEquals(summary.getVolumeUnit(), detail.getVolumeUnit());
+    }
+
+    private WorkoutHistory summary(long id, int count, int reps, double volume) {
+        return new WorkoutHistory(id, "Snapshot", 1000L, 2000L,
+                java.time.Duration.ofSeconds(1), 1, count, reps, volume);
     }
 
     private LoggedWorkout workout(long id, long userId, long start, Long end) {

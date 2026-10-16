@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface TemplateWorkoutRepository {
+    List<TemplateWorkout> findByUserId(long userId, boolean includeArchived);
 
     TemplateWorkout save(TemplateWorkout templateWorkout);
 

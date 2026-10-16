@@ -18,16 +18,16 @@ public final class TransactionalWorkoutHistoryService implements WorkoutHistoryQ
 
     @Override
     public List<WorkoutHistory> getWorkoutHistory(long userId) {
-        return transactions.run(() -> delegate.getWorkoutHistory(userId));
+        return delegate.getWorkoutHistory(userId);
     }
 
     @Override
     public List<WorkoutHistory> getWorkoutHistory(long userId, int limit, int offset) {
-        return transactions.run(() -> delegate.getWorkoutHistory(userId, limit, offset));
+        return delegate.getWorkoutHistory(userId, limit, offset);
     }
 
     @Override
     public WorkoutHistoryDetail getWorkoutHistoryDetail(long userId, long workoutId) {
-        return transactions.run(() -> delegate.getWorkoutHistoryDetail(userId, workoutId));
+        return transactions.read(() -> delegate.getWorkoutHistoryDetail(userId, workoutId));
     }
 }

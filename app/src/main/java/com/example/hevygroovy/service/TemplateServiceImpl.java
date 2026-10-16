@@ -78,8 +78,8 @@ public class TemplateServiceImpl implements TemplateService {
             templateWorkout.setTitle(newTitle);
         }
 
-        if (newDesc != null && !newDesc.isBlank()){
-            newDesc = newDesc.trim().replaceAll("\\s+"," ");
+        if (request.hasDescription()){
+            newDesc = newDesc == null ? null : newDesc.trim().replaceAll("\\s+"," ");
             templateWorkout.setDescription(newDesc);
         }
 
@@ -246,15 +246,7 @@ public class TemplateServiceImpl implements TemplateService {
     public List<TemplateSummaryModel> listTemplates(long userId, boolean includeArchived) {
         requireUserId(userId);
 
-        if(includeArchived){
-            return templateWorkoutRepository.findAll()
-                    .stream()
-                    .filter(template -> template.getUserId() == userId)
-                    .map(this::toSummaryModel)
-                    .toList();
-        }
-
-        return templateWorkoutRepository.findByArchive(false)
+        return templateWorkoutRepository.findByUserId(userId, includeArchived)
                 .stream()
                 .filter(template -> template.getUserId() == userId)
                 .map(this::toSummaryModel)

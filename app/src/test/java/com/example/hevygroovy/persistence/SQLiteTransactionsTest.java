@@ -17,6 +17,38 @@ import static org.mockito.Mockito.*;
 
 class SQLiteTransactionsTest {
     @Test
+    void singleQueryTemplateListDoesNotOpenTransaction() {
+        SQLiteDatabase db = mock(SQLiteDatabase.class);
+        TemplateService delegate = mock(TemplateService.class);
+        new TransactionalTemplateService(db, delegate).listTemplates(1L, false);
+        verify(delegate).listTemplates(1L, false);
+        verifyNoInteractions(db);
+    }
+
+    @Test
+    void singleQueryHistorySummariesDoNotOpenTransaction() {
+        SQLiteDatabase db = mock(SQLiteDatabase.class);
+        com.example.hevygroovy.service.WorkoutHistoryQueryService delegate =
+                mock(com.example.hevygroovy.service.WorkoutHistoryQueryService.class);
+        TransactionalWorkoutHistoryService wrapper = new TransactionalWorkoutHistoryService(db, delegate);
+        wrapper.getWorkoutHistory(1L);
+        wrapper.getWorkoutHistory(1L, 20, 0);
+        verify(delegate).getWorkoutHistory(1L);
+        verify(delegate).getWorkoutHistory(1L, 20, 0);
+        verifyNoInteractions(db);
+    }
+
+    @Test
+    void readFailureEndsSnapshotWithoutCommitting() {
+        SQLiteDatabase db = mock(SQLiteDatabase.class);
+        assertThrows(IllegalArgumentException.class, () -> new SQLiteTransactions(db).read(() -> {
+            throw new IllegalArgumentException("Read failed");
+        }));
+        verify(db).endTransaction();
+        verify(db, never()).setTransactionSuccessful();
+        verify(db, never()).beginTransaction();
+    }
+    @Test
     void everyTemplateOperationRunsInsideTransaction() {
         CreateTemplateRequest create = new CreateTemplateRequest();
         UpdateTemplateRequest update = new UpdateTemplateRequest();
@@ -28,7 +60,7 @@ class SQLiteTransactionsTest {
                 service -> service.removeExerciseFromTemplate(1L, 10L, 7L),
                 service -> service.moveExerciseInTemplate(1L, 10L, 2),
                 service -> service.getTemplateDetail(1L, 7L),
-                service -> service.listTemplates(1L, false),
+
                 service -> service.archiveTemplate(1L, 7L),
                 service -> service.restoreTemplate(1L, 7L));
         for (Consumer<TemplateService> operation : operations) {
@@ -36,7 +68,7 @@ class SQLiteTransactionsTest {
             TemplateService delegate = mock(TemplateService.class);
             operation.accept(new TransactionalTemplateService(db, delegate));
             InOrder order = inOrder(db, delegate);
-            order.verify(db).beginTransaction();
+            order.verify(db).beginTransactionNonExclusive();
             operation.accept(order.verify(delegate));
             order.verify(db).setTransactionSuccessful();
             order.verify(db).endTransaction();
@@ -53,7 +85,7 @@ class SQLiteTransactionsTest {
             return result;
         }));
         InOrder order = inOrder(db, operation);
-        order.verify(db).beginTransaction();
+        order.verify(db).beginTransactionNonExclusive();
         order.verify(operation).run();
         order.verify(db).setTransactionSuccessful();
         order.verify(db).endTransaction();
@@ -72,7 +104,7 @@ class SQLiteTransactionsTest {
     @Test
     void failedBeginDoesNotEndAnUnopenedTransaction() {
         SQLiteDatabase db = mock(SQLiteDatabase.class);
-        doThrow(new RuntimeException("Database unavailable")).when(db).beginTransaction();
+        doThrow(new RuntimeException("Database unavailable")).when(db).beginTransactionNonExclusive();
         assertThrows(RuntimeException.class, () -> new SQLiteTransactions(db).run(() -> null));
         verify(db, never()).endTransaction();
     }
@@ -81,6 +113,9 @@ class SQLiteTransactionsTest {
     void everyWorkoutMutationRunsInsideTransaction() {
         List<Consumer<WorkoutSessionService>> operations = List.of(
                 service -> service.getActiveWorkout(1L),
+                service -> service.renameWorkout(1L, 100L, "Legs"),
+                service -> service.updateWorkoutNotes(1L, 100L, null),
+                service -> service.discardWorkout(1L, 100L),
                 service -> service.startEmptyWorkout(1L),
                 service -> service.startWorkoutFromTemplate(1L, 7L),
                 service -> service.finishWorkout(1L, 100L),
@@ -94,7 +129,7 @@ class SQLiteTransactionsTest {
             WorkoutSessionService delegate = mock(WorkoutSessionService.class);
             operation.accept(new TransactionalWorkoutSessionService(db, delegate));
             InOrder order = inOrder(db, delegate);
-            order.verify(db).beginTransaction();
+            order.verify(db).beginTransactionNonExclusive();
             operation.accept(order.verify(delegate));
             order.verify(db).setTransactionSuccessful();
             order.verify(db).endTransaction();
@@ -114,7 +149,7 @@ class SQLiteTransactionsTest {
             SetEntryService delegate = mock(SetEntryService.class);
             operation.accept(new TransactionalSetEntryService(db, delegate));
             InOrder order = inOrder(db, delegate);
-            order.verify(db).beginTransaction();
+            order.verify(db).beginTransactionNonExclusive();
             operation.accept(order.verify(delegate));
             order.verify(db).setTransactionSuccessful();
             order.verify(db).endTransaction();

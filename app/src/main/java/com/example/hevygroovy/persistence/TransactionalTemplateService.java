@@ -46,12 +46,12 @@ public final class TransactionalTemplateService implements TemplateService {
 
     @Override
     public TemplateDetailModel getTemplateDetail(long userId, long templateId) {
-        return transactions.run(() -> delegate.getTemplateDetail(userId, templateId));
+        return transactions.read(() -> delegate.getTemplateDetail(userId, templateId));
     }
 
     @Override
     public List<TemplateSummaryModel> listTemplates(long userId, boolean includeArchived) {
-        return transactions.run(() -> delegate.listTemplates(userId, includeArchived));
+        return delegate.listTemplates(userId, includeArchived);
     }
 
     @Override

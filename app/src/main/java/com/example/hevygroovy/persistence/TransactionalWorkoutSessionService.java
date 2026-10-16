@@ -19,7 +19,22 @@ public final class TransactionalWorkoutSessionService implements WorkoutSessionS
 
     @Override
     public Optional<ActiveWorkoutDetail> getActiveWorkout(long userId) {
-        return transactions.run(() -> delegate.getActiveWorkout(userId));
+        return transactions.read(() -> delegate.getActiveWorkout(userId));
+    }
+
+    @Override
+    public LoggedWorkout renameWorkout(long userId, long workoutId, String name) {
+        return transactions.run(() -> delegate.renameWorkout(userId, workoutId, name));
+    }
+
+    @Override
+    public LoggedWorkout updateWorkoutNotes(long userId, long workoutId, String notes) {
+        return transactions.run(() -> delegate.updateWorkoutNotes(userId, workoutId, notes));
+    }
+
+    @Override
+    public void discardWorkout(long userId, long workoutId) {
+        transactions.run(() -> { delegate.discardWorkout(userId, workoutId); return null; });
     }
 
     @Override

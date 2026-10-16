@@ -183,8 +183,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
             throw new RuntimeException("Invalid Exercise Id");
         }
         ExerciseModel exercise = exerciseService.requireActiveExercise(exerciseId);
-        List<WorkoutExercise> rows = orderedWorkoutExercises(workoutId);
-        int nextIndex = rows.isEmpty() ? 0 : rows.get(rows.size() - 1).getOrderIndex() + 1;
+        int nextIndex = workoutExerciseRepository.findMaxOrderIndex(workoutId) + 1;
         Map<Long, String> notes = workoutExerciseRepository.findLastNotesForUserExercises(
                 userId, java.util.Collections.singletonList(exerciseId));
         WorkoutExercise row = new WorkoutExercise();
@@ -283,6 +282,39 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
                 workoutExerciseRepository.save(row);
             }
         }
+    }
+
+    @Override
+    public LoggedWorkout renameWorkout(long userId, long workoutId, String name) {
+        LoggedWorkout workout = requireOwnedWorkout(userId, workoutId);
+        requireActiveWorkout(workout);
+        if (name == null || name.isBlank()) {
+            throw new RuntimeException("Workout name is required");
+        }
+        workout.setNameSnapshot(name.trim().replaceAll("\\s+", " "));
+        return loggedWorkoutRepository.save(workout);
+    }
+
+    @Override
+    public LoggedWorkout updateWorkoutNotes(long userId, long workoutId, String notes) {
+        LoggedWorkout workout = requireOwnedWorkout(userId, workoutId);
+        requireActiveWorkout(workout);
+        workout.setNotes(notes);
+        return loggedWorkoutRepository.save(workout);
+    }
+
+    @Override
+    public void discardWorkout(long userId, long workoutId) {
+        LoggedWorkout workout = requireOwnedWorkout(userId, workoutId);
+        requireActiveWorkout(workout);
+        // The SQLite service wrapper makes all child and parent deletes atomic.
+        for (SetEntry set : setEntryRepository.findByLoggedWorkoutId(workoutId)) {
+            setEntryRepository.delete(set.getId());
+        }
+        for (WorkoutExercise row : workoutExerciseRepository.findByLoggedWorkoutId(workoutId)) {
+            workoutExerciseRepository.delete(row.getId());
+        }
+        loggedWorkoutRepository.delete(workoutId);
     }
 
     private void requireNoActiveWorkout(long userId) {

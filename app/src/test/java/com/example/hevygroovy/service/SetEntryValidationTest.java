@@ -20,6 +20,20 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class SetEntryValidationTest {
     @Test
+    void omittedOptionalFieldsArePreservedButExplicitNullClearsThem() {
+        SetEntry set = ownedSet();
+        when(sets.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        service.updateSet(1L, 50L, new UpdateSetEntryRequest());
+        assertEquals(Float.valueOf(7F), set.getRpe());
+        assertEquals(Integer.valueOf(60), set.getRestSeconds());
+        UpdateSetEntryRequest clear = new UpdateSetEntryRequest();
+        clear.setRpe(null);
+        clear.setRestSeconds(null);
+        service.updateSet(1L, 50L, clear);
+        assertNull(set.getRpe());
+        assertNull(set.getRestSeconds());
+    }
+    @Test
     void completionCanBeSetClearedAndOmitted() {
         SetEntry set = ownedSet();
         assertFalse(set.isCompleted());

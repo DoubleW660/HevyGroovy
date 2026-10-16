@@ -20,6 +20,52 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ExerciseServiceImplTest {
+    @Test
+    void nullSecondaryListIsEmptyAndIncomingListsAreCopied() {
+        when(exerciseRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        CreateExerciseRequest request = new CreateExerciseRequest();
+        request.setTitle("Bench");
+        request.setPrimaryMuscleGroup(MuscleGroup.CHEST);
+        request.setSecondaryMuscleGroups(null);
+        assertTrue(exerciseService.createExercise(request).getSecondaryMuscleGroups().isEmpty());
+        java.util.ArrayList<MuscleGroup> secondary = new java.util.ArrayList<>(List.of(MuscleGroup.TRICEPS));
+        request.setSecondaryMuscleGroups(secondary);
+        exerciseService.createExercise(request);
+        org.mockito.ArgumentCaptor<Exercise> captor = org.mockito.ArgumentCaptor.forClass(Exercise.class);
+        verify(exerciseRepository, times(2)).save(captor.capture());
+        secondary.clear();
+        assertEquals(List.of(MuscleGroup.TRICEPS), captor.getValue().getSecondaryMuscleGroups());
+    }
+
+    @Test
+    void invalidSecondaryElementIsRejectedBeforeOtherFieldsMutate() {
+        Exercise existing = new Exercise();
+        existing.setTitle("Original");
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(existing));
+        UpdateExerciseRequest request = new UpdateExerciseRequest();
+        request.setTitle("Changed");
+        request.setSecondaryMuscleGroups(java.util.Arrays.asList(MuscleGroup.TRICEPS, null));
+        assertThrows(IllegalArgumentException.class, () -> exerciseService.updateExercise(1L, request));
+        assertEquals("Original", existing.getTitle());
+        verify(exerciseRepository, never()).save(any());
+    }
+
+    @Test
+    void exerciseDescriptionCanBeOmittedBlankOrCleared() {
+        Exercise existing = new Exercise();
+        existing.setDescription("Original");
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(existing));
+        when(exerciseRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        exerciseService.updateExercise(1L, new UpdateExerciseRequest());
+        assertEquals("Original", existing.getDescription());
+        UpdateExerciseRequest request = new UpdateExerciseRequest();
+        request.setDescription("  ");
+        exerciseService.updateExercise(1L, request);
+        assertEquals("", existing.getDescription());
+        request.setDescription(null);
+        exerciseService.updateExercise(1L, request);
+        assertNull(existing.getDescription());
+    }
 
     @Mock
     private ExerciseRepository exerciseRepository;

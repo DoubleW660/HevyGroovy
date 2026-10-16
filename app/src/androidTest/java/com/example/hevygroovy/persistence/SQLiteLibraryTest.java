@@ -12,6 +12,20 @@ import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
 public class SQLiteLibraryTest {
+    @Test
+    public void templateListingFiltersUserAndArchiveStateInRepository() {
+        TemplateWorkout mine = template();
+        TemplateWorkout archived = template();
+        archived.setArchived(true);
+        templates.save(archived);
+        TemplateWorkout other = template();
+        other.setUserId(2L);
+        templates.save(other);
+        assertEquals(1, templates.findByUserId(1L, false).size());
+        assertEquals(mine.getId(), templates.findByUserId(1L, false).get(0).getId());
+        assertEquals(2, templates.findByUserId(1L, true).size());
+        assertTrue(templates.findByUserId(3L, true).isEmpty());
+    }
     private SQLiteDatabase db;
     private WorkoutDatabase helper;
     private SQLiteExerciseRepository exercises;

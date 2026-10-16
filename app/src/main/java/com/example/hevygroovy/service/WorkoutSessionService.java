@@ -14,6 +14,15 @@ public interface WorkoutSessionService {
 
     LoggedWorkout finishWorkout(long userId, long workoutId);
 
+    /** Name must be nonblank; surrounding and repeated whitespace is normalized. */
+    LoggedWorkout renameWorkout(long userId, long workoutId, String name);
+
+    /** Null or blank notes clear the current note. */
+    LoggedWorkout updateWorkoutNotes(long userId, long workoutId, String notes);
+
+    /** Permanently removes an owned active workout and its child rows. */
+    void discardWorkout(long userId, long workoutId);
+
     WorkoutExercise addExerciseToWorkout(long userId, long workoutId, long exerciseId);
 
     void removeExerciseFromWorkout(long userId, long workoutExerciseId);

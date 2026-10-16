@@ -13,6 +13,12 @@ public final class SQLiteTemplateWorkoutRepository implements TemplateWorkoutRep
     public SQLiteTemplateWorkoutRepository(SQLiteDatabase db) { this.db = db; }
 
     @Override
+    public List<TemplateWorkout> findByUserId(long userId, boolean includeArchived) {
+        return query("user_id = ?" + (includeArchived ? "" : " AND archived = 0"),
+                new String[]{Long.toString(userId)});
+    }
+
+    @Override
     public TemplateWorkout save(TemplateWorkout row) {
         ContentValues values = new ContentValues();
         values.put("user_id", row.getUserId());

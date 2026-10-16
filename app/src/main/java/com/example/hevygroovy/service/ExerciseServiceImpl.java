@@ -33,6 +33,7 @@ public class ExerciseServiceImpl implements ExerciseService{
         if (request.getPrimaryMuscleGroup() == null) {
             throw new RuntimeException("Primary Muscle Group is Required");
         }
+        List<MuscleGroup> secondary = validatedSecondaryMuscles(request.getSecondaryMuscleGroups());
         title = title.trim().replaceAll("\\s+"," ");
         String description = request.getDescription();
         if (description != null) {
@@ -44,7 +45,7 @@ public class ExerciseServiceImpl implements ExerciseService{
         exercise.setDescription(description);
         exercise.setArchived(false);
         exercise.setPrimaryMuscleGroup(request.getPrimaryMuscleGroup());
-        exercise.setSecondaryMuscleGroups(request.getSecondaryMuscleGroups());
+        exercise.setSecondaryMuscleGroups(secondary);
 
         Exercise saved = exerciseRepository.save(exercise);
 
@@ -65,6 +66,7 @@ public class ExerciseServiceImpl implements ExerciseService{
         String newDesc = request.getDescription();
         MuscleGroup primary = request.getPrimaryMuscleGroup();
         List<MuscleGroup> secondary = request.getSecondaryMuscleGroups();
+        if (secondary != null) { secondary = validatedSecondaryMuscles(secondary); }
 
         if (newTitle != null && !newTitle.isBlank()){
 
@@ -72,8 +74,8 @@ public class ExerciseServiceImpl implements ExerciseService{
             exercise.setTitle(newTitle);
         }
 
-        if (newDesc != null && !newDesc.isBlank()){
-            newDesc = newDesc.trim();
+        if (request.hasDescription()){
+            newDesc = newDesc == null ? null : newDesc.trim();
             exercise.setDescription(newDesc);
         }
 
@@ -154,6 +156,14 @@ public class ExerciseServiceImpl implements ExerciseService{
         }
 
         return toModel(exercise);
+    }
+
+    private List<MuscleGroup> validatedSecondaryMuscles(List<MuscleGroup> muscles) {
+        if (muscles == null) { return new ArrayList<>(); }
+        if (muscles.stream().anyMatch(java.util.Objects::isNull)) {
+            throw new IllegalArgumentException("Secondary muscles cannot contain null");
+        }
+        return new ArrayList<>(muscles);
     }
 
     private ExerciseModel toModel(Exercise exercise){

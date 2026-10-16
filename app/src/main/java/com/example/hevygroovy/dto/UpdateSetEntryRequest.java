@@ -3,6 +3,7 @@ package com.example.hevygroovy.dto;
 import com.example.hevygroovy.entity.enums.SetType;
 import com.example.hevygroovy.entity.enums.Unit;
 
+/** Omit optional-field setters to preserve values; pass null to clear RPE/rest. */
 public class UpdateSetEntryRequest {
     // Null leaves completion unchanged; false marks the set as a placeholder again.
     private Boolean completed;
@@ -15,8 +16,13 @@ public class UpdateSetEntryRequest {
     private Double weight;
     private Unit unit;
     private Float rpe;
+    private boolean rpeProvided;
     private SetType setType;
     private Integer restSeconds;
+    private boolean restSecondsProvided;
+
+    public boolean hasRpe() { return rpeProvided; }
+    public boolean hasRestSeconds() { return restSecondsProvided; }
 
     public Integer getReps() {
         return reps;
@@ -47,6 +53,7 @@ public class UpdateSetEntryRequest {
     }
 
     public void setRpe(Float rpe) {
+        this.rpeProvided = true;
         this.rpe = rpe;
     }
 
@@ -63,6 +70,7 @@ public class UpdateSetEntryRequest {
     }
 
     public void setRestSeconds(Integer restSeconds) {
+        this.restSecondsProvided = true;
         this.restSeconds = restSeconds;
     }
 }

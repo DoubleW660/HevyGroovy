@@ -39,10 +39,7 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
             throw new IllegalArgumentException("Invalid user ID");
         }
 
-        List<LoggedWorkout> workouts =
-                loggedWorkoutRepository.findByUserId(userId);
-
-        return buildHistory(userId, workouts);
+        return loggedWorkoutRepository.findCompletedSummaries(userId, Integer.MAX_VALUE, 0);
     }
 
     @Override
@@ -56,60 +53,7 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
         if (limit == 0) {
             return List.of();
         }
-        return buildHistory(userId, loggedWorkoutRepository
-                .findCompletedByUserIdOrderByStartedAtDesc(userId, limit, offset));
-    }
-
-    private List<WorkoutHistory> buildHistory(long userId, List<LoggedWorkout> workouts) {
-        List<WorkoutHistory> workoutHistoryList = new ArrayList<>();
-
-        workouts = new ArrayList<>(workouts);
-        workouts.sort(Comparator.comparingLong(LoggedWorkout::getStartedAtEpochMillis).reversed()
-                .thenComparing(Comparator.comparingLong(LoggedWorkout::getId).reversed()));
-        for (LoggedWorkout workout : workouts) {
-            if (workout.getUserId() != userId) {
-                continue;
-            }
-            if (workout.getEndedAtEpochMillis() == null) {
-                continue;
-            }
-
-            long workoutId = workout.getId();
-
-            List<WorkoutExercise> workoutExercises =
-                    workoutExerciseRepository.findByLoggedWorkoutId(workoutId);
-
-            List<SetEntry> setEntries =
-                    setEntryRepository.findByLoggedWorkoutId(workoutId).stream()
-                            .filter(SetEntry::isCompleted).collect(Collectors.toList());
-
-            int totalReps = 0;
-            double totalVolume = 0.0;
-
-            for (SetEntry setEntry : setEntries) {
-                totalReps += setEntry.getReps();
-                totalVolume += weightInKg(setEntry) * setEntry.getReps();
-            }
-
-            WorkoutHistory dto = new WorkoutHistory(
-                    workoutId,
-                    workout.getNameSnapshot(),
-                    workout.getStartedAtEpochMillis(),
-                    workout.getEndedAtEpochMillis(),
-                    Duration.ofMillis(
-                            workout.getEndedAtEpochMillis()
-                                    - workout.getStartedAtEpochMillis()
-                    ),
-                    workoutExercises.size(),
-                    setEntries.size(),
-                    totalReps,
-                    totalVolume
-            );
-
-            workoutHistoryList.add(dto);
-        }
-
-        return workoutHistoryList;
+        return loggedWorkoutRepository.findCompletedSummaries(userId, limit, offset);
     }
 
     @Override

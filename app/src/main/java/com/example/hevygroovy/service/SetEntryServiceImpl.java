@@ -11,6 +11,7 @@ import com.example.hevygroovy.repo.SetEntryRepository;
 import com.example.hevygroovy.repo.WorkoutExerciseRepository;
 
 import java.util.Comparator;
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -63,7 +64,8 @@ public class SetEntryServiceImpl implements SetEntryService{
         SetEntry setEntry = new SetEntry();
 
         setEntry.setWorkoutExerciseId(workoutExerciseId);
-        setEntry.setSetNumber(existingSets.size() + 1);
+        int lastSetNumber = existingSets.stream().mapToInt(SetEntry::getSetNumber).max().orElse(0);
+        setEntry.setSetNumber(lastSetNumber + 1);
         setEntry.setSetType(SetType.NORMAL);
         setEntry.setUnit(Unit.LB);
         setEntry.setCreatedAtEpochMillis(System.currentTimeMillis());
@@ -74,19 +76,17 @@ public class SetEntryServiceImpl implements SetEntryService{
     @Override
     public SetEntry updateSet(long userId, long setEntryId, UpdateSetEntryRequest request){
 
+        if (request == null) {
+            throw new RuntimeException("Set update request is required");
+        }
         SetEntry setEntry = requireOwnedActiveSet(userId, setEntryId);
+        validateUpdate(request);
 
         if (request.getReps() != null){
-            if (request.getReps() < 0) {
-                throw new RuntimeException("Reps cannot be negative");
-            }
 
             setEntry.setReps(request.getReps());
         }
         if (request.getWeight() != null){
-            if (request.getWeight() < 0) {
-                throw new RuntimeException("Weight cannot be negative");
-            }
 
             setEntry.setWeight(request.getWeight());
         }
@@ -95,9 +95,6 @@ public class SetEntryServiceImpl implements SetEntryService{
             setEntry.setUnit(request.getUnit());
         }
         if (request.getRpe() != null){
-            if (request.getRpe() < 0 || request.getRpe() > 10){
-                throw new RuntimeException("RPE must be between 0 and 10");
-            }
 
             setEntry.setRpe(request.getRpe());
         }
@@ -108,9 +105,6 @@ public class SetEntryServiceImpl implements SetEntryService{
         }
 
         if (request.getRestSeconds() != null){
-            if (request.getRestSeconds() < 0) {
-                throw new RuntimeException("Rest seconds cannot be negative");
-            }
 
             setEntry.setRestSeconds(request.getRestSeconds());
         }
@@ -128,7 +122,7 @@ public class SetEntryServiceImpl implements SetEntryService{
         setEntryRepository.delete(setEntryId);
 
         List<SetEntry> sets =
-                setEntryRepository.findByWorkoutExerciseId(workoutExerciseId);
+                new ArrayList<>(setEntryRepository.findByWorkoutExerciseId(workoutExerciseId));
 
         sets.sort(Comparator.comparingInt(SetEntry::getSetNumber));
 
@@ -144,6 +138,27 @@ public class SetEntryServiceImpl implements SetEntryService{
         }
     }
 
+
+    private void validateUpdate(UpdateSetEntryRequest request) {
+        if (request.getReps() != null && request.getReps() < 0) {
+            throw new RuntimeException("Reps cannot be negative");
+        }
+        if (request.getWeight() != null) {
+            if (!Double.isFinite(request.getWeight())) {
+                throw new RuntimeException("Weight must be finite");
+            }
+            if (request.getWeight() < 0) {
+                throw new RuntimeException("Weight cannot be negative");
+            }
+        }
+        if (request.getRpe() != null && (!Float.isFinite(request.getRpe())
+                || request.getRpe() < 0 || request.getRpe() > 10)) {
+            throw new RuntimeException("RPE must be between 0 and 10");
+        }
+        if (request.getRestSeconds() != null && request.getRestSeconds() < 0) {
+            throw new RuntimeException("Rest seconds cannot be negative");
+        }
+    }
 
     private SetEntry requireOwnedActiveSet(long userId,  long setEntryId) {
         //Check the passed variables are not invalid Ids <= 0

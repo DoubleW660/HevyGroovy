@@ -80,6 +80,7 @@ class SQLiteTransactionsTest {
     @Test
     void everyWorkoutMutationRunsInsideTransaction() {
         List<Consumer<WorkoutSessionService>> operations = List.of(
+                service -> service.getActiveWorkout(1L),
                 service -> service.startEmptyWorkout(1L),
                 service -> service.startWorkoutFromTemplate(1L, 7L),
                 service -> service.finishWorkout(1L, 100L),

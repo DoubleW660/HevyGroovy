@@ -17,6 +17,47 @@ import static org.junit.Assert.*;
 /** Uses real services, repositories, transactions, and an isolated SQLite database. */
 @RunWith(AndroidJUnit4.class)
 public class SQLiteWorkoutFlowTest {
+    @Test
+    public void reconstructedServicesRecoverOrderedSessionIncludingIncompleteSets() {
+        long exerciseId = createExercise("Squat");
+        LoggedWorkout workout = sessions.startEmptyWorkout(1L);
+        WorkoutExercise first = sessions.addExerciseToWorkout(1L, workout.getId(), exerciseId);
+        WorkoutExercise second = sessions.addExerciseToWorkout(1L, workout.getId(), exerciseId);
+        sessions.moveExerciseInWorkout(1L, second.getId(), 0);
+        sessions.updateExerciseNotes(1L, second.getId(), "Brace");
+        sessions.updateExerciseRestTime(1L, second.getId(), 120);
+        SetEntry completed = setService.addSet(1L, second.getId());
+        SetEntry placeholder = setService.addSet(1L, second.getId());
+        UpdateSetEntryRequest update = new UpdateSetEntryRequest();
+        update.setCompleted(true);
+        update.setWeight(100D);
+        update.setReps(5);
+        setService.updateSet(1L, completed.getId(), update);
+
+        SQLiteWorkoutServices rebuilt = new SQLiteWorkoutServices(db,
+                new SQLiteTemplateWorkoutRepository(db), new SQLiteTemplateExerciseRepository(db),
+                new ExerciseServiceImpl(new SQLiteExerciseRepository(db)));
+        ActiveWorkoutDetail restored = rebuilt.getWorkoutSessions().getActiveWorkout(1L).get();
+        assertEquals(workout.getId(), restored.getWorkoutId());
+        assertEquals(workout.getStartedAtEpochMillis(), restored.getStartedAtEpochMillis());
+        assertNull(restored.getTemplateId());
+        assertEquals(2, restored.getExercises().size());
+        ActiveWorkoutExercise top = restored.getExercises().get(0);
+        assertEquals(second.getId(), top.getWorkoutExerciseId());
+        assertEquals("Squat", top.getExerciseNameSnapshot());
+        assertEquals("Brace", top.getNotes());
+        assertEquals(120, top.getRestTimeSeconds());
+        assertEquals(2, top.getSets().size());
+        assertEquals(completed.getId(), top.getSets().get(0).getId());
+        assertTrue(top.getSets().get(0).isCompleted());
+        assertEquals(placeholder.getId(), top.getSets().get(1).getId());
+        assertFalse(top.getSets().get(1).isCompleted());
+        assertEquals(first.getId(), restored.getExercises().get(1).getWorkoutExerciseId());
+        assertTrue(rebuilt.getWorkoutSessions().getActiveWorkout(2L).isEmpty());
+        assertThrows(UnsupportedOperationException.class, () -> top.getSets().clear());
+        sessions.finishWorkout(1L, workout.getId());
+        assertTrue(rebuilt.getWorkoutSessions().getActiveWorkout(1L).isEmpty());
+    }
     private SQLiteDatabase db;
     private WorkoutDatabase helper;
     private ExerciseService exerciseService;

@@ -2,8 +2,11 @@ package com.example.hevygroovy.service;
 
 import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.entity.WorkoutExercise;
+import com.example.hevygroovy.dto.ActiveWorkoutDetail;
+import java.util.Optional;
 
 public interface WorkoutSessionService {
+    Optional<ActiveWorkoutDetail> getActiveWorkout(long userId);
 
     LoggedWorkout startEmptyWorkout(long userID);
 

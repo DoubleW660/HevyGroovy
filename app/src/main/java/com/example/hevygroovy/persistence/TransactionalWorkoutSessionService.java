@@ -4,6 +4,8 @@ import android.database.sqlite.SQLiteDatabase;
 import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.entity.WorkoutExercise;
 import com.example.hevygroovy.service.WorkoutSessionService;
+import com.example.hevygroovy.dto.ActiveWorkoutDetail;
+import java.util.Optional;
 
 /** All delegate repositories must use this same SQLiteDatabase. Call off the UI thread. */
 public final class TransactionalWorkoutSessionService implements WorkoutSessionService {
@@ -13,6 +15,11 @@ public final class TransactionalWorkoutSessionService implements WorkoutSessionS
     public TransactionalWorkoutSessionService(SQLiteDatabase db, WorkoutSessionService delegate) {
         this.delegate = delegate;
         this.transactions = new SQLiteTransactions(db);
+    }
+
+    @Override
+    public Optional<ActiveWorkoutDetail> getActiveWorkout(long userId) {
+        return transactions.run(() -> delegate.getActiveWorkout(userId));
     }
 
     @Override

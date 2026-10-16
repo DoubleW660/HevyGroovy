@@ -21,6 +21,30 @@ import com.example.hevygroovy.repo.WorkoutExerciseRepository;
 
 @ExtendWith(MockitoExtension.class)
 class WorkoutSessionServiceImplTest {
+    @Test
+    void getActiveWorkoutReturnsEmptyWithoutLoadingChildren() {
+        assertTrue(workoutSessionService.getActiveWorkout(1L).isEmpty());
+        verifyNoInteractions(workoutExerciseRepository, setEntryRepository);
+    }
+
+    @Test
+    void getActiveWorkoutRejectsInvalidUsersBeforeRepositoryAccess() {
+        assertThrows(RuntimeException.class, () -> workoutSessionService.getActiveWorkout(0L));
+        assertThrows(RuntimeException.class, () -> workoutSessionService.getActiveWorkout(-1L));
+        verifyNoInteractions(loggedWorkoutRepository, workoutExerciseRepository, setEntryRepository);
+    }
+
+    @Test
+    void getActiveWorkoutRejectsWrongOwnerAndCompletedResults() {
+        LoggedWorkout workout = new LoggedWorkout();
+        workout.setUserId(2L);
+        when(loggedWorkoutRepository.findActiveWorkoutByUserId(1L)).thenReturn(Optional.of(workout));
+        assertThrows(RuntimeException.class, () -> workoutSessionService.getActiveWorkout(1L));
+        workout.setUserId(1L);
+        workout.setEndedAtEpochMillis(1000L);
+        assertThrows(RuntimeException.class, () -> workoutSessionService.getActiveWorkout(1L));
+        verifyNoInteractions(workoutExerciseRepository, setEntryRepository);
+    }
 
     private WorkoutSessionServiceImpl workoutSessionService;
     private ExerciseService exerciseService;

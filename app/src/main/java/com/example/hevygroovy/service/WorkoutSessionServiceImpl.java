@@ -17,6 +17,11 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
+import com.example.hevygroovy.dto.ActiveWorkoutDetail;
+import com.example.hevygroovy.dto.ActiveWorkoutExercise;
+import com.example.hevygroovy.dto.ActiveSetEntry;
 
 public class WorkoutSessionServiceImpl implements WorkoutSessionService {
 
@@ -44,6 +49,31 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
         this.setEntryRepository = setEntryRepository;
         this.templateService = templateService;
         this.exerciseService = exerciseService;
+    }
+
+    @Override
+    public Optional<ActiveWorkoutDetail> getActiveWorkout(long userId) {
+        if (userId <= 0) {
+            throw new RuntimeException("Invalid User Id");
+        }
+        Optional<LoggedWorkout> active = loggedWorkoutRepository.findActiveWorkoutByUserId(userId);
+        if (!active.isPresent()) { return Optional.empty(); }
+        LoggedWorkout workout = active.get();
+        if (workout.getUserId() != userId) {
+            throw new RuntimeException("Workout does not belong to user");
+        }
+        requireActiveWorkout(workout);
+        List<WorkoutExercise> rows = orderedWorkoutExercises(workout.getId());
+        Map<Long, List<SetEntry>> setsByExercise = setEntryRepository.findByLoggedWorkoutId(workout.getId())
+                .stream().collect(Collectors.groupingBy(SetEntry::getWorkoutExerciseId));
+        List<ActiveWorkoutExercise> result = new ArrayList<>();
+        for (WorkoutExercise row : rows) {
+            List<SetEntry> sets = new ArrayList<>(setsByExercise.getOrDefault(row.getId(), List.of()));
+            sets.sort(Comparator.comparingInt(SetEntry::getSetNumber).thenComparingLong(SetEntry::getId));
+            result.add(new ActiveWorkoutExercise(row,
+                    sets.stream().map(ActiveSetEntry::new).collect(Collectors.toList())));
+        }
+        return Optional.of(new ActiveWorkoutDetail(workout, result));
     }
 
     @Override

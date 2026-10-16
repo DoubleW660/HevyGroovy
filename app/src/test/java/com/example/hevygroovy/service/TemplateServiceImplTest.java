@@ -53,6 +53,7 @@ class TemplateServiceImplTest {
         request.setDescription("  Chest and triceps  ");
 
         TemplateWorkout saved = new TemplateWorkout();
+        saved.setUserId(1L);
         saved.setId(1L);
         saved.setTitle("Push Day");
         saved.setDescription("Chest and triceps");
@@ -60,7 +61,7 @@ class TemplateServiceImplTest {
 
         when(templateWorkoutRepository.save(any(TemplateWorkout.class))).thenReturn(saved);
 
-        TemplateSummaryModel result = templateService.createTemplate(request);
+        TemplateSummaryModel result = templateService.createTemplate(1L, request);
 
         assertNotNull(result);
         assertEquals(1L, result.getTemplateWorkoutId());
@@ -72,6 +73,7 @@ class TemplateServiceImplTest {
         verify(templateWorkoutRepository).save(captor.capture());
 
         TemplateWorkout toSave = captor.getValue();
+        assertEquals(1L, toSave.getUserId());
         assertEquals("Push Day", toSave.getTitle());
         assertEquals("Chest and triceps", toSave.getDescription());
         assertFalse(toSave.isArchived());
@@ -79,8 +81,64 @@ class TemplateServiceImplTest {
     }
 
     @Test
+    void allTemplateOperationsRejectAnotherUsersTemplateWithoutWrites() {
+        TemplateWorkout other = new TemplateWorkout();
+        other.setId(10L);
+        other.setUserId(2L);
+        when(templateWorkoutRepository.findById(10L)).thenReturn(Optional.of(other));
+        TemplateExercise child = new TemplateExercise();
+        child.setId(20L);
+        child.setTemplateWorkoutId(10L);
+        when(templateExerciseRepository.findById(20L)).thenReturn(Optional.of(child));
+        AddTemplateExerciseRequest add = new AddTemplateExerciseRequest();
+        add.setTemplateId(10L);
+        add.setExerciseId(30L);
+        List<Runnable> operations = List.of(
+                () -> templateService.updateTemplate(1L, 10L, new UpdateTemplateRequest()),
+                () -> templateService.addExerciseToTemplate(1L, add),
+                () -> templateService.removeExerciseFromTemplate(1L, 20L, 10L),
+                () -> templateService.moveExerciseInTemplate(1L, 20L, 0),
+                () -> templateService.getTemplateDetail(1L, 10L),
+                () -> templateService.archiveTemplate(1L, 10L),
+                () -> templateService.restoreTemplate(1L, 10L));
+        for (Runnable operation : operations) {
+            RuntimeException error = assertThrows(RuntimeException.class, operation::run);
+            assertEquals("Template does not belong to user", error.getMessage());
+        }
+        assertFalse(other.isArchived());
+        verify(templateWorkoutRepository, never()).save(any());
+        verify(templateExerciseRepository, never()).save(any());
+        verify(templateExerciseRepository, never()).delete(anyLong());
+        verifyNoInteractions(exerciseService);
+    }
+
+    @Test
+    void listTemplatesExcludesOtherUsersForBothArchiveModes() {
+        TemplateWorkout mine = new TemplateWorkout();
+        mine.setUserId(1L);
+        mine.setTitle("Mine");
+        TemplateWorkout other = new TemplateWorkout();
+        other.setUserId(2L);
+        when(templateWorkoutRepository.findAll()).thenReturn(List.of(other, mine));
+        when(templateWorkoutRepository.findByArchive(false)).thenReturn(List.of(other, mine));
+        assertEquals(1, templateService.listTemplates(1L, true).size());
+        assertEquals("Mine", templateService.listTemplates(1L, false).get(0).getTitle());
+    }
+
+    @Test
+    void invalidUserCannotCreateOrListTemplates() {
+        for (long userId : new long[]{0L, -1L}) {
+            assertThrows(RuntimeException.class,
+                    () -> templateService.createTemplate(userId, new CreateTemplateRequest()));
+            assertThrows(RuntimeException.class, () -> templateService.listTemplates(userId, true));
+        }
+        verifyNoInteractions(templateWorkoutRepository, templateExerciseRepository, exerciseService);
+    }
+
+    @Test
     void updateTemplate_shouldUpdateTitleAndDescription() {
         TemplateWorkout existing = new TemplateWorkout();
+        existing.setUserId(1L);
         existing.setId(10L);
         existing.setTitle("Old");
         existing.setDescription("Old Desc");
@@ -93,7 +151,7 @@ class TemplateServiceImplTest {
         when(templateWorkoutRepository.findById(10L)).thenReturn(Optional.of(existing));
         when(templateWorkoutRepository.save(any(TemplateWorkout.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        TemplateSummaryModel result = templateService.updateTemplate(10L, request);
+        TemplateSummaryModel result = templateService.updateTemplate(1L, 10L, request);
 
         assertEquals("New Title", result.getTitle());
         assertEquals("New Desc", result.getDescription());
@@ -104,6 +162,7 @@ class TemplateServiceImplTest {
     @Test
     void addExerciseToTemplate_shouldAppendToEndWhenOrderIndexIsNull() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(5L);
         template.setArchived(false);
 
@@ -116,7 +175,7 @@ class TemplateServiceImplTest {
         when(templateWorkoutRepository.findById(5L)).thenReturn(Optional.of(template));
         when(templateExerciseRepository.findMaxOrderIndex(5L)).thenReturn(2);
 
-        templateService.addExerciseToTemplate(request);
+        templateService.addExerciseToTemplate(1L, request);
 
         verify(exerciseService).requireActiveExercise(20L);
 
@@ -133,6 +192,7 @@ class TemplateServiceImplTest {
     @Test
     void addExerciseToTemplate_shouldStartAtZeroWhenTemplateHasNoExercises() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(5L);
         template.setArchived(false);
 
@@ -145,7 +205,7 @@ class TemplateServiceImplTest {
         when(templateWorkoutRepository.findById(5L)).thenReturn(Optional.of(template));
         when(templateExerciseRepository.findMaxOrderIndex(5L)).thenReturn(null);
 
-        templateService.addExerciseToTemplate(request);
+        templateService.addExerciseToTemplate(1L, request);
 
         ArgumentCaptor<TemplateExercise> captor = ArgumentCaptor.forClass(TemplateExercise.class);
         verify(templateExerciseRepository).save(captor.capture());
@@ -158,12 +218,13 @@ class TemplateServiceImplTest {
     @Test
     void archiveTemplate_shouldMarkTemplateArchived() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(1L);
         template.setArchived(false);
 
         when(templateWorkoutRepository.findById(1L)).thenReturn(Optional.of(template));
 
-        templateService.archiveTemplate(1L);
+        templateService.archiveTemplate(1L, 1L);
 
         assertTrue(template.isArchived());
         verify(templateWorkoutRepository).save(template);
@@ -172,12 +233,13 @@ class TemplateServiceImplTest {
     @Test
     void restoreTemplate_shouldMarkTemplateActive() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(1L);
         template.setArchived(true);
 
         when(templateWorkoutRepository.findById(1L)).thenReturn(Optional.of(template));
 
-        templateService.restoreTemplate(1L);
+        templateService.restoreTemplate(1L, 1L);
 
         assertFalse(template.isArchived());
         verify(templateWorkoutRepository).save(template);
@@ -186,12 +248,14 @@ class TemplateServiceImplTest {
     @Test
     void listTemplates_shouldMapRepositoryResults() {
         TemplateWorkout a = new TemplateWorkout();
+        a.setUserId(1L);
         a.setId(1L);
         a.setTitle("Push");
         a.setDescription("Chest");
         a.setArchived(false);
 
         TemplateWorkout b = new TemplateWorkout();
+        b.setUserId(1L);
         b.setId(2L);
         b.setTitle("Legs");
         b.setDescription("Quads");
@@ -199,7 +263,7 @@ class TemplateServiceImplTest {
 
         when(templateWorkoutRepository.findAll()).thenReturn(List.of(a, b));
 
-        List<TemplateSummaryModel> result = templateService.listTemplates(true);
+        List<TemplateSummaryModel> result = templateService.listTemplates(1L, true);
 
         assertEquals(2, result.size());
         assertEquals("Push", result.get(0).getTitle());
@@ -210,6 +274,7 @@ class TemplateServiceImplTest {
     @Test
     void getTemplateDetail_shouldReturnSortedExercises() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(100L);
         template.setTitle("Upper");
         template.setDescription("Upper body");
@@ -244,7 +309,7 @@ class TemplateServiceImplTest {
         when(exerciseService.requireExercise(11L)).thenReturn(exercise1);
         when(exerciseService.requireExercise(22L)).thenReturn(exercise2);
 
-        TemplateDetailModel result = templateService.getTemplateDetail(100L);
+        TemplateDetailModel result = templateService.getTemplateDetail(1L, 100L);
 
         assertNotNull(result);
         assertEquals(100L, result.getTemplateWorkoutId());
@@ -261,6 +326,7 @@ class TemplateServiceImplTest {
     @Test
     void removeExerciseFromTemplate_shouldDeleteAndShiftLaterExercisesDown() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(50L);
         template.setArchived(false);
 
@@ -291,7 +357,7 @@ class TemplateServiceImplTest {
                 .thenReturn(new ArrayList<>(List.of(keep0, shift2, shift3)));
         when(templateExerciseRepository.save(any(TemplateExercise.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        templateService.removeExerciseFromTemplate(200L, 50L);
+        templateService.removeExerciseFromTemplate(1L, 200L, 50L);
 
         verify(templateExerciseRepository).delete(200L);
         assertEquals(1, shift2.getOrderIndex());
@@ -303,6 +369,7 @@ class TemplateServiceImplTest {
     @Test
     void moveExerciseInTemplate_shouldMoveUpAndShiftCrossedRangeDown() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(60L);
         template.setArchived(false);
 
@@ -327,7 +394,7 @@ class TemplateServiceImplTest {
                 .thenReturn(new ArrayList<>(List.of(e0, e1, moved)));
         when(templateExerciseRepository.save(any(TemplateExercise.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        templateService.moveExerciseInTemplate(300L, 0);
+        templateService.moveExerciseInTemplate(1L, 300L, 0);
 
         assertEquals(0, moved.getOrderIndex());
         assertEquals(1, e0.getOrderIndex());
@@ -337,6 +404,7 @@ class TemplateServiceImplTest {
     @Test
     void moveExerciseInTemplate_shouldMoveDownAndShiftCrossedRangeUp() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(70L);
         template.setArchived(false);
 
@@ -361,7 +429,7 @@ class TemplateServiceImplTest {
                 .thenReturn(new ArrayList<>(List.of(moved, e1, e2)));
         when(templateExerciseRepository.save(any(TemplateExercise.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        templateService.moveExerciseInTemplate(400L, 2);
+        templateService.moveExerciseInTemplate(1L, 400L, 2);
 
         assertEquals(2, moved.getOrderIndex());
         assertEquals(0, e1.getOrderIndex());
@@ -371,6 +439,7 @@ class TemplateServiceImplTest {
     @Test
     void moveExerciseInTemplate_shouldDoNothingWhenPositionIsUnchanged() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(80L);
         template.setArchived(false);
 
@@ -389,7 +458,7 @@ class TemplateServiceImplTest {
         when(templateExerciseRepository.findByTemplateWorkoutId(80L))
                 .thenReturn(new ArrayList<>(List.of(e0, moved)));
 
-        templateService.moveExerciseInTemplate(500L, 1);
+        templateService.moveExerciseInTemplate(1L, 500L, 1);
 
         verify(templateExerciseRepository, never()).save(any());
     }
@@ -397,6 +466,7 @@ class TemplateServiceImplTest {
     @Test
     void moveExerciseInTemplate_shouldThrowWhenTargetIndexOutOfBounds() {
         TemplateWorkout template = new TemplateWorkout();
+        template.setUserId(1L);
         template.setId(90L);
         template.setArchived(false);
 
@@ -416,7 +486,7 @@ class TemplateServiceImplTest {
                 .thenReturn(new ArrayList<>(List.of(moved, e1)));
 
         RuntimeException ex = assertThrows(RuntimeException.class,
-                () -> templateService.moveExerciseInTemplate(600L, 5));
+                () -> templateService.moveExerciseInTemplate(1L, 600L, 5));
 
         assertEquals("Position is not available", ex.getMessage());
     }

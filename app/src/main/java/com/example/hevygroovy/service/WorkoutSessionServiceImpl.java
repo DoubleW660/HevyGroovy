@@ -117,7 +117,8 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
             workoutExercise.setExerciseId(exerciseId);
             workoutExercise.setExerciseNameSnapshot(exercise.getTitle());
             workoutExercise.setOrderIndex(current.getOrderIndex());
-            workoutExercise.setRestTimeSeconds(current.getRestTimeSeconds());
+            workoutExercise.setRestTimeSeconds(current.getRestTimeSeconds() == null
+                    ? 0 : current.getRestTimeSeconds());
 
             String lastNote = lastNotesByExerciseId.get(exerciseId);
 

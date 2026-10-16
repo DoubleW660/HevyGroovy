@@ -1,6 +1,7 @@
 package com.example.hevygroovy.dto;
 
 import com.example.hevygroovy.entity.SetEntry;
+import com.example.hevygroovy.entity.enums.Unit;
 
 import java.util.List;
 
@@ -60,7 +61,7 @@ public class WorkoutExerciseHistory {
         this.bestSetVolume = bestSetVolume;
         this.personalRecord = personalRecord;
         this.personalRecordCount = personalRecordCount;
-        this.sets = sets;
+        this.sets = List.copyOf(sets);
     }
 
     public long getWorkoutExerciseId() {
@@ -94,6 +95,9 @@ public class WorkoutExerciseHistory {
     public double getTotalVolume() {
         return totalVolume;
     }
+
+    /** Aggregate weights use KG; individual sets retain their original units. */
+    public Unit getWeightUnit() { return Unit.KG; }
 
     public double getHeaviestWeight() {
         return heaviestWeight;

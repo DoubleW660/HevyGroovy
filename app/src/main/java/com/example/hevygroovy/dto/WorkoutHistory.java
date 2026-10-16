@@ -1,6 +1,7 @@
 package com.example.hevygroovy.dto;
 
 import java.time.Duration;
+import com.example.hevygroovy.entity.enums.Unit;
 
 public class WorkoutHistory {
 
@@ -78,6 +79,9 @@ public class WorkoutHistory {
     public double getTotalVolume() {
         return totalVolume;
     }
+
+    /** Aggregate volume is expressed in kilograms times repetitions. */
+    public Unit getVolumeUnit() { return Unit.KG; }
 
     public int getPersonalRecordCount() {
         return personalRecordCount;

@@ -4,6 +4,10 @@ import android.database.sqlite.SQLiteDatabase;
 import com.example.hevygroovy.dto.UpdateSetEntryRequest;
 import com.example.hevygroovy.service.SetEntryService;
 import com.example.hevygroovy.service.WorkoutSessionService;
+import com.example.hevygroovy.service.TemplateService;
+import com.example.hevygroovy.dto.CreateTemplateRequest;
+import com.example.hevygroovy.dto.UpdateTemplateRequest;
+import com.example.hevygroovy.dto.AddTemplateExerciseRequest;
 import org.junit.jupiter.api.Test;
 import org.mockito.InOrder;
 import java.util.List;
@@ -12,6 +16,33 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class SQLiteTransactionsTest {
+    @Test
+    void everyTemplateOperationRunsInsideTransaction() {
+        CreateTemplateRequest create = new CreateTemplateRequest();
+        UpdateTemplateRequest update = new UpdateTemplateRequest();
+        AddTemplateExerciseRequest add = new AddTemplateExerciseRequest();
+        List<Consumer<TemplateService>> operations = List.of(
+                service -> service.createTemplate(1L, create),
+                service -> service.updateTemplate(1L, 7L, update),
+                service -> service.addExerciseToTemplate(1L, add),
+                service -> service.removeExerciseFromTemplate(1L, 10L, 7L),
+                service -> service.moveExerciseInTemplate(1L, 10L, 2),
+                service -> service.getTemplateDetail(1L, 7L),
+                service -> service.listTemplates(1L, false),
+                service -> service.archiveTemplate(1L, 7L),
+                service -> service.restoreTemplate(1L, 7L));
+        for (Consumer<TemplateService> operation : operations) {
+            SQLiteDatabase db = mock(SQLiteDatabase.class);
+            TemplateService delegate = mock(TemplateService.class);
+            operation.accept(new TransactionalTemplateService(db, delegate));
+            InOrder order = inOrder(db, delegate);
+            order.verify(db).beginTransaction();
+            operation.accept(order.verify(delegate));
+            order.verify(db).setTransactionSuccessful();
+            order.verify(db).endTransaction();
+            verifyNoMoreInteractions(db, delegate);
+        }
+    }
     @Test
     void commitsAfterSuccessfulOperationAndReturnsResult() {
         SQLiteDatabase db = mock(SQLiteDatabase.class);

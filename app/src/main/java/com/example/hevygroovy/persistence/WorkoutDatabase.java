@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 /** Local workout storage. Use one shared instance and access it off the UI thread. */
 public final class WorkoutDatabase extends SQLiteOpenHelper {
     public WorkoutDatabase(Context context) {
-        super(context.getApplicationContext(), "hevy_groovy.db", null, 1);
+        super(context.getApplicationContext(), "hevy_groovy.db", null, 2);
     }
 
     @Override
@@ -47,10 +47,33 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
                 + "set_type TEXT NOT NULL CHECK(set_type IN ('WARMUP', 'NORMAL', 'FAILURE', 'DROP')), "
                 + "created_at INTEGER NOT NULL)");
         db.execSQL("CREATE INDEX set_exercise_number ON set_entry(workout_exercise_id, set_number, id)");
+        createLibraryTables(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        if (oldVersion == 1 && newVersion == 2) {
+            createLibraryTables(db);
+            return;
+        }
         throw new IllegalStateException("Missing database migration from " + oldVersion + " to " + newVersion);
+    }
+
+    private void createLibraryTables(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE exercise (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "title TEXT NOT NULL, description TEXT, primary_muscle TEXT, "
+                + "secondary_muscles TEXT NOT NULL DEFAULT '', archived INTEGER NOT NULL DEFAULT 0 "
+                + "CHECK(archived IN (0,1)))");
+        db.execSQL("CREATE INDEX exercise_title ON exercise(title COLLATE NOCASE)");
+        db.execSQL("CREATE TABLE template_workout (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "user_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT, "
+                + "created_at INTEGER NOT NULL, archived INTEGER NOT NULL DEFAULT 0 CHECK(archived IN (0,1)))");
+        db.execSQL("CREATE TABLE template_exercise (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "template_workout_id INTEGER NOT NULL REFERENCES template_workout(id), "
+                + "exercise_id INTEGER NOT NULL REFERENCES exercise(id), "
+                + "order_index INTEGER NOT NULL CHECK(order_index >= 0), "
+                + "rest_time_seconds INTEGER CHECK(rest_time_seconds >= 0))");
+        db.execSQL("CREATE INDEX template_exercise_order "
+                + "ON template_exercise(template_workout_id, order_index, id)");
     }
 }

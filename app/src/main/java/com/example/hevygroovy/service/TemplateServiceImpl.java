@@ -30,7 +30,8 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public TemplateSummaryModel createTemplate(CreateTemplateRequest request) {
+    public TemplateSummaryModel createTemplate(long userId, CreateTemplateRequest request) {
+        requireUserId(userId);
         if (request == null){
             throw new RuntimeException("Request is Required");
         }
@@ -48,6 +49,7 @@ public class TemplateServiceImpl implements TemplateService {
         long currentTime = System.currentTimeMillis();
 
         TemplateWorkout templateWorkout = new TemplateWorkout();
+        templateWorkout.setUserId(userId);
         templateWorkout.setTitle(title);
         templateWorkout.setDescription(description);
         templateWorkout.setCreatedAtEpochMillis(currentTime);
@@ -59,13 +61,13 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public TemplateSummaryModel updateTemplate(long templateId, UpdateTemplateRequest request) {
+    public TemplateSummaryModel updateTemplate(long userId, long templateId, UpdateTemplateRequest request) {
 
         if(request == null){
             throw new RuntimeException("No Template Update Request Found");
         }
 
-        TemplateWorkout templateWorkout = requireActiveTemplate(templateId);
+        TemplateWorkout templateWorkout = requireActiveTemplate(userId, templateId);
 
         String newTitle = request.getTitle();
         String newDesc = request.getDescription();
@@ -87,13 +89,13 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public void addExerciseToTemplate(AddTemplateExerciseRequest request) {
+    public void addExerciseToTemplate(long userId, AddTemplateExerciseRequest request) {
 
         if(request == null){
             throw new RuntimeException("No Template Exercise Request Found");
         }
 
-        requireActiveTemplate(request.getTemplateId());
+        requireActiveTemplate(userId, request.getTemplateId());
 
         exerciseService.requireActiveExercise(request.getExerciseId());
 
@@ -122,12 +124,12 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public void removeExerciseFromTemplate(long templateExerciseId, long templateId) {
+    public void removeExerciseFromTemplate(long userId, long templateExerciseId, long templateId) {
         if(templateId <= 0){
             throw new RuntimeException("Invalid Template Id");
         }
 
-        requireActiveTemplate(templateId);
+        requireActiveTemplate(userId, templateId);
 
         TemplateExercise templateExercise = requireTemplateExercise(templateExerciseId);
 
@@ -151,7 +153,8 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public void moveExerciseInTemplate(long templateExerciseId, int orderIndex) {
+    public void moveExerciseInTemplate(long userId, long templateExerciseId, int orderIndex) {
+        requireUserId(userId);
         if(templateExerciseId <= 0){
             throw new RuntimeException("Invalid Template Id");
         }
@@ -163,7 +166,7 @@ public class TemplateServiceImpl implements TemplateService {
         TemplateExercise templateExercise = requireTemplateExercise(templateExerciseId);
 
         long templateId = templateExercise.getTemplateWorkoutId();
-        requireActiveTemplate(templateId);
+        requireActiveTemplate(userId, templateId);
 
         List<TemplateExercise> exercises = templateExerciseRepository.findByTemplateWorkoutId(templateId);
         exercises.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
@@ -201,11 +204,11 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public TemplateDetailModel getTemplateDetail(long templateId) {
+    public TemplateDetailModel getTemplateDetail(long userId, long templateId) {
         if(templateId <= 0){
             throw new RuntimeException("Invalid Template Id");
         }
-        TemplateWorkout templateWorkout = requireTemplate(templateId);
+        TemplateWorkout templateWorkout = requireOwnedTemplate(userId, templateId);
 
         List<TemplateExercise> exercises = templateExerciseRepository.findByTemplateWorkoutId(templateId);
         exercises.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
@@ -222,25 +225,28 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public List<TemplateSummaryModel> listTemplates(boolean includeArchived) {
+    public List<TemplateSummaryModel> listTemplates(long userId, boolean includeArchived) {
+        requireUserId(userId);
 
         if(includeArchived){
             return templateWorkoutRepository.findAll()
                     .stream()
+                    .filter(template -> template.getUserId() == userId)
                     .map(this::toSummaryModel)
                     .toList();
         }
 
         return templateWorkoutRepository.findByArchive(false)
                 .stream()
+                .filter(template -> template.getUserId() == userId)
                 .map(this::toSummaryModel)
                 .toList();
 
     }
 
     @Override
-    public void archiveTemplate(long templateId) {
-        TemplateWorkout templateWorkout = requireTemplate(templateId);
+    public void archiveTemplate(long userId, long templateId) {
+        TemplateWorkout templateWorkout = requireOwnedTemplate(userId, templateId);
 
         if(templateWorkout.isArchived()){
             throw new RuntimeException("Template Already Archived");
@@ -252,8 +258,8 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
-    public void restoreTemplate(long templateId) {
-        TemplateWorkout templateWorkout = requireTemplate(templateId);
+    public void restoreTemplate(long userId, long templateId) {
+        TemplateWorkout templateWorkout = requireOwnedTemplate(userId, templateId);
 
         if(!templateWorkout.isArchived()){
             throw new RuntimeException("Template Already Active");
@@ -314,14 +320,29 @@ public class TemplateServiceImpl implements TemplateService {
         return templateWorkoutOptional.get();
     }
 
-    private TemplateWorkout requireActiveTemplate(long templateId){
-        TemplateWorkout templateWorkout = requireTemplate(templateId);
+    private TemplateWorkout requireActiveTemplate(long userId, long templateId){
+        TemplateWorkout templateWorkout = requireOwnedTemplate(userId, templateId);
 
         if(templateWorkout.isArchived()){
             throw new RuntimeException("Template is Archived");
         }
 
         return templateWorkout;
+    }
+
+    private void requireUserId(long userId) {
+        if (userId <= 0) {
+            throw new RuntimeException("Invalid User Id");
+        }
+    }
+
+    private TemplateWorkout requireOwnedTemplate(long userId, long templateId) {
+        requireUserId(userId);
+        TemplateWorkout template = requireTemplate(templateId);
+        if (template.getUserId() != userId) {
+            throw new RuntimeException("Template does not belong to user");
+        }
+        return template;
     }
 
     private TemplateExercise requireTemplateExercise(long templateExerciseId){

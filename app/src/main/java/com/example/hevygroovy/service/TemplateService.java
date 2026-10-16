@@ -10,21 +10,21 @@ import java.util.List;
 
 public interface TemplateService {
 
-    TemplateSummaryModel createTemplate(CreateTemplateRequest request);
+    TemplateSummaryModel createTemplate(long userId, CreateTemplateRequest request);
 
-    TemplateSummaryModel updateTemplate(long templateId, UpdateTemplateRequest request);
+    TemplateSummaryModel updateTemplate(long userId, long templateId, UpdateTemplateRequest request);
 
-    void addExerciseToTemplate(AddTemplateExerciseRequest request);
+    void addExerciseToTemplate(long userId, AddTemplateExerciseRequest request);
 
-    void removeExerciseFromTemplate(long templateExerciseId, long templateId);
+    void removeExerciseFromTemplate(long userId, long templateExerciseId, long templateId);
 
-    void moveExerciseInTemplate(long templateExerciseId, int orderIndex);
+    void moveExerciseInTemplate(long userId, long templateExerciseId, int orderIndex);
 
-    TemplateDetailModel getTemplateDetail(long templateId);
+    TemplateDetailModel getTemplateDetail(long userId, long templateId);
 
-    List<TemplateSummaryModel> listTemplates(boolean includeArchived);
+    List<TemplateSummaryModel> listTemplates(long userId, boolean includeArchived);
 
-    void archiveTemplate(long templateId);
+    void archiveTemplate(long userId, long templateId);
 
-    void restoreTemplate(long templateId);
+    void restoreTemplate(long userId, long templateId);
 }

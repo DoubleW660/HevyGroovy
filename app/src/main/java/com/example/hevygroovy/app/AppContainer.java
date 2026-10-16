@@ -14,12 +14,16 @@ public final class AppContainer implements AutoCloseable {
     private final HistoryGateway history;
     private final ProfileGateway profile;
 
-    public AppContainer(Context context) { this(context, "hevy_groovy.db"); }
+    public AppContainer(Context context) { this(context, "hevy_groovy.db", true); }
 
     public AppContainer(Context context, String databaseName) {
+        this(context, databaseName, false);
+    }
+
+    public AppContainer(Context context, String databaseName, boolean seedCatalog) {
         Context app = context.getApplicationContext();
         appWorker = new AppWorker(worker, app.getMainExecutor(),
-                () -> new SQLiteAppStorage(app, databaseName), () -> new LocalUserIdentity(app).getUserId());
+                () -> new SQLiteAppStorage(app, databaseName, seedCatalog), () -> new LocalUserIdentity(app).getUserId());
         UserPreferences preferences = new UserPreferences(app);
         workouts = new ServiceWorkoutGateway(appWorker, preferences::readDefaultUnit);
         library = new ServiceLibraryGateway(appWorker);

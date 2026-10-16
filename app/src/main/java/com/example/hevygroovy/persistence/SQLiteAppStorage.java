@@ -14,22 +14,33 @@ public final class SQLiteAppStorage implements AppServices {
     private final WorkoutHistoryQueryService history;
 
     public SQLiteAppStorage(Context context) {
-        this(context, "hevy_groovy.db");
+        this(context, "hevy_groovy.db", true);
     }
 
     /** Named storage also supports isolated integration tests and local profiles. */
     public SQLiteAppStorage(Context context, String databaseName) {
+        this(context, databaseName, false);
+    }
+
+    /** Explicit catalog opt-in keeps isolated test/profile databases free of bundled fixtures. */
+    public SQLiteAppStorage(Context context, String databaseName, boolean seedCatalog) {
         helper = new WorkoutDatabase(context, databaseName);
-        SQLiteDatabase db = helper.getWritableDatabase();
-        exercises = new ExerciseServiceImpl(new SQLiteExerciseRepository(db));
-        SQLiteTemplateWorkoutRepository templateRows = new SQLiteTemplateWorkoutRepository(db);
-        SQLiteTemplateExerciseRepository templateExercises = new SQLiteTemplateExerciseRepository(db);
-        templates = new TransactionalTemplateService(db,
-                new TemplateServiceImpl(templateRows, templateExercises, exercises));
-        workouts = new SQLiteWorkoutServices(db, templateRows, templateExercises, exercises);
-        history = new TransactionalWorkoutHistoryService(db, new WorkoutHistoryQueryServiceImpl(
-                new SQLiteLoggedWorkoutRepository(db), new SQLiteWorkoutExerciseRepository(db),
-                new SQLiteSetEntryRepository(db)));
+        try {
+            SQLiteDatabase db = helper.getWritableDatabase();
+            if (seedCatalog) { BundledExerciseCatalog.seed(context, db); }
+            exercises = new ExerciseServiceImpl(new SQLiteExerciseRepository(db));
+            SQLiteTemplateWorkoutRepository templateRows = new SQLiteTemplateWorkoutRepository(db);
+            SQLiteTemplateExerciseRepository templateExercises = new SQLiteTemplateExerciseRepository(db);
+            templates = new TransactionalTemplateService(db,
+                    new TemplateServiceImpl(templateRows, templateExercises, exercises));
+            workouts = new SQLiteWorkoutServices(db, templateRows, templateExercises, exercises);
+            history = new TransactionalWorkoutHistoryService(db, new WorkoutHistoryQueryServiceImpl(
+                    new SQLiteLoggedWorkoutRepository(db), new SQLiteWorkoutExerciseRepository(db),
+                    new SQLiteSetEntryRepository(db)));
+        } catch (RuntimeException | Error failure) {
+            try { helper.close(); } catch (RuntimeException closeFailure) { failure.addSuppressed(closeFailure); }
+            throw failure;
+        }
     }
 
     public ExerciseService getExercises() { return exercises; }

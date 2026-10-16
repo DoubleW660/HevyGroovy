@@ -13,6 +13,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hevygroovy.dto.*
 import com.example.hevygroovy.entity.enums.MuscleGroup
@@ -49,6 +50,7 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
     var creating by rememberSaveable { mutableStateOf(false) }
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var archiveId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var guideId by rememberSaveable { mutableStateOf<Long?>(null) }
     val filtered = state.exercises.filter { (includeArchived || !it.isArchived) && it.title.contains(search, true) }
     LibraryPage("Exercise library", model) {
         item(key = "controls") {
@@ -68,9 +70,16 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
                     Text(exercise.title, style = MaterialTheme.typography.titleLarge)
                     Text(exercise.primaryMuscle?.displayName() ?: "Other", style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary)
-                    if (!exercise.description.isNullOrBlank()) Text(exercise.description)
+                    if (!exercise.description.isNullOrBlank()) Text(exercise.description,
+                        maxLines = 3, overflow = TextOverflow.Ellipsis)
                     if (exercise.isArchived) Text("Archived")
                     Row {
+                        if (!exercise.description.isNullOrBlank()) {
+                            TextButton(onClick = { guideId = exercise.id },
+                                modifier = Modifier.testTag("guide-exercise-${exercise.id}").semantics {
+                                    contentDescription = "Read guide for ${exercise.title}"
+                                }) { Text("Guide") }
+                        }
                         TextButton(onClick = { editingId = exercise.id }, enabled = !state.busy,
                             modifier = Modifier.testTag("edit-exercise-${exercise.id}")) { Text("Edit exercise") }
                         TextButton(onClick = {
@@ -82,6 +91,9 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
                 }
             }
         }
+    }
+    state.exercises.find { it.id == guideId && !it.description.isNullOrBlank() }?.let { exercise ->
+        ExerciseGuideDialog(exercise, onDismiss = { guideId = null })
     }
     val editing = state.exercises.find { it.id == editingId }
     if (creating || editing != null) {
@@ -96,6 +108,22 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
             model.archiveExercise(exercise.id, true); archiveId = null
         }
     }
+}
+
+@Composable
+private fun ExerciseGuideDialog(exercise: CatalogExercise, onDismiss: () -> Unit) {
+    val paragraphs = remember(exercise.description) {
+        exercise.description.orEmpty().split(Regex("\\n\\s*\\n"))
+    }
+    AlertDialog(onDismissRequest = onDismiss, modifier = Modifier.testTag("exercise-guide-dialog"),
+        title = { Text(exercise.title) },
+        text = {
+            LazyColumn(Modifier.heightIn(max = 400.dp).testTag("exercise-guide-instructions"),
+                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                itemsIndexed(paragraphs) { _, paragraph -> Text(paragraph) }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss, modifier = Modifier.testTag("close-exercise-guide")) { Text("Close") } })
 }
 
 @Composable

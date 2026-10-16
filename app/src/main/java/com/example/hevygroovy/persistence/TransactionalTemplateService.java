@@ -45,6 +45,11 @@ public final class TransactionalTemplateService implements TemplateService {
     }
 
     @Override
+    public void updateExerciseRestTime(long userId, long rowId, int seconds) {
+        transactions.run(() -> { delegate.updateExerciseRestTime(userId, rowId, seconds); return null; });
+    }
+
+    @Override
     public TemplateDetailModel getTemplateDetail(long userId, long templateId) {
         return transactions.read(() -> delegate.getTemplateDetail(userId, templateId));
     }

@@ -222,6 +222,16 @@ public class TemplateServiceImpl implements TemplateService {
     }
 
     @Override
+    public void updateExerciseRestTime(long userId, long templateExerciseId, int restSeconds) {
+        requireUserId(userId);
+        TemplateExercise row = requireTemplateExercise(templateExerciseId);
+        requireActiveTemplate(userId, row.getTemplateWorkoutId());
+        if (restSeconds < 0) { throw new IllegalArgumentException("Rest seconds cannot be negative"); }
+        row.setRestTimeSeconds(restSeconds);
+        templateExerciseRepository.save(row);
+    }
+
+    @Override
     public TemplateDetailModel getTemplateDetail(long userId, long templateId) {
         if(templateId <= 0){
             throw new RuntimeException("Invalid Template Id");

@@ -27,6 +27,37 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class TemplateServiceImplTest {
     @Test
+    void restTargetUpdateValidatesBeforeMutatingAndSavesOnce() {
+        TemplateWorkout parent = new TemplateWorkout();
+        parent.setUserId(1L);
+        TemplateExercise row = new TemplateExercise();
+        row.setTemplateWorkoutId(10L);
+        row.setRestTimeSeconds(60);
+        when(templateWorkoutRepository.findById(10L)).thenReturn(Optional.of(parent));
+        when(templateExerciseRepository.findById(20L)).thenReturn(Optional.of(row));
+        assertThrows(IllegalArgumentException.class, () -> templateService.updateExerciseRestTime(1L, 20L, -1));
+        assertEquals(Integer.valueOf(60), row.getRestTimeSeconds());
+        verify(templateExerciseRepository, never()).save(any());
+        templateService.updateExerciseRestTime(1L, 20L, 90);
+        assertEquals(Integer.valueOf(90), row.getRestTimeSeconds());
+        verify(templateExerciseRepository).save(row);
+    }
+
+    @Test
+    void restTargetUpdateRejectsArchivedTemplateWithoutMutation() {
+        TemplateWorkout parent = new TemplateWorkout();
+        parent.setUserId(1L);
+        parent.setArchived(true);
+        TemplateExercise row = new TemplateExercise();
+        row.setTemplateWorkoutId(10L);
+        row.setRestTimeSeconds(60);
+        when(templateWorkoutRepository.findById(10L)).thenReturn(Optional.of(parent));
+        when(templateExerciseRepository.findById(20L)).thenReturn(Optional.of(row));
+        assertThrows(RuntimeException.class, () -> templateService.updateExerciseRestTime(1L, 20L, 90));
+        assertEquals(Integer.valueOf(60), row.getRestTimeSeconds());
+        verify(templateExerciseRepository, never()).save(any());
+    }
+    @Test
     void templateDescriptionCanBeOmittedBlankOrCleared() {
         TemplateWorkout existing = new TemplateWorkout();
         existing.setUserId(1L);
@@ -162,6 +193,7 @@ class TemplateServiceImplTest {
         add.setTemplateId(10L);
         add.setExerciseId(30L);
         List<Runnable> operations = List.of(
+                () -> templateService.updateExerciseRestTime(1L, 20L, 90),
                 () -> templateService.updateTemplate(1L, 10L, new UpdateTemplateRequest()),
                 () -> templateService.addExerciseToTemplate(1L, add),
                 () -> templateService.removeExerciseFromTemplate(1L, 20L, 10L),

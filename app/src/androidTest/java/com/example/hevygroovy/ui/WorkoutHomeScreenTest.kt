@@ -30,6 +30,7 @@ class WorkoutHomeScreenTest {
     }
 
     private class FakeGateway : WorkoutGateway {
+        override fun startFromTemplate(templateId: Long, callback: WorkoutGateway.Callback) = error("Unexpected template start")
         override fun finish(workoutId: Long, callback: WorkoutGateway.Callback) = error("Unexpected finish")
         override fun updateWorkout(workoutId: Long, name: String, notes: String, callback: WorkoutGateway.Callback) = error("Unexpected edit")
         override fun createExercise(title: String, primaryMuscle: com.example.hevygroovy.entity.enums.MuscleGroup, callback: WorkoutGateway.Callback) = error("Unexpected create")

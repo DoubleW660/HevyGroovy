@@ -36,6 +36,7 @@ public interface WorkoutGateway {
 
     void load(Callback callback);
     void startEmpty(Callback callback);
+    void startFromTemplate(long templateId, Callback callback);
     void discard(long workoutId, Callback callback);
     void finish(long workoutId, Callback callback);
     void updateWorkout(long workoutId, String name, String notes, Callback callback);

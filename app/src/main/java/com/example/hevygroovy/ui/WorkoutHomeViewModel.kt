@@ -40,6 +40,11 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
         execute { gateway.startEmpty(it) }
     }
 
+    fun startFromTemplate(templateId: Long) {
+        if (!state.loaded || state.loading || state.activeWorkout != null || templateId <= 0) return
+        execute { gateway.startFromTemplate(templateId, it) }
+    }
+
     fun discardWorkout() {
         if (state.loading) return
         val id = state.activeWorkout?.workoutId ?: return

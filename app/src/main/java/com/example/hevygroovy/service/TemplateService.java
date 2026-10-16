@@ -19,6 +19,7 @@ public interface TemplateService {
     void removeExerciseFromTemplate(long userId, long templateExerciseId, long templateId);
 
     void moveExerciseInTemplate(long userId, long templateExerciseId, int orderIndex);
+    void updateExerciseRestTime(long userId, long templateExerciseId, int restSeconds);
 
     TemplateDetailModel getTemplateDetail(long userId, long templateId);
 

@@ -6,7 +6,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.lifecycle.ViewModelProvider
 import com.example.hevygroovy.ui.WorkoutHomeViewModel
-import com.example.hevygroovy.ui.WorkoutHomeScreen
+import com.example.hevygroovy.ui.WorkoutApp
+import com.example.hevygroovy.ui.LibraryViewModel
 import com.example.hevygroovy.ui.theme.HevyGroovyTheme
 
 class MainActivity : ComponentActivity() {
@@ -16,9 +17,10 @@ class MainActivity : ComponentActivity() {
         val container = (application as HevyGroovyApplication).container
         val viewModel = ViewModelProvider(this, WorkoutHomeViewModel.Factory(container))
             .get(WorkoutHomeViewModel::class.java)
+        val library = ViewModelProvider(this, LibraryViewModel.Factory(container)).get(LibraryViewModel::class.java)
         setContent {
             HevyGroovyTheme {
-                WorkoutHomeScreen(viewModel)
+                WorkoutApp(viewModel, library)
             }
         }
     }

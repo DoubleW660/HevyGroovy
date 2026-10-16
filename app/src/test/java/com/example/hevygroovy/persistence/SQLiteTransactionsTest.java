@@ -59,6 +59,7 @@ class SQLiteTransactionsTest {
                 service -> service.addExerciseToTemplate(1L, add),
                 service -> service.removeExerciseFromTemplate(1L, 10L, 7L),
                 service -> service.moveExerciseInTemplate(1L, 10L, 2),
+                service -> service.updateExerciseRestTime(1L, 10L, 90),
                 service -> service.getTemplateDetail(1L, 7L),
 
                 service -> service.archiveTemplate(1L, 7L),

@@ -44,17 +44,17 @@ class EditorRecoveryTest {
         compose.runOnUiThread { model.refresh() }
         compose.setContent { HevyGroovyTheme { TemplateLibraryScreen(model, false) {} } }
         compose.onNodeWithTag("open-template-7").performClick()
-        compose.onNodeWithText("Edit template").performClick()
+        compose.onNodeWithText("Edit routine").performClick()
         compose.onNodeWithTag("template-name").performTextReplacement("Unsaved template")
-        compose.onNodeWithText("Save template").performClick()
+        compose.onNodeWithText("Save routine").performClick()
         compose.runOnIdle { fake.fail() }
         compose.onNodeWithTag("template-name").assertTextContains("Unsaved template")
-        compose.onNodeWithText("Save template").assertIsEnabled().performClick()
+        compose.onNodeWithText("Save routine").assertIsEnabled().performClick()
         compose.runOnIdle { fake.fail(CommittedRefreshException(IllegalStateException("Read failed"), 7L)) }
         compose.onNodeWithTag("template-name").assertDoesNotExist()
-        compose.onNodeWithText("Edit template").assertIsNotEnabled()
+        compose.onNodeWithText("Edit routine").assertIsNotEnabled()
         compose.onNodeWithText("Retry").performScrollTo().performClick()
-        compose.onNodeWithText("Edit template").assertIsEnabled()
+        compose.onNodeWithText("Edit routine").assertIsEnabled()
         assertEquals(2, fake.writes)
     }
 
@@ -66,7 +66,7 @@ class EditorRecoveryTest {
         val restoration = StateRestorationTester(compose)
         restoration.setContent { HevyGroovyTheme { TemplateLibraryScreen(current.value, false) {} } }
         compose.onNodeWithTag("open-template-7").performClick()
-        compose.onNodeWithText("Edit template").performClick()
+        compose.onNodeWithText("Edit routine").performClick()
         compose.onNodeWithTag("template-name").performTextReplacement("Restored draft")
         compose.onNodeWithTag("template-description").performTextReplacement("Unsaved description")
         val restoredGateway = LibraryFake().apply { delayLoads = true }
@@ -76,7 +76,7 @@ class EditorRecoveryTest {
             current.value.refresh()
         }
         restoration.emulateSavedInstanceStateRestore()
-        compose.onNodeWithText("Loading template…").assertIsDisplayed()
+        compose.onNodeWithText("Loading routine…").assertIsDisplayed()
         compose.runOnIdle { restoredGateway.succeed(detail = true) }
         compose.onNodeWithTag("template-name").assertTextContains("Restored draft")
         compose.onNodeWithTag("template-description").assertTextContains("Unsaved description")

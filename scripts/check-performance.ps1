@@ -130,7 +130,8 @@ foreach ($file in $files) {
         $description = "$brand $model ($deviceName), Android API $sdk".Trim()
         if (-not $model -and -not $deviceName) { $description = 'Device metadata unavailable; inspect raw JSON.' }
         $sources.Add([pscustomobject]@{ Path = $file.FullName; Device = $description })
-        foreach ($entry in @(Get-Property $document 'benchmarks')) {
+        $benchmarks = Get-Property $document 'benchmarks'
+        foreach ($entry in $benchmarks) {
             if ($null -eq $entry) { continue }
             $name = [string](Get-Property $entry 'name')
             if ($name -notmatch '^(coldStartup|libraryLoad|templateOpen|setSave|libraryScroll)(?:\[|$)') { continue }

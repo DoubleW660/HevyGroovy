@@ -145,6 +145,7 @@ class SQLiteTransactionsTest {
         UpdateSetEntryRequest request = new UpdateSetEntryRequest();
         List<Consumer<SetEntryService>> operations = List.of(
                 service -> service.addSet(1L, 10L),
+                service -> service.addSet(1L, 10L, com.example.hevygroovy.entity.enums.Unit.KG),
                 service -> service.updateSet(1L, 50L, request),
                 service -> service.deleteSet(1L, 50L));
         for (Consumer<SetEntryService> operation : operations) {

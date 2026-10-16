@@ -59,6 +59,39 @@ public class SetEntryServiceImplTest {
     }
 
     @Test
+    void addSet_selectedUnitIsSavedWithoutChangingExistingSetUnits() {
+        LoggedWorkout workout = new LoggedWorkout();
+        workout.setId(20L);
+        workout.setUserId(1L);
+        WorkoutExercise exercise = new WorkoutExercise();
+        exercise.setId(10L);
+        exercise.setLoggedWorkoutId(20L);
+        SetEntry previous = new SetEntry();
+        previous.setSetNumber(1);
+        previous.setUnit(LB);
+        previous.setWeight(135);
+        when(workoutExerciseRepository.findById(10L)).thenReturn(Optional.of(exercise));
+        when(loggedWorkoutRepository.findById(20L)).thenReturn(Optional.of(workout));
+        when(setEntryRepository.findByWorkoutExerciseId(10L)).thenReturn(List.of(previous));
+        when(setEntryRepository.save(any(SetEntry.class))).thenAnswer(call -> call.getArgument(0));
+
+        SetEntry added = setEntryService.addSet(1L, 10L, KG);
+
+        Assertions.assertEquals(KG, added.getUnit());
+        Assertions.assertEquals(2, added.getSetNumber());
+        Assertions.assertEquals(LB, previous.getUnit());
+        Assertions.assertEquals(135, previous.getWeight());
+        verify(setEntryRepository).save(added);
+        verify(setEntryRepository, never()).save(previous);
+    }
+
+    @Test
+    void addSet_missingSelectedUnitFailsBeforeAnyWrite() {
+        assertThrows(IllegalArgumentException.class, () -> setEntryService.addSet(1L, 10L, null));
+        org.mockito.Mockito.verifyNoInteractions(setEntryRepository, workoutExerciseRepository, loggedWorkoutRepository);
+    }
+
+    @Test
     void addSet_validWorkoutExercise_createsFirstSet() {
         long userId = 1L;
         long workoutExerciseId = 10L;

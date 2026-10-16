@@ -22,6 +22,12 @@ android {
     }
 
     buildTypes {
+        qa {
+            initWith debug
+            applicationIdSuffix '.qa'
+            versionNameSuffix '-qa'
+            matchingFallbacks = ['debug']
+        }
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
@@ -46,9 +52,11 @@ android {
             useJUnitPlatform()
         }
     }
+    testBuildType = providers.gradleProperty('phoneChecks').getOrElse('false').toBoolean() ? 'qa' : 'debug'
 }
 
 dependencies {
+    qaImplementation libs.androidx.compose.ui.test.manifest
     benchmarkImplementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     implementation libs.androidx.core.ktx
     implementation libs.androidx.lifecycle.runtime.ktx

@@ -11,6 +11,8 @@ public final class AppContainer implements AutoCloseable {
     private final AppWorker appWorker;
     private final WorkoutGateway workouts;
     private final LibraryGateway library;
+    private final HistoryGateway history;
+    private final ProfileGateway profile;
 
     public AppContainer(Context context) { this(context, "hevy_groovy.db"); }
 
@@ -18,12 +20,17 @@ public final class AppContainer implements AutoCloseable {
         Context app = context.getApplicationContext();
         appWorker = new AppWorker(worker, app.getMainExecutor(),
                 () -> new SQLiteAppStorage(app, databaseName), () -> new LocalUserIdentity(app).getUserId());
-        workouts = new ServiceWorkoutGateway(appWorker);
+        UserPreferences preferences = new UserPreferences(app);
+        workouts = new ServiceWorkoutGateway(appWorker, preferences::readDefaultUnit);
         library = new ServiceLibraryGateway(appWorker);
+        history = new ServiceHistoryGateway(appWorker);
+        profile = new ServiceProfileGateway(appWorker, preferences);
     }
 
     public WorkoutGateway getWorkouts() { return workouts; }
     public LibraryGateway getLibrary() { return library; }
+    public HistoryGateway getHistory() { return history; }
+    public ProfileGateway getProfile() { return profile; }
 
     /** For explicit shutdown outside main; normal app storage lives until process exit. */
     @Override

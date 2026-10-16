@@ -33,6 +33,12 @@ public class SetEntryServiceImpl implements SetEntryService{
 
     @Override
     public SetEntry addSet(long userId, long workoutExerciseId){
+        return addSet(userId, workoutExerciseId, Unit.LB);
+    }
+
+    @Override
+    public SetEntry addSet(long userId, long workoutExerciseId, Unit unit){
+        if (unit == null) throw new IllegalArgumentException("Set unit is required");
 
         //Check the passed variables are not invalid Ids <= 0
         if (workoutExerciseId <= 0) {
@@ -67,7 +73,7 @@ public class SetEntryServiceImpl implements SetEntryService{
         int lastSetNumber = existingSets.stream().mapToInt(SetEntry::getSetNumber).max().orElse(0);
         setEntry.setSetNumber(lastSetNumber + 1);
         setEntry.setSetType(SetType.NORMAL);
-        setEntry.setUnit(Unit.LB);
+        setEntry.setUnit(unit);
         setEntry.setCreatedAtEpochMillis(System.currentTimeMillis());
 
         return setEntryRepository.save(setEntry);

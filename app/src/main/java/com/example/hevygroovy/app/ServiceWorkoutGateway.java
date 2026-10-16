@@ -2,16 +2,24 @@ package com.example.hevygroovy.app;
 
 import com.example.hevygroovy.dto.*;
 import com.example.hevygroovy.entity.enums.MuscleGroup;
+import com.example.hevygroovy.entity.enums.Unit;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /** Maps synchronous workout services to immutable screen snapshots on one worker. */
 final class ServiceWorkoutGateway implements WorkoutGateway {
     private final AppWorker worker;
+    private final Supplier<Unit> defaultUnit;
     private List<WorkoutHistory> history;
     private List<ExerciseOption> exercises;
 
-    ServiceWorkoutGateway(AppWorker worker) { this.worker = worker; }
+    ServiceWorkoutGateway(AppWorker worker) { this(worker, () -> Unit.LB); }
+
+    ServiceWorkoutGateway(AppWorker worker, Supplier<Unit> defaultUnit) {
+        this.worker = worker;
+        this.defaultUnit = defaultUnit;
+    }
 
     private void submit(Runnable mutation, Callback callback) {
         submit(mutation, callback, false, false);
@@ -96,7 +104,7 @@ final class ServiceWorkoutGateway implements WorkoutGateway {
 
     @Override
     public void addSet(long workoutExerciseId, Callback callback) {
-        submit(() -> worker.services().getSetEntries().addSet(worker.userId(), workoutExerciseId), callback);
+        submit(() -> worker.services().getSetEntries().addSet(worker.userId(), workoutExerciseId, defaultUnit.get()), callback);
     }
 
     @Override

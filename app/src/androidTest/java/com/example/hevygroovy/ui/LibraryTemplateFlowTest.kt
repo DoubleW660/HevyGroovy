@@ -20,11 +20,15 @@ class LibraryTemplateFlowTest {
         val gateway = AppContainer(context, name)
         lateinit var workouts: WorkoutHomeViewModel
         lateinit var library: LibraryViewModel
+        lateinit var history: HistoryViewModel
+        lateinit var profile: ProfileViewModel
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
             workouts = WorkoutHomeViewModel(gateway.workouts); library = LibraryViewModel(gateway.library)
+            history = HistoryViewModel(gateway.history)
+            profile = ProfileViewModel(gateway.profile)
         }
         try {
-            compose.setContent { HevyGroovyTheme { WorkoutApp(workouts, library) } }
+            compose.setContent { HevyGroovyTheme { WorkoutApp(workouts, library, history, profile) } }
             awaitWorkouts(workouts)
             compose.onNodeWithText("Exercises", useUnmergedTree = true).performClick()
             awaitLibrary(library)
@@ -50,12 +54,12 @@ class LibraryTemplateFlowTest {
             awaitLibrary(library)
             assertFalse(library.state.exercises.single().isArchived)
 
-            compose.onNodeWithText("Templates", useUnmergedTree = true).performClick()
+            compose.onNodeWithTag("templates-tab").performClick()
             awaitLibrary(library)
-            compose.onNodeWithText("New template").performClick()
+            compose.onNodeWithText("New routine").performClick()
             compose.onNodeWithTag("template-name").performTextReplacement("Upper A")
             compose.onNodeWithTag("template-description").performTextReplacement("Routine")
-            compose.onNodeWithText("Save template").performClick()
+            compose.onNodeWithText("Save routine").performClick()
             awaitLibrary(library)
             val templateId = library.state.selectedTemplate!!.id
 
@@ -75,15 +79,15 @@ class LibraryTemplateFlowTest {
             awaitLibrary(library)
             assertEquals(90, library.state.selectedTemplate!!.exercises.single().restSeconds)
 
-            compose.onNodeWithText("Archive template").performScrollTo().performClick()
+            compose.onNodeWithText("Archive routine").performScrollTo().performClick()
             compose.onNodeWithTag("confirm-library-action").performClick()
             awaitLibrary(library)
-            compose.onNodeWithText("Restore template").performClick()
+            compose.onNodeWithText("Restore routine").performClick()
             awaitLibrary(library)
-            compose.onNodeWithText("Edit template").performClick()
+            compose.onNodeWithText("Edit routine").performClick()
             compose.onNodeWithTag("template-name").performTextReplacement("Upper revised")
             compose.onNodeWithTag("template-description").performTextClearance()
-            compose.onNodeWithText("Save template").performClick()
+            compose.onNodeWithText("Save routine").performClick()
             awaitLibrary(library)
             assertEquals("", library.state.selectedTemplate!!.description)
             compose.onNodeWithText("Start this workout").performClick()
@@ -91,6 +95,7 @@ class LibraryTemplateFlowTest {
             assertEquals(templateId, workouts.state.activeWorkout!!.templateId)
             assertEquals("Upper revised", workouts.state.activeWorkout!!.nameSnapshot)
             assertEquals(90, workouts.state.activeWorkout!!.exercises.single().restTimeSeconds)
+            val workoutId = workouts.state.activeWorkout!!.workoutId
 
             compose.onNodeWithContentDescription("Add set to Bench revised").performScrollTo().performClick()
             awaitWorkouts(workouts)
@@ -102,17 +107,51 @@ class LibraryTemplateFlowTest {
             awaitWorkouts(workouts)
             compose.onNodeWithContentDescription("Complete set 1 for Bench revised").performScrollTo().performClick()
             awaitWorkouts(workouts)
-            compose.onNodeWithText("Finish workout").performScrollTo().performClick()
+
+            // Finish from a session resumed over an already-loaded History tab. The
+            // automatic detail navigation must also refresh that tab's existing list.
+            compose.onNodeWithTag("minimize-workout").performClick()
+            compose.onNodeWithTag("history-tab").performClick()
+            awaitHistoryList(history)
+            compose.runOnIdle { assertTrue(history.state.items.isEmpty()) }
+            compose.onNodeWithTag("resume-workout").performClick()
+            compose.onNodeWithTag("workout-list").performScrollToNode(hasText("Finish workout"))
+            compose.onNodeWithText("Finish workout").performClick()
             compose.onNodeWithText("Finish", useUnmergedTree = true).performClick()
             awaitWorkouts(workouts)
             assertNull(workouts.state.activeWorkout)
             assertEquals("Upper revised", workouts.state.history.single().nameSnapshot)
             assertEquals(250.0, workouts.state.history.single().totalVolume, 0.0)
+            awaitHistoryDetail(history, workoutId)
+            compose.onNodeWithTag("history-detail").assertIsDisplayed()
+            compose.runOnIdle { assertEquals(250.0, history.state.detail!!.totalVolume, 0.0) }
+            compose.onNodeWithTag("history-back").performClick()
+            awaitHistoryList(history)
+            compose.runOnIdle { assertEquals(listOf(workoutId), history.state.items.map { it.workoutId }) }
+            compose.onNodeWithTag("history-card-$workoutId").assertIsDisplayed().performClick()
+            awaitHistoryDetail(history, workoutId)
+
+            // Explicit list shortcuts must not reopen a previously selected detail.
+            compose.onNodeWithTag("home-tab").performClick()
+            awaitWorkouts(workouts)
+            compose.onNodeWithTag("workouts-ready").performScrollToNode(hasText("View all"))
+            compose.onNodeWithText("View all").performClick()
+            awaitHistoryList(history)
+            compose.onNodeWithTag("history-detail").assertDoesNotExist()
+            compose.onNodeWithTag("history-card-$workoutId").assertIsDisplayed().performClick()
+            awaitHistoryDetail(history, workoutId)
+
+            compose.onNodeWithTag("profile-tab").performClick()
+            compose.onNodeWithTag("profile-screen").performScrollToNode(hasText("Workout history"))
+            compose.onNodeWithText("Workout history").performClick()
+            awaitHistoryList(history)
+            compose.onNodeWithTag("history-detail").assertDoesNotExist()
+            compose.onNodeWithTag("history-card-$workoutId").assertIsDisplayed()
         } finally { gateway.close(); context.deleteDatabase(name) }
     }
 
     private fun addTemplateExercise(model: LibraryViewModel, id: Long) {
-        compose.onNodeWithText("Add template exercise").performScrollTo().performClick()
+        compose.onNodeWithText("Add routine exercise").performScrollTo().performClick()
         compose.onNodeWithTag("template-picker-$id").performClick()
         awaitLibrary(model)
     }
@@ -123,5 +162,19 @@ class LibraryTemplateFlowTest {
     private fun awaitWorkouts(model: WorkoutHomeViewModel) {
         compose.waitUntil(10_000) { model.state.loaded && !model.state.loading }
         compose.runOnIdle { assertNull(model.state.error) }
+    }
+    private fun awaitHistoryList(model: HistoryViewModel) {
+        compose.waitUntil(10_000) { model.state.loaded && !model.state.loading }
+        compose.runOnIdle {
+            assertNull(model.state.error)
+            assertNull(model.state.selectedWorkoutId)
+        }
+        compose.onNodeWithTag("history-list").assertIsDisplayed()
+    }
+    private fun awaitHistoryDetail(model: HistoryViewModel, workoutId: Long) {
+        compose.waitUntil(10_000) {
+            !model.state.loading && !model.state.detailLoading && model.state.detail?.workoutId == workoutId
+        }
+        compose.runOnIdle { assertNull(model.state.detailError) }
     }
 }

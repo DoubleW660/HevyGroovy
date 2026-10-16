@@ -23,7 +23,12 @@ private fun LibraryPage(title: String, model: LibraryViewModel, readyTag: String
     Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) readyTag else "library-loading")) { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("library-list"), contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            item(key = "heading") { Text(title, style = MaterialTheme.typography.headlineLarge) }
+            item(key = "heading") {
+                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("YOUR TRAINING", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                    Text(title, style = MaterialTheme.typography.headlineLarge)
+                }
+            }
             if (state.loading) item(key = "loading") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             state.error?.let { error ->
                 item(key = "error") {
@@ -58,10 +63,11 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
         }
         if (state.loaded && filtered.isEmpty()) item(key = "empty") { Text("No matching exercises.") }
         items(filtered, key = { it.id }) { exercise ->
-            Card(Modifier.fillMaxWidth()) {
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(exercise.title, style = MaterialTheme.typography.titleLarge)
-                    Text(exercise.primaryMuscle?.displayName() ?: "Other")
+                    Text(exercise.primaryMuscle?.displayName() ?: "Other", style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.primary)
                     if (!exercise.description.isNullOrBlank()) Text(exercise.description)
                     if (exercise.isArchived) Text("Archived")
                     Row {
@@ -133,40 +139,44 @@ private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, err
 }
 
 @Composable
-fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean, onStart: (Long) -> Unit) {
+fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean,
+    header: (@Composable () -> Unit)? = null, onStart: (Long) -> Unit) {
     val state = model.state
     if (state.selectedTemplate != null) {
         TemplateEditorScreen(model, state.selectedTemplate, workoutBlocked, onStart)
         return
     }
     if (state.selectedTemplateId != null) {
-        LibraryPage("Workout template", model) {
-            item { Text(if (state.loading) "Loading template…" else "Template couldn't be loaded.") }
-            item { TextButton(onClick = model::showTemplateList, enabled = !state.loading) { Text("All templates") } }
+        LibraryPage("Routine", model) {
+            item { Text(if (state.loading) "Loading routine…" else "Routine couldn't be loaded.") }
+            item { TextButton(onClick = model::showTemplateList, enabled = !state.loading) { Text("All routines") } }
         }
         return
     }
     var includeArchived by rememberSaveable { mutableStateOf(false) }
     val visible = state.templates.filter { includeArchived || !it.isArchived }
-    LibraryPage("Workout templates", model) {
+    LibraryPage("Workout", model) {
+        if (header != null) item(key = "quick-start") { header() }
         item(key = "controls") {
+            Text("My routines", style = MaterialTheme.typography.titleLarge)
+            Spacer(Modifier.height(12.dp))
             Button(onClick = model::beginTemplateDetails, enabled = !state.busy,
-                modifier = Modifier.testTag(if (state.loaded && !state.busy) "template-list-ready" else "template-list-loading")) { Text("New template") }
+                modifier = Modifier.testTag(if (state.loaded && !state.busy) "template-list-ready" else "template-list-loading")) { Text("New routine") }
             Row {
                 Checkbox(includeArchived, onCheckedChange = { includeArchived = it },
-                    modifier = Modifier.semantics { contentDescription = "Show archived templates" })
+                    modifier = Modifier.semantics { contentDescription = "Show archived routines" })
                 Text("Show archived", Modifier.padding(top = 12.dp))
             }
         }
-        if (state.loaded && visible.isEmpty()) item(key = "empty") { Text("Create a template to save your exercise routine.") }
+        if (state.loaded && visible.isEmpty()) item(key = "empty") { Text("Build a routine with your favorite exercises.") }
         items(visible, key = { it.id }) { template ->
-            Card(Modifier.fillMaxWidth()) {
+            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.padding(16.dp)) {
                     Text(template.title, style = MaterialTheme.typography.titleLarge)
-                    if (!template.description.isNullOrBlank()) Text(template.description)
+                    if (!template.description.isNullOrBlank()) Text(template.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (template.isArchived) Text("Archived")
                     TextButton(onClick = { model.openTemplate(template.id) }, enabled = !state.busy,
-                        modifier = Modifier.testTag("open-template-${template.id}")) { Text("Open template") }
+                        modifier = Modifier.testTag("open-template-${template.id}")) { Text("Open routine") }
                 }
             }
         }
@@ -183,22 +193,22 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
     LibraryPage(template.title, model, readyTag = "template-ready") {
         item(key = "controls") {
             TextButton(onClick = model::showTemplateList, enabled = !busy,
-                modifier = Modifier.testTag("template-list-back")) { Text("All templates") }
+                modifier = Modifier.testTag("template-list-back")) { Text("All routines") }
             if (!template.description.isNullOrBlank()) Text(template.description)
             if (template.isArchived) {
-                Text("Archived template")
-                Button(onClick = { model.archiveTemplate(false) }, enabled = !busy) { Text("Restore template") }
+                Text("Archived routine")
+                Button(onClick = { model.archiveTemplate(false) }, enabled = !busy) { Text("Restore routine") }
             } else {
                 Row {
-                    TextButton(onClick = model::beginTemplateDetails, enabled = !busy) { Text("Edit template") }
-                    TextButton(onClick = { archiving = true }, enabled = !busy) { Text("Archive template") }
+                    TextButton(onClick = model::beginTemplateDetails, enabled = !busy) { Text("Edit routine") }
+                    TextButton(onClick = { archiving = true }, enabled = !busy) { Text("Archive routine") }
                 }
                 Button(onClick = { onStart(template.id) }, enabled = !busy && !workoutBlocked) { Text("Start this workout") }
                 if (workoutBlocked) Text("Finish or discard your current workout before starting another.")
-                OutlinedButton(onClick = model::beginTemplateExercise, enabled = !busy) { Text("Add template exercise") }
+                OutlinedButton(onClick = model::beginTemplateExercise, enabled = !busy) { Text("Add routine exercise") }
             }
         }
-        if (template.exercises.isEmpty()) item(key = "empty") { Text("This template has no exercises yet.") }
+        if (template.exercises.isEmpty()) item(key = "empty") { Text("Add exercises to build your routine.") }
         itemsIndexed(template.exercises, key = { _, row -> row.id }) { index, row ->
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -222,10 +232,10 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
     }
     if (model.templateDraft?.kind == "details") TemplateDetailsDialog(model)
     if (model.templateDraft?.kind == "add") TemplateExercisePicker(model)
-    if (archiving) Confirmation("Archive this template?", "You can restore it later. Existing workouts won't change.",
+    if (archiving) Confirmation("Archive this routine?", "You can restore it later. Existing workouts won't change.",
         "Archive", busy, { archiving = false }) { model.archiveTemplate(true); archiving = false }
     template.exercises.find { it.id == removing }?.let { row ->
-        Confirmation("Remove ${row.title}?", "This only removes the exercise from this template.", "Remove", busy,
+        Confirmation("Remove ${row.title}?", "This only removes the exercise from this routine.", "Remove", busy,
             { removing = null }) { model.removeExercise(row.id); removing = null }
     }
     model.templateDraft?.takeIf { it.kind == "rest" }?.let { draft ->
@@ -246,18 +256,18 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
 @Composable
 private fun TemplateDetailsDialog(model: LibraryViewModel) {
     val draft = model.templateDraft ?: return
-    AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text(if (draft.templateId == null) "New template" else "Edit template") },
+    AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text(if (draft.templateId == null) "New routine" else "Edit routine") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                OutlinedTextField(draft.title, { model.updateTemplateDraft(title = it) }, label = { Text("Template name") }, singleLine = true,
+                OutlinedTextField(draft.title, { model.updateTemplateDraft(title = it) }, label = { Text("Routine name") }, singleLine = true,
                     modifier = Modifier.testTag("template-name"))
                 OutlinedTextField(draft.description, { model.updateTemplateDraft(description = it) }, label = { Text("Description") },
                     modifier = Modifier.testTag("template-description"))
             }
         },
         confirmButton = { TextButton(onClick = { model.saveTemplate(draft.templateId, draft.title, draft.description) },
-            enabled = !model.state.busy && draft.title.isNotBlank()) { Text("Save template") } },
+            enabled = !model.state.busy && draft.title.isNotBlank()) { Text("Save routine") } },
         dismissButton = { TextButton(onClick = model::closeTemplateDraft) { Text("Cancel") } })
 }
 
@@ -268,7 +278,7 @@ private fun TemplateExercisePicker(model: LibraryViewModel) {
     val rest = draft.rest
     val restValue = rest.toIntOrNull()
     val options = model.state.exercises.filter { !it.isArchived && it.title.contains(search, true) }
-    AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text("Choose template exercise") },
+    AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text("Choose routine exercise") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }

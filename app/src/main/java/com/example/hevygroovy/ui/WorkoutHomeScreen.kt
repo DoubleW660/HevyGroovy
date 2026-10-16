@@ -14,7 +14,7 @@ import java.text.DateFormat
 import java.util.Date
 
 @Composable
-fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel) {
+fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = true) {
     val state = viewModel.state
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) "workouts-ready" else "workouts-loading")) { padding ->
@@ -24,8 +24,8 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel) {
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             item(key = "title") {
-                Text("HevyGroovy", style = MaterialTheme.typography.headlineLarge)
-                Text("Your workouts", style = MaterialTheme.typography.titleMedium)
+                Text(if (showHistory) "HevyGroovy" else "Workout", style = MaterialTheme.typography.headlineLarge)
+                Text(if (showHistory) "Your workouts" else "One set at a time.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             if (state.loading) {
                 item(key = "loading") { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) }
@@ -61,6 +61,7 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel) {
                         WorkoutExerciseCard(viewModel, exercise, index, active.exercises.size)
                     }
                 }
+                if (showHistory) {
                 item(key = "recent-heading") {
                     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                         Text("Recent workouts", style = MaterialTheme.typography.titleLarge)
@@ -78,6 +79,7 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel) {
                             Text("${workout.totalExercises} exercises · ${workout.totalSets} completed sets")
                         }
                     }
+                }
                 }
             }
         }

@@ -17,8 +17,8 @@ public interface SetEntryRepository {
     List<SetEntry> findByLoggedWorkoutId(long loggedWorkoutId);
 
     /**
-     * Returns whether a recorded set exists through a WorkoutExercise belonging
-     * to this workout. Exercise rows alone do not make a workout nonempty.
+     * Returns whether a completed set exists through a WorkoutExercise belonging
+     * to this workout. Placeholder sets and exercise rows do not make it nonempty.
      * Implement as an existence query without loading all sets.
      */
     boolean existsByLoggedWorkoutId(long loggedWorkoutId);

@@ -75,7 +75,7 @@ public final class SQLiteWorkoutExerciseRepository implements WorkoutExerciseRep
                     + "JOIN logged_workout w ON w.id = we.logged_workout_id "
                     + "WHERE w.user_id = ? AND w.ended_at IS NOT NULL "
                     + "AND we.exercise_id IN (" + placeholders + ") "
-                    + "AND EXISTS (SELECT 1 FROM set_entry s WHERE s.workout_exercise_id = we.id) "
+                    + "AND EXISTS (SELECT 1 FROM set_entry s WHERE s.workout_exercise_id = we.id AND s.completed = 1) "
                     + "ORDER BY w.ended_at DESC, w.id DESC, we.id DESC";
             try (Cursor cursor = db.rawQuery(sql, args)) {
                 while (cursor.moveToNext()) {

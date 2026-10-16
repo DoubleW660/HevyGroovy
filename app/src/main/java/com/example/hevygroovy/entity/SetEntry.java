@@ -4,6 +4,11 @@ import com.example.hevygroovy.entity.enums.SetType;
 import com.example.hevygroovy.entity.enums.Unit;
 
 public class SetEntry {
+    private boolean completed;
+
+    public boolean isCompleted() { return completed; }
+
+    public void setCompleted(boolean completed) { this.completed = completed; }
 
     private long id;
 

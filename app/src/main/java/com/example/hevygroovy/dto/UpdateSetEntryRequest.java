@@ -4,6 +4,12 @@ import com.example.hevygroovy.entity.enums.SetType;
 import com.example.hevygroovy.entity.enums.Unit;
 
 public class UpdateSetEntryRequest {
+    // Null leaves completion unchanged; false marks the set as a placeholder again.
+    private Boolean completed;
+
+    public Boolean getCompleted() { return completed; }
+
+    public void setCompleted(Boolean completed) { this.completed = completed; }
 
     private Integer reps;
     private Double weight;

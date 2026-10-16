@@ -16,6 +16,26 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class WorkoutHistoryQueryServiceImplTest {
+    @Test
+    void placeholdersAreExcludedFromSummaryDetailAndExerciseStatistics() {
+        LoggedWorkout workout = workout(100L, 1L, 1000L, 2000L);
+        when(workouts.findByUserId(1L)).thenReturn(List.of(workout));
+        when(workouts.findById(100L)).thenReturn(Optional.of(workout));
+        when(exercises.findByLoggedWorkoutId(100L)).thenReturn(List.of(exercise(10L, 0)));
+        SetEntry completed = set(10L, 1, 50, 5, Unit.KG);
+        SetEntry placeholder = set(10L, 2, 999, 999, Unit.KG);
+        placeholder.setCompleted(false);
+        when(sets.findByLoggedWorkoutId(100L)).thenReturn(List.of(completed, placeholder));
+        WorkoutHistory summary = service.getWorkoutHistory(1L).get(0);
+        WorkoutHistoryDetail detail = service.getWorkoutHistoryDetail(1L, 100L);
+        assertEquals(1, summary.getTotalSets());
+        assertEquals(5, summary.getTotalReps());
+        assertEquals(250D, summary.getTotalVolume());
+        assertEquals(1, detail.getTotalSets());
+        assertEquals(250D, detail.getTotalVolume());
+        assertEquals(1, detail.getExercises().get(0).getSets().size());
+        assertEquals(50D, detail.getExercises().get(0).getHeaviestWeight());
+    }
     @Mock private LoggedWorkoutRepository workouts;
     @Mock private WorkoutExerciseRepository exercises;
     @Mock private SetEntryRepository sets;
@@ -139,6 +159,7 @@ class WorkoutHistoryQueryServiceImplTest {
         row.setWeight(weight);
         row.setReps(reps);
         row.setUnit(unit);
+        row.setCompleted(true);
         return row;
     }
 }

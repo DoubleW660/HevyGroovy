@@ -61,7 +61,8 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
                     workoutExerciseRepository.findByLoggedWorkoutId(workoutId);
 
             List<SetEntry> setEntries =
-                    setEntryRepository.findByLoggedWorkoutId(workoutId);
+                    setEntryRepository.findByLoggedWorkoutId(workoutId).stream()
+                            .filter(SetEntry::isCompleted).collect(Collectors.toList());
 
             int totalReps = 0;
             double totalVolume = 0.0;
@@ -119,7 +120,8 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
         rows.sort(Comparator.comparingInt(WorkoutExercise::getOrderIndex)
                 .thenComparingLong(WorkoutExercise::getId));
         Map<Long, List<SetEntry>> setsByExercise = setEntryRepository.findByLoggedWorkoutId(workoutId)
-                .stream().collect(Collectors.groupingBy(SetEntry::getWorkoutExerciseId));
+                .stream().filter(SetEntry::isCompleted)
+                .collect(Collectors.groupingBy(SetEntry::getWorkoutExerciseId));
         List<WorkoutExerciseHistory> details = new ArrayList<>();
         int totalSets = 0;
         int totalReps = 0;

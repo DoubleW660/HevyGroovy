@@ -33,6 +33,7 @@ public final class SQLiteSetEntryRepository implements SetEntryRepository {
         values.put("rpe", set.getRpe());
         values.put("set_type", set.getSetType() == null ? null : set.getSetType().name());
         values.put("created_at", set.getCreatedAtEpochMillis());
+        values.put("completed", set.isCompleted() ? 1 : 0);
         if (set.getId() == 0) {
             set.setId(db.insertOrThrow("set_entry", null, values));
         } else if (set.getId() < 0 || db.update("set_entry", values,
@@ -68,7 +69,7 @@ public final class SQLiteSetEntryRepository implements SetEntryRepository {
     @Override
     public boolean existsByLoggedWorkoutId(long id) {
         try (Cursor cursor = db.rawQuery("SELECT 1 FROM set_entry s JOIN workout_exercise we "
-                + "ON we.id = s.workout_exercise_id WHERE we.logged_workout_id = ? LIMIT 1",
+                + "ON we.id = s.workout_exercise_id WHERE we.logged_workout_id = ? AND s.completed = 1 LIMIT 1",
                 new String[]{Long.toString(id)})) {
             return cursor.moveToFirst();
         }
@@ -87,6 +88,7 @@ public final class SQLiteSetEntryRepository implements SetEntryRepository {
                 set.setUnit(Unit.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("unit"))));
                 set.setSetType(SetType.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("set_type"))));
                 set.setCreatedAtEpochMillis(cursor.getLong(cursor.getColumnIndexOrThrow("created_at")));
+                set.setCompleted(cursor.getInt(cursor.getColumnIndexOrThrow("completed")) != 0);
                 int rest = cursor.getColumnIndexOrThrow("rest_seconds");
                 set.setRestSeconds(cursor.isNull(rest) ? null : cursor.getInt(rest));
                 int rpe = cursor.getColumnIndexOrThrow("rpe");

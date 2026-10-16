@@ -7,7 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 /** Local workout storage. Use one shared instance and access it off the UI thread. */
 public final class WorkoutDatabase extends SQLiteOpenHelper {
     public WorkoutDatabase(Context context) {
-        super(context.getApplicationContext(), "hevy_groovy.db", null, 2);
+        super(context.getApplicationContext(), "hevy_groovy.db", null, 3);
     }
 
     @Override
@@ -45,18 +45,24 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
                 + "rest_seconds INTEGER CHECK(rest_seconds >= 0), "
                 + "rpe REAL CHECK(rpe >= 0 AND rpe <= 10), "
                 + "set_type TEXT NOT NULL CHECK(set_type IN ('WARMUP', 'NORMAL', 'FAILURE', 'DROP')), "
-                + "created_at INTEGER NOT NULL)");
+                + "created_at INTEGER NOT NULL, completed INTEGER NOT NULL DEFAULT 0 CHECK(completed IN (0,1)))");
         db.execSQL("CREATE INDEX set_exercise_number ON set_entry(workout_exercise_id, set_number, id)");
         createLibraryTables(db);
     }
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion == 1 && newVersion == 2) {
-            createLibraryTables(db);
-            return;
+        if (oldVersion < 1 || newVersion > 3 || oldVersion >= newVersion) {
+            throw new IllegalStateException("Missing database migration from " + oldVersion + " to " + newVersion);
         }
-        throw new IllegalStateException("Missing database migration from " + oldVersion + " to " + newVersion);
+        if (oldVersion < 2 && newVersion >= 2) {
+            createLibraryTables(db);
+        }
+        if (oldVersion < 3 && newVersion >= 3) {
+            // Preserve the pre-v3 meaning of existing rows as recorded sets.
+            db.execSQL("ALTER TABLE set_entry ADD COLUMN completed INTEGER NOT NULL DEFAULT 1 "
+                    + "CHECK(completed IN (0,1))");
+        }
     }
 
     private void createLibraryTables(SQLiteDatabase db) {

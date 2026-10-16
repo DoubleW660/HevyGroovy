@@ -22,7 +22,7 @@ public interface WorkoutExerciseRepository {
     /**
      * Returns notes keyed by exercise ID from the user's latest completed
      * performance across all templates, including workouts without a template.
-     * A performance requires at least one SetEntry for that WorkoutExercise.
+     * A performance requires at least one completed SetEntry for that WorkoutExercise.
      * Choose the latest by endedAtEpochMillis, then workout ID, then
      * workout-exercise ID (all descending) to resolve ties.
      * Preserve null or blank notes from the latest performance; do not fall

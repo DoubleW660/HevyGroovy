@@ -19,6 +19,32 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class SetEntryValidationTest {
+    @Test
+    void completionCanBeSetClearedAndOmitted() {
+        SetEntry set = ownedSet();
+        assertFalse(set.isCompleted());
+        when(sets.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        UpdateSetEntryRequest request = new UpdateSetEntryRequest();
+        request.setCompleted(true);
+        service.updateSet(1L, 50L, request);
+        assertTrue(set.isCompleted());
+        service.updateSet(1L, 50L, new UpdateSetEntryRequest());
+        assertTrue(set.isCompleted());
+        request.setCompleted(false);
+        service.updateSet(1L, 50L, request);
+        assertFalse(set.isCompleted());
+    }
+
+    @Test
+    void invalidUpdateCannotChangeCompletionState() {
+        SetEntry set = ownedSet();
+        UpdateSetEntryRequest request = new UpdateSetEntryRequest();
+        request.setCompleted(true);
+        request.setReps(-1);
+        assertThrows(RuntimeException.class, () -> service.updateSet(1L, 50L, request));
+        assertFalse(set.isCompleted());
+        verify(sets, never()).save(any());
+    }
     @Mock private SetEntryRepository sets;
     @Mock private WorkoutExerciseRepository exercises;
     @Mock private LoggedWorkoutRepository workouts;
@@ -118,7 +144,9 @@ class SetEntryValidationTest {
         last.setSetNumber(4);
         when(sets.findByWorkoutExerciseId(10L)).thenReturn(List.of(last, first));
         when(sets.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        assertEquals(5, service.addSet(1L, 10L).getSetNumber());
+        SetEntry added = service.addSet(1L, 10L);
+        assertEquals(5, added.getSetNumber());
+        assertFalse(added.isCompleted());
     }
 
     @Test

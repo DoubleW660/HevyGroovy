@@ -81,6 +81,9 @@ public class SetEntryServiceImpl implements SetEntryService{
         }
         SetEntry setEntry = requireOwnedActiveSet(userId, setEntryId);
         validateUpdate(request);
+        if (request.getCompleted() != null) {
+            setEntry.setCompleted(request.getCompleted());
+        }
 
         if (request.getReps() != null){
 

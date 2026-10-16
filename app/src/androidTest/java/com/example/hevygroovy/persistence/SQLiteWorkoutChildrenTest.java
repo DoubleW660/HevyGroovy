@@ -14,6 +14,49 @@ import static org.junit.Assert.*;
 
 @RunWith(AndroidJUnit4.class)
 public class SQLiteWorkoutChildrenTest {
+    @Test
+    public void placeholdersDoNotQualifyForFinishOrHistoricalNotes() {
+        long workout = workout(1L, 100L);
+        WorkoutExercise row = exercise(workout, 9L, 0, "Placeholder note", false);
+        SetEntry placeholder = set(row.getId(), 1);
+        placeholder.setCompleted(false);
+        sets.save(placeholder);
+        assertFalse(sets.findById(placeholder.getId()).get().isCompleted());
+        assertFalse(sets.existsByLoggedWorkoutId(workout));
+        assertTrue(exercises.findLastNotesForUserExercises(1L, List.of(9L)).isEmpty());
+        placeholder.setCompleted(true);
+        sets.save(placeholder);
+        assertTrue(sets.existsByLoggedWorkoutId(workout));
+        assertEquals("Placeholder note", exercises.findLastNotesForUserExercises(1L, List.of(9L)).get(9L));
+    }
+
+    @Test
+    public void versionTwoMigrationPreservesExistingSetsAsCompleted() {
+        // Reproduce the v2 set table; other tables already have their pre-v3 layout.
+        db.execSQL("DROP TABLE set_entry");
+        db.execSQL("CREATE TABLE set_entry (id INTEGER PRIMARY KEY AUTOINCREMENT, "
+                + "workout_exercise_id INTEGER NOT NULL REFERENCES workout_exercise(id), "
+                + "set_number INTEGER NOT NULL, reps INTEGER NOT NULL, weight REAL NOT NULL, "
+                + "unit TEXT NOT NULL, rest_seconds INTEGER, rpe REAL, set_type TEXT NOT NULL, "
+                + "created_at INTEGER NOT NULL)");
+        long workout = workout(1L, 100L);
+        WorkoutExercise row = exercise(workout, 9L, 0, "Legacy note", false);
+        db.execSQL("INSERT INTO set_entry (workout_exercise_id, set_number, reps, weight, unit, set_type, created_at) "
+                + "VALUES (?, 1, 5, 100, 'LB', 'NORMAL', 10)", new Object[]{row.getId()});
+        WorkoutDatabase helper = new WorkoutDatabase(
+                InstrumentationRegistry.getInstrumentation().getTargetContext());
+        helper.onUpgrade(db, 2, 3);
+        helper.close();
+        assertTrue(sets.findByWorkoutExerciseId(row.getId()).get(0).isCompleted());
+        assertTrue(sets.existsByLoggedWorkoutId(workout));
+        SetEntry fresh = new SetEntry();
+        fresh.setWorkoutExerciseId(row.getId());
+        fresh.setSetNumber(2);
+        fresh.setUnit(Unit.LB);
+        fresh.setSetType(SetType.NORMAL);
+        sets.save(fresh);
+        assertFalse(sets.findById(fresh.getId()).get().isCompleted());
+    }
     private SQLiteDatabase db;
     private SQLiteLoggedWorkoutRepository workouts;
     private SQLiteWorkoutExerciseRepository exercises;
@@ -145,6 +188,7 @@ public class SQLiteWorkoutChildrenTest {
         set.setWorkoutExerciseId(exercise);
         set.setSetNumber(number);
         set.setReps(5);
+        set.setCompleted(true);
         set.setWeight(100D);
         set.setUnit(Unit.LB);
         set.setSetType(SetType.NORMAL);

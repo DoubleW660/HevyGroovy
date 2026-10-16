@@ -18,10 +18,10 @@ import com.example.hevygroovy.dto.*
 import com.example.hevygroovy.entity.enums.MuscleGroup
 
 @Composable
-private fun LibraryPage(title: String, model: LibraryViewModel, content: LazyListScope.() -> Unit) {
+private fun LibraryPage(title: String, model: LibraryViewModel, readyTag: String = "library-ready", content: LazyListScope.() -> Unit) {
     val state = model.state
-    Scaffold { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp),
+    Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) readyTag else "library-loading")) { padding ->
+        LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("library-list"), contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item(key = "heading") { Text(title, style = MaterialTheme.typography.headlineLarge) }
             if (state.loading) item(key = "loading") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
@@ -150,7 +150,8 @@ fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean, onSt
     val visible = state.templates.filter { includeArchived || !it.isArchived }
     LibraryPage("Workout templates", model) {
         item(key = "controls") {
-            Button(onClick = model::beginTemplateDetails, enabled = !state.busy) { Text("New template") }
+            Button(onClick = model::beginTemplateDetails, enabled = !state.busy,
+                modifier = Modifier.testTag(if (state.loaded && !state.busy) "template-list-ready" else "template-list-loading")) { Text("New template") }
             Row {
                 Checkbox(includeArchived, onCheckedChange = { includeArchived = it },
                     modifier = Modifier.semantics { contentDescription = "Show archived templates" })
@@ -179,9 +180,10 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
     val busy = model.state.busy
     var archiving by rememberSaveable(template.id) { mutableStateOf(false) }
     var removing by rememberSaveable(template.id) { mutableStateOf<Long?>(null) }
-    LibraryPage(template.title, model) {
+    LibraryPage(template.title, model, readyTag = "template-ready") {
         item(key = "controls") {
-            TextButton(onClick = model::showTemplateList, enabled = !busy) { Text("All templates") }
+            TextButton(onClick = model::showTemplateList, enabled = !busy,
+                modifier = Modifier.testTag("template-list-back")) { Text("All templates") }
             if (!template.description.isNullOrBlank()) Text(template.description)
             if (template.isArchived) {
                 Text("Archived template")

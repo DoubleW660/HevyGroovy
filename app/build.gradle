@@ -26,6 +26,13 @@ android {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
+        benchmark {
+            initWith release
+            debuggable false
+            signingConfig signingConfigs.debug
+            applicationIdSuffix '.benchmark'
+            matchingFallbacks = ['release']
+        }
     }
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_11
@@ -42,6 +49,7 @@ android {
 }
 
 dependencies {
+    benchmarkImplementation 'androidx.profileinstaller:profileinstaller:1.4.1'
     implementation libs.androidx.core.ktx
     implementation libs.androidx.lifecycle.runtime.ktx
     implementation libs.androidx.lifecycle.viewmodel

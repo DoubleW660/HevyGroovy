@@ -10,9 +10,11 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import com.example.hevygroovy.dto.*
@@ -159,7 +161,7 @@ fun WorkoutExerciseCard(model: WorkoutHomeViewModel, row: ActiveWorkoutExercise,
                         Text("Set ${set.setNumber} · ${set.setType?.label() ?: "Normal"}")
                         Text("${set.weight} ${set.unit?.name ?: "LB"} × ${set.reps} reps")
                         TextButton(onClick = { editingSetId = set.id }, enabled = !busy,
-                            modifier = Modifier.semantics { contentDescription = "Edit set ${set.setNumber} for $name" }) {
+                            modifier = Modifier.testTag("set-editor-${set.id}").semantics { contentDescription = "Edit set ${set.setNumber} for $name" }) {
                             Text("Edit set ${set.setNumber}")
                         }
                     }
@@ -214,6 +216,7 @@ fun WorkoutExerciseCard(model: WorkoutHomeViewModel, row: ActiveWorkoutExercise,
 }
 
 @Composable
+@OptIn(ExperimentalComposeUiApi::class)
 private fun SetEditorDialog(set: ActiveSetEntry, busy: Boolean, error: String?, onDismiss: () -> Unit,
                             onSave: (UpdateSetEntryRequest) -> Unit, onDelete: () -> Unit) {
     var weight by rememberSaveable(set.id) { mutableStateOf(set.weight.toString()) }
@@ -240,6 +243,7 @@ private fun SetEditorDialog(set: ActiveSetEntry, busy: Boolean, error: String?, 
         return
     }
     AlertDialog(
+        modifier = Modifier.semantics { testTagsAsResourceId = true },
         onDismissRequest = onDismiss, title = { Text("Edit set ${set.setNumber}") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -272,7 +276,7 @@ private fun SetEditorDialog(set: ActiveSetEntry, busy: Boolean, error: String?, 
             }
         },
         confirmButton = {
-            TextButton(enabled = !busy && validWeight && validReps && validRpe && validRest, onClick = {
+            TextButton(modifier = Modifier.testTag("save-set"), enabled = !busy && validWeight && validReps && validRpe && validRest, onClick = {
                 onSave(UpdateSetEntryRequest().apply {
                     setWeight(weightValue!!); setReps(repsValue!!); setUnit(unit); setSetType(type)
                     setRpe(if (rpe.isBlank()) null else rpeValue); setRestSeconds(if (rest.isBlank()) null else restValue)

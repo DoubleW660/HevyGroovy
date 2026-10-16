@@ -28,7 +28,8 @@ data class LibraryState(
 data class TemplateDraft(val kind: String, val templateId: Long? = null, val rowId: Long? = null,
     val title: String = "", val description: String = "", val rest: String = "0", val search: String = "")
 
-class LibraryViewModel(private val gateway: LibraryGateway, private val savedState: SavedStateHandle = SavedStateHandle()) : ViewModel() {
+class LibraryViewModel(private val gateway: LibraryGateway, private val savedState: SavedStateHandle = SavedStateHandle(),
+    val performanceTiming: UiPerformanceTiming = UiPerformanceTiming()) : ViewModel() {
     var state by mutableStateOf(LibraryState(selectedTemplateId = savedState["selectedTemplateId"]))
         private set
     var templateDraft by mutableStateOf(savedState.get<String>("draftKind")?.let {
@@ -49,7 +50,7 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
     fun openTemplate(id: Long) {
         if (state.busy || state.templates.none { it.id == id }) return
         selectTemplate(id)
-        execute(mutation = false) { gateway.loadTemplate(id, it) }
+        execute(mutation = false, traceName = "template_open") { gateway.loadTemplate(id, it) }
     }
 
     private fun selectTemplate(id: Long?) {
@@ -152,8 +153,10 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
 
     private fun editableTemplate(): TemplateEditorDetail? = state.selectedTemplate?.takeUnless { it.isArchived }
 
-    private fun execute(mutation: Boolean = true, operation: (LibraryGateway.LibraryCallback) -> Unit) {
+    private fun execute(mutation: Boolean = true, traceName: String = if (mutation) "library_update" else "library_load",
+        operation: (LibraryGateway.LibraryCallback) -> Unit) {
         if (cleared || state.loading || (mutation && state.refreshRequired)) return
+        performanceTiming.begin(traceName)
         state = state.copy(loading = true, error = null)
         operation(object : LibraryGateway.LibraryCallback {
             override fun onSuccess(snapshot: LibraryGateway.LibrarySnapshot) {
@@ -163,9 +166,11 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
                 state = LibraryState(loaded = true, exercises = snapshot.exercises.toList(),
                     templates = snapshot.templates.toList(), selectedTemplate = snapshot.selectedTemplate,
                     selectedTemplateId = snapshot.selectedTemplate?.id, savedChanges = state.savedChanges + if (mutation) 1 else 0)
+                performanceTiming.ready()
             }
             override fun onFailure(error: Exception) {
                 if (cleared) return
+                performanceTiming.cancel()
                 val committed = mutation && error is CommittedRefreshException
                 if (committed) {
                     selectTemplate((error as CommittedRefreshException).selectedTemplateId)
@@ -180,13 +185,14 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
         })
     }
 
-    override fun onCleared() { cleared = true }
+    override fun onCleared() { cleared = true; performanceTiming.cancel() }
 
-    class Factory(private val gateway: LibraryGateway) : ViewModelProvider.Factory {
+    class Factory(private val gateway: LibraryGateway,
+        private val timing: UiPerformanceTiming = UiPerformanceTiming()) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
             require(modelClass == LibraryViewModel::class.java)
             @Suppress("UNCHECKED_CAST")
-            return LibraryViewModel(gateway, extras.createSavedStateHandle()) as T
+            return LibraryViewModel(gateway, extras.createSavedStateHandle(), timing) as T
         }
     }
 }

@@ -8,6 +8,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import java.text.DateFormat
 import java.util.Date
@@ -16,9 +17,9 @@ import java.util.Date
 fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel) {
     val state = viewModel.state
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
-    Scaffold { padding ->
+    Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) "workouts-ready" else "workouts-loading")) { padding ->
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding),
+            modifier = Modifier.fillMaxSize().padding(padding).testTag("workout-list"),
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {

@@ -26,7 +26,8 @@ data class WorkoutHomeState(
     val busy: Boolean get() = loading || refreshRequired
 }
 
-class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
+class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
+    val performanceTiming: UiPerformanceTiming = UiPerformanceTiming()) : ViewModel() {
     var state by mutableStateOf(WorkoutHomeState())
         private set
     private var cleared = false
@@ -99,7 +100,7 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
 
     fun updateSet(setId: Long, request: UpdateSetEntryRequest) {
         if (state.activeWorkout?.exercises?.none { row -> row.sets.any { it.id == setId } } != false) return
-        execute { gateway.updateSet(setId, request, it) }
+        execute(traceName = "set_save") { gateway.updateSet(setId, request, it) }
     }
 
     fun deleteSet(setId: Long) {
@@ -112,8 +113,10 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
         execute(operation = action)
     }
 
-    private fun execute(mutation: Boolean = true, operation: (WorkoutGateway.Callback) -> Unit) {
+    private fun execute(mutation: Boolean = true, traceName: String = if (mutation) "workout_update" else "workout_load",
+        operation: (WorkoutGateway.Callback) -> Unit) {
         if (requestInFlight || cleared || (mutation && state.refreshRequired)) return
+        performanceTiming.begin(traceName)
         requestInFlight = true
         state = state.copy(loading = true, error = null)
         operation(object : WorkoutGateway.Callback {
@@ -128,10 +131,12 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
                     exercises = snapshot.exercises.toList(),
                     savedChanges = state.savedChanges + if (mutation) 1 else 0,
                 )
+                performanceTiming.ready()
             }
 
             override fun onFailure(error: Exception) {
                 requestInFlight = false
+                performanceTiming.cancel()
                 if (cleared) return
                 val committed = mutation && error is CommittedRefreshException
                 state = state.copy(loading = false, refreshRequired = state.refreshRequired || committed,
@@ -143,13 +148,14 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
         })
     }
 
-    override fun onCleared() { cleared = true }
+    override fun onCleared() { cleared = true; performanceTiming.cancel() }
 
-    class Factory(private val gateway: WorkoutGateway) : ViewModelProvider.Factory {
+    class Factory(private val gateway: WorkoutGateway,
+        private val timing: UiPerformanceTiming = UiPerformanceTiming()) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass == WorkoutHomeViewModel::class.java)
             @Suppress("UNCHECKED_CAST")
-            return WorkoutHomeViewModel(gateway) as T
+            return WorkoutHomeViewModel(gateway, timing) as T
         }
     }
 }

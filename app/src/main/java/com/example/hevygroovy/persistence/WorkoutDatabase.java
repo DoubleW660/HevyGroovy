@@ -11,7 +11,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
     }
 
     public WorkoutDatabase(Context context, String name) {
-        super(context.getApplicationContext(), name, null, 6);
+        super(context.getApplicationContext(), name, null, 7);
         setWriteAheadLoggingEnabled(true);
     }
 
@@ -46,6 +46,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
         createLibraryTables(db);
         createCatalogTable(db);
         createTemplateCatalogTable(db);
+        createWorkoutImportTable(db);
     }
 
     private void createSetTable(SQLiteDatabase db, String table) {
@@ -63,7 +64,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 1 || newVersion > 6 || oldVersion >= newVersion) {
+        if (oldVersion < 1 || newVersion > 7 || oldVersion >= newVersion) {
             throw new IllegalStateException("Missing database migration from " + oldVersion + " to " + newVersion);
         }
         if (oldVersion < 2 && newVersion >= 2) {
@@ -96,6 +97,17 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
         if (oldVersion < 6 && newVersion >= 6) {
             createTemplateCatalogTable(db);
         }
+        if (oldVersion < 7 && newVersion >= 7) {
+            createWorkoutImportTable(db);
+        }
+    }
+
+    private void createWorkoutImportTable(SQLiteDatabase db) {
+        db.execSQL("CREATE TABLE workout_import_entry ("
+                + "user_id INTEGER NOT NULL CHECK(user_id > 0), source_key TEXT NOT NULL, "
+                + "workout_id INTEGER REFERENCES logged_workout(id) ON DELETE SET NULL, "
+                + "PRIMARY KEY(user_id, source_key))");
+        db.execSQL("CREATE INDEX imported_workout ON workout_import_entry(workout_id)");
     }
 
     private void createTemplateCatalogTable(SQLiteDatabase db) {

@@ -2,9 +2,11 @@ package com.example.hevygroovy.ui
 
 import androidx.compose.ui.test.*
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.espresso.Espresso
 import com.example.hevygroovy.app.AppContainer
 import com.example.hevygroovy.app.LocalUserIdentity
 import com.example.hevygroovy.app.WorkoutGateway
@@ -241,28 +243,23 @@ class InlineWorkoutEditingFlowTest {
     }
 
     @Test
-    fun holdingAndDraggingExercisePreservesInlineDraftAndPersistsNewOrder() {
+    fun holdingAndDraggingExercisePersistsNewOrder() {
         val database = "inline-reorder-${UUID.randomUUID()}.db"
         val user = LocalUserIdentity(context).userId
-        val fixture = seedWorkout(database, user)
-        val rows = SQLiteAppStorage(context, database).use { storage ->
-            val active = storage.workoutSessions.getActiveWorkout(user).get()
-            val first = active.exercises.single().workoutExerciseId
-            val squat = storage.exercises.createExercise(CreateExerciseRequest().apply {
-                title = "Inline squat"; primaryMuscleGroup = MuscleGroup.QUADRICEPS
-            }).exerciseId
-            val second = storage.workoutSessions.addExerciseToWorkout(user, active.workoutId, squat).id
-            listOf(first, second)
-        }
+        seedWorkout(database, user)
+        val rows = addSecondExercise(database, user)
         try {
             AppContainer(context, database).use { container ->
                 val model = model(container)
                 compose.setContent { HevyGroovyTheme { WorkoutHomeScreen(model, showHistory = false) } }
                 awaitLoaded(model)
-                compose.onNodeWithTag("inline-weight-${fixture.setId}")
-                    .performScrollTo().performTextReplacement("92.5")
+                // Keep the touch assertion independent of keyboard focus, blur saves and IME resizing.
+                Espresso.closeSoftKeyboard()
+                compose.onNodeWithTag("workout-list").performScrollToNode(
+                    hasTestTag("reorder-exercise-${rows[0]}"))
+                compose.waitForIdle()
                 val dragDistance = 100f * context.resources.displayMetrics.density
-                compose.onNodeWithTag("reorder-exercise-${rows[0]}").performScrollTo()
+                compose.onNodeWithTag("reorder-exercise-${rows[0]}").assertIsDisplayed()
                     .performTouchInput {
                         down(center)
                         // Compose's longClick sends stationary MOVE events while holding.
@@ -281,15 +278,6 @@ class InlineWorkoutEditingFlowTest {
                     !model.state.loading && model.state.activeWorkout?.exercises
                         ?.map { it.workoutExerciseId } == rows.reversed()
                 }
-                compose.runOnIdle { assertNull(model.state.error) }
-                compose.onNodeWithTag("workout-list").performScrollToNode(
-                    hasTestTag("inline-weight-${fixture.setId}"))
-                compose.onNodeWithTag("inline-weight-${fixture.setId}")
-                    .assertTextContains("92.5").performClick().performImeAction()
-                compose.waitUntil(10_000) {
-                    !model.state.loading && model.state.activeWorkout?.exercises
-                        ?.flatMap { it.sets }?.single()?.weight == 92.5
-                }
                 compose.runOnIdle {
                     assertNull(model.state.error)
                     assertEquals(rows.reversed(), model.state.activeWorkout!!.exercises.map { it.workoutExerciseId })
@@ -299,6 +287,48 @@ class InlineWorkoutEditingFlowTest {
                 val exercises = reopened.workoutSessions.getActiveWorkout(user).get().exercises
                 assertEquals(rows.reversed(), exercises.map { it.workoutExerciseId })
                 assertEquals(listOf(0, 1), exercises.map { it.orderIndex })
+                assertEquals(80.0, exercises.flatMap { it.sets }.single().weight, 0.0)
+            }
+        } finally {
+            context.deleteDatabase(database)
+        }
+    }
+
+    @Test
+    fun accessibleReorderPreservesFocusedInlineDraftUntilItIsSaved() {
+        val database = "inline-reorder-draft-${UUID.randomUUID()}.db"
+        val user = LocalUserIdentity(context).userId
+        val fixture = seedWorkout(database, user)
+        val rows = addSecondExercise(database, user)
+        try {
+            AppContainer(context, database).use { container ->
+                val model = model(container)
+                compose.setContent { HevyGroovyTheme { WorkoutHomeScreen(model, showHistory = false) } }
+                awaitLoaded(model)
+                compose.onNodeWithTag("inline-weight-${fixture.setId}")
+                    .performScrollTo().performTextReplacement("92.5")
+                Espresso.closeSoftKeyboard()
+                val moveDown = compose.onNodeWithTag("reorder-exercise-${rows[0]}")
+                    .fetchSemanticsNode().config[SemanticsActions.CustomActions]
+                    .single { it.label == "Move down" }
+                compose.runOnUiThread { assertTrue(moveDown.action()) }
+                compose.waitUntil(10_000) {
+                    !model.state.loading && model.state.activeWorkout?.exercises
+                        ?.map { it.workoutExerciseId } == rows.reversed()
+                }
+                compose.onNodeWithTag("workout-list").performScrollToNode(
+                    hasTestTag("inline-weight-${fixture.setId}"))
+                compose.onNodeWithTag("inline-weight-${fixture.setId}")
+                    .assertTextContains("92.5").performClick().performImeAction()
+                compose.waitUntil(10_000) {
+                    !model.state.loading && model.state.activeWorkout?.exercises
+                        ?.flatMap { it.sets }?.single()?.weight == 92.5
+                }
+                compose.runOnIdle { assertNull(model.state.error) }
+            }
+            SQLiteAppStorage(context, database).use { reopened ->
+                val exercises = reopened.workoutSessions.getActiveWorkout(user).get().exercises
+                assertEquals(rows.reversed(), exercises.map { it.workoutExerciseId })
                 assertEquals(92.5, exercises.flatMap { it.sets }.single().weight, 0.0)
             }
         } finally {
@@ -395,6 +425,18 @@ class InlineWorkoutEditingFlowTest {
     }
 
     private data class Fixture(val setId: Long, val previousWorkoutId: Long?)
+
+    private fun addSecondExercise(database: String, user: Long): List<Long> {
+        SQLiteAppStorage(context, database).use { storage ->
+            val active = storage.workoutSessions.getActiveWorkout(user).get()
+            val first = active.exercises.single().workoutExerciseId
+            val squat = storage.exercises.createExercise(CreateExerciseRequest().apply {
+                title = "Inline squat"; primaryMuscleGroup = MuscleGroup.QUADRICEPS
+            }).exerciseId
+            val second = storage.workoutSessions.addExerciseToWorkout(user, active.workoutId, squat).id
+            return listOf(first, second)
+        }
+    }
 
     private fun seedWorkout(database: String, user: Long, previousInAnotherRoutine: Boolean = false): Fixture {
         SQLiteAppStorage(context, database).use { storage ->

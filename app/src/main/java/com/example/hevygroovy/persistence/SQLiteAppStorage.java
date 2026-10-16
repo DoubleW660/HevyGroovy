@@ -15,7 +15,7 @@ public final class SQLiteAppStorage implements AppServices {
     private final PersonalRecordService personalRecords;
 
     public SQLiteAppStorage(Context context) {
-        this(context, "hevy_groovy.db", true);
+        this(context, "hevy_groovy.db", true, 1L, true);
     }
 
     /** Named storage also supports isolated integration tests and local profiles. */
@@ -29,14 +29,23 @@ public final class SQLiteAppStorage implements AppServices {
     }
 
     public SQLiteAppStorage(Context context, String databaseName, boolean seedCatalog, long userId) {
+        this(context, databaseName, seedCatalog, userId, false);
+    }
+
+    /** Personal workout history is an explicit opt-in outside the normal app startup. */
+    public SQLiteAppStorage(Context context, String databaseName, boolean seedCatalog,
+                             long userId, boolean seedHistory) {
         helper = new WorkoutDatabase(context, databaseName);
         try {
             SQLiteDatabase db = helper.getWritableDatabase();
-            if (seedCatalog) {
+            if (seedCatalog || seedHistory) {
                 db.beginTransaction();
                 try {
-                    BundledExerciseCatalog.seed(context, db);
-                    BundledTemplateCatalog.seed(context, db, userId);
+                    if (seedCatalog) {
+                        BundledExerciseCatalog.seed(context, db);
+                        BundledTemplateCatalog.seed(context, db, userId);
+                    }
+                    if (seedHistory) BundledWorkoutHistory.seed(context, db, userId);
                     db.setTransactionSuccessful();
                 } finally { db.endTransaction(); }
             }

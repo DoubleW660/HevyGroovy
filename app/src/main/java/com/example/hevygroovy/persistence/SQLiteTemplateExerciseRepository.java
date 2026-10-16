@@ -4,6 +4,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import com.example.hevygroovy.entity.TemplateExercise;
+import com.example.hevygroovy.model.TemplateExerciseItemModel;
 import com.example.hevygroovy.repo.TemplateExerciseRepository;
 import java.util.List;
 import java.util.Optional;
@@ -31,6 +32,27 @@ public final class SQLiteTemplateExerciseRepository implements TemplateExerciseR
     @Override
     public List<TemplateExercise> findByTemplateWorkoutId(long id) {
         return query("template_workout_id = ?", new String[]{Long.toString(id)});
+    }
+
+    @Override
+    public List<TemplateExerciseItemModel> findDetailsByTemplateWorkoutId(long id) {
+        List<TemplateExerciseItemModel> rows = new java.util.ArrayList<>();
+        try (Cursor cursor = db.rawQuery("SELECT te.id, te.exercise_id, te.order_index, "
+                + "te.rest_time_seconds, e.title FROM template_exercise te "
+                + "JOIN exercise e ON e.id = te.exercise_id "
+                + "WHERE te.template_workout_id = ? ORDER BY te.order_index, te.id",
+                new String[]{Long.toString(id)})) {
+            while (cursor.moveToNext()) {
+                TemplateExerciseItemModel row = new TemplateExerciseItemModel();
+                row.setTemplateExerciseId(cursor.getLong(0));
+                row.setExerciseId(cursor.getLong(1));
+                row.setOrderIndex(cursor.getInt(2));
+                row.setRestTargetSeconds(cursor.isNull(3) ? null : cursor.getInt(3));
+                row.setExerciseTitle(cursor.getString(4));
+                rows.add(row);
+            }
+        }
+        return rows;
     }
 
     @Override

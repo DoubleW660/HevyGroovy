@@ -7,6 +7,7 @@ import java.util.List;
 public interface LibraryGateway {
     interface LibraryCallback {
         void onSuccess(LibrarySnapshot snapshot);
+        /** CommittedRefreshException means the write succeeded and only a reload should be retried. */
         void onFailure(Exception error);
     }
     final class LibrarySnapshot {
@@ -22,6 +23,8 @@ public interface LibraryGateway {
         public TemplateEditorDetail getSelectedTemplate() { return selectedTemplate; }
     }
     void loadLibrary(Long templateId, LibraryCallback callback);
+    /** Opens detail using cached lists; explicit loadLibrary refreshes those lists. */
+    void loadTemplate(long templateId, LibraryCallback callback);
     void createCatalogExercise(CreateExerciseRequest request, LibraryCallback callback);
     void updateCatalogExercise(long id, UpdateExerciseRequest request, LibraryCallback callback);
     void setExerciseArchived(long id, boolean archived, LibraryCallback callback);

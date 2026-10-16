@@ -12,6 +12,26 @@ that fallback still reserves the writer slot, so keep those reads short. History
 summary pages and template lists are single SQL queries and need no explicit
 transaction. History details and active-session recovery keep their snapshot.
 
+## Android gateways and recovery
+
+`AppContainer` wires `WorkoutGateway` and `LibraryGateway` to synchronous services
+through one shared `AppWorker`. Storage opens lazily on its serial background
+executor. Results return on the main executor as immutable snapshots.
+
+A mutation callback reports success only after loading the resulting screen state.
+An ordinary failure means the write did not complete; forms retain their drafts.
+`CommittedRefreshException` means the write completed but the following read failed.
+The ViewModel records the save, closes the submitted form, and blocks further writes
+until a read-only refresh succeeds. Template creation carries its new ID through
+this failure so recovery opens the saved template without creating another one.
+
+Explicit library refreshes reload the catalog and template list. Opening a template
+reuses those lists and reads its detail with two queries: the owned parent and one
+join for all exercise rows and current names. The join preserves nullable rest
+targets and orders by exercise position, then row ID. Selected template IDs and
+unsaved template form fields live in `SavedStateHandle`; database objects and
+screen snapshots are reloaded after process recreation.
+
 ## Partial updates
 
 For optional RPE, set rest seconds, and exercise/template descriptions, not calling

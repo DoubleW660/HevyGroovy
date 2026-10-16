@@ -15,9 +15,9 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         val container = (application as HevyGroovyApplication).container
-        val viewModel = ViewModelProvider(this, WorkoutHomeViewModel.Factory(container))
+        val viewModel = ViewModelProvider(this, WorkoutHomeViewModel.Factory(container.workouts))
             .get(WorkoutHomeViewModel::class.java)
-        val library = ViewModelProvider(this, LibraryViewModel.Factory(container)).get(LibraryViewModel::class.java)
+        val library = ViewModelProvider(this, LibraryViewModel.Factory(container.library)).get(LibraryViewModel::class.java)
         setContent {
             HevyGroovyTheme {
                 WorkoutApp(viewModel, library)

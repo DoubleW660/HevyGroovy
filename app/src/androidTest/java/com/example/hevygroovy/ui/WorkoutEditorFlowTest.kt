@@ -22,7 +22,7 @@ class WorkoutEditorFlowTest {
         val name = "editor-${UUID.randomUUID()}.db"
         val gateway = AppContainer(context, name)
         lateinit var model: WorkoutHomeViewModel
-        InstrumentationRegistry.getInstrumentation().runOnMainSync { model = WorkoutHomeViewModel(gateway) }
+        InstrumentationRegistry.getInstrumentation().runOnMainSync { model = WorkoutHomeViewModel(gateway.workouts) }
         try {
             val restoration = StateRestorationTester(compose)
             restoration.setContent { HevyGroovyTheme { WorkoutHomeScreen(model) } }

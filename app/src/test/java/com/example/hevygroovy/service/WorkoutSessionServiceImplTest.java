@@ -53,7 +53,6 @@ class WorkoutSessionServiceImplTest {
     private TemplateExerciseRepository templateExerciseRepository;
     private WorkoutExerciseRepository workoutExerciseRepository;
     private SetEntryRepository setEntryRepository;
-    private TemplateServiceImpl templateService;
 
 
     @BeforeEach
@@ -66,11 +65,6 @@ class WorkoutSessionServiceImplTest {
 
         exerciseService = mock(ExerciseService.class);
 
-        templateService = new TemplateServiceImpl(
-                templateWorkoutRepository,
-                templateExerciseRepository,
-                exerciseService
-        );
 
         workoutSessionService = new WorkoutSessionServiceImpl(
                 loggedWorkoutRepository,
@@ -78,7 +72,6 @@ class WorkoutSessionServiceImplTest {
                 templateExerciseRepository,
                 workoutExerciseRepository,
                 setEntryRepository,
-                templateService,
                 exerciseService
         );
     }

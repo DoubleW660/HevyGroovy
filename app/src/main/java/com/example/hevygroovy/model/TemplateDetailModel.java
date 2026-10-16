@@ -13,7 +13,7 @@ public class TemplateDetailModel {
 
     private boolean archived;
 
-    private List<TemplateExerciseItemModel> exercises = new ArrayList<>();;
+    private List<TemplateExerciseItemModel> exercises = new ArrayList<>();
 
     public long getTemplateWorkoutId() {
         return templateWorkoutId;

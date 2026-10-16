@@ -17,10 +17,9 @@ public final class SQLiteWorkoutServices {
         SQLiteLoggedWorkoutRepository workouts = new SQLiteLoggedWorkoutRepository(db);
         SQLiteWorkoutExerciseRepository workoutExercises = new SQLiteWorkoutExerciseRepository(db);
         SQLiteSetEntryRepository sets = new SQLiteSetEntryRepository(db);
-        TemplateService templateService = new TemplateServiceImpl(templates, templateExercises, exercises);
         workoutSessions = new TransactionalWorkoutSessionService(db,
                 new WorkoutSessionServiceImpl(workouts, templates, templateExercises,
-                        workoutExercises, sets, templateService, exercises));
+                        workoutExercises, sets, exercises));
         setEntries = new TransactionalSetEntryService(db,
                 new SetEntryServiceImpl(sets, workoutExercises, workouts));
     }

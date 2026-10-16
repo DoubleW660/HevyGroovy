@@ -96,14 +96,13 @@ class WorkoutSessionEditingTest {
     @Mock private SetEntryRepository sets;
     @Mock private TemplateWorkoutRepository templates;
     @Mock private TemplateExerciseRepository templateRows;
-    @Mock private TemplateService templateService;
     @Mock private ExerciseService exercises;
     private WorkoutSessionService service;
 
     @BeforeEach
     void setUp() {
         service = new WorkoutSessionServiceImpl(workouts, templates, templateRows,
-                rows, sets, templateService, exercises);
+                rows, sets, exercises);
     }
 
     @Test

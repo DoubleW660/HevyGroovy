@@ -3,7 +3,6 @@ package com.example.hevygroovy.service;
 import com.example.hevygroovy.dto.AddTemplateExerciseRequest;
 import com.example.hevygroovy.dto.CreateTemplateRequest;
 import com.example.hevygroovy.dto.UpdateTemplateRequest;
-import com.example.hevygroovy.entity.Exercise;
 import com.example.hevygroovy.entity.TemplateExercise;
 import com.example.hevygroovy.entity.TemplateWorkout;
 import com.example.hevygroovy.model.TemplateDetailModel;
@@ -238,18 +237,7 @@ public class TemplateServiceImpl implements TemplateService {
         }
         TemplateWorkout templateWorkout = requireOwnedTemplate(userId, templateId);
 
-        List<TemplateExercise> exercises = new ArrayList<>(templateExerciseRepository.findByTemplateWorkoutId(templateId));
-        exercises.sort(Comparator.comparingInt(TemplateExercise::getOrderIndex));
-
-        List<TemplateExerciseItemModel> templateExerciseItemModels = new ArrayList<>(exercises.size());
-
-        for (TemplateExercise current : exercises) {
-            Exercise exercise = exerciseService.requireExercise(current.getExerciseId());
-
-            templateExerciseItemModels.add(toExerciseItemModel(current, exercise));
-        }
-
-        return toDetailModel(templateWorkout, templateExerciseItemModels);
+        return toDetailModel(templateWorkout, templateExerciseRepository.findDetailsByTemplateWorkoutId(templateId));
     }
 
     @Override
@@ -296,19 +284,6 @@ public class TemplateServiceImpl implements TemplateService {
         model.setTitle(templateWorkout.getTitle());
         model.setDescription(templateWorkout.getDescription());
         model.setArchived(templateWorkout.isArchived());
-
-        return model;
-    }
-
-    private TemplateExerciseItemModel toExerciseItemModel(TemplateExercise templateExercise, Exercise exercise){
-
-        TemplateExerciseItemModel model = new TemplateExerciseItemModel();
-        model.setTemplateExerciseId(templateExercise.getId());
-        model.setExerciseId(templateExercise.getExerciseId());
-        model.setRestTargetSeconds(templateExercise.getRestTimeSeconds());
-        model.setOrderIndex(templateExercise.getOrderIndex());
-
-        model.setExerciseTitle(exercise.getTitle());
 
         return model;
     }

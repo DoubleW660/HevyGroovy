@@ -2,10 +2,11 @@ package com.example.hevygroovy.persistence;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
+import com.example.hevygroovy.app.AppServices;
 import com.example.hevygroovy.service.*;
 
 /** Own one instance for the app lifetime. Construct and use on a background thread. */
-public final class SQLiteAppStorage implements AutoCloseable {
+public final class SQLiteAppStorage implements AppServices {
     private final WorkoutDatabase helper;
     private final ExerciseService exercises;
     private final TemplateService templates;

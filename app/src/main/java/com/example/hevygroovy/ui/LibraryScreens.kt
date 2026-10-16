@@ -20,9 +20,7 @@ import com.example.hevygroovy.entity.enums.MuscleGroup
 @Composable
 private fun LibraryPage(title: String, model: LibraryViewModel, content: LazyListScope.() -> Unit) {
     val state = model.state
-    val snackbar = remember { SnackbarHostState() }
-    LaunchedEffect(state.error) { state.error?.let { snackbar.showSnackbar(it) } }
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold { padding ->
         LazyColumn(Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item(key = "heading") { Text(title, style = MaterialTheme.typography.headlineLarge) }
@@ -56,7 +54,7 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
                     modifier = Modifier.semantics { contentDescription = "Show archived exercises" })
                 Text("Show archived", Modifier.padding(top = 12.dp))
             }
-            Button(onClick = { creating = true }, enabled = !state.loading) { Text("New exercise") }
+            Button(onClick = { creating = true }, enabled = !state.busy) { Text("New exercise") }
         }
         if (state.loaded && filtered.isEmpty()) item(key = "empty") { Text("No matching exercises.") }
         items(filtered, key = { it.id }) { exercise ->
@@ -67,11 +65,11 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
                     if (!exercise.description.isNullOrBlank()) Text(exercise.description)
                     if (exercise.isArchived) Text("Archived")
                     Row {
-                        TextButton(onClick = { editingId = exercise.id }, enabled = !state.loading,
+                        TextButton(onClick = { editingId = exercise.id }, enabled = !state.busy,
                             modifier = Modifier.testTag("edit-exercise-${exercise.id}")) { Text("Edit exercise") }
                         TextButton(onClick = {
                             if (exercise.isArchived) model.archiveExercise(exercise.id, false) else archiveId = exercise.id
-                        }, enabled = !state.loading, modifier = Modifier.testTag("archive-exercise-${exercise.id}")) {
+                        }, enabled = !state.busy, modifier = Modifier.testTag("archive-exercise-${exercise.id}")) {
                             Text(if (exercise.isArchived) "Restore" else "Archive")
                         }
                     }
@@ -81,21 +79,21 @@ fun ExerciseLibraryScreen(model: LibraryViewModel) {
     }
     val editing = state.exercises.find { it.id == editingId }
     if (creating || editing != null) {
-        ExerciseCatalogDialog(editing, state.loading, onDismiss = { creating = false; editingId = null }) { title, description, primary, secondary ->
+        SaveResultEffect(state.savedChanges) { creating = false; editingId = null }
+        ExerciseCatalogDialog(editing, state.busy, state.error, onDismiss = { creating = false; editingId = null }) { title, description, primary, secondary ->
             model.saveExercise(editing?.id, title, description, primary, secondary)
-            creating = false; editingId = null
         }
     }
     state.exercises.find { it.id == archiveId }?.let { exercise ->
         Confirmation("Archive ${exercise.title}?", "It will be hidden from exercise pickers. Existing workouts keep their saved names.",
-            "Archive", state.loading, onDismiss = { archiveId = null }) {
+            "Archive", state.busy, onDismiss = { archiveId = null }) {
             model.archiveExercise(exercise.id, true); archiveId = null
         }
     }
 }
 
 @Composable
-private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, onDismiss: () -> Unit,
+private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, error: String?, onDismiss: () -> Unit,
     onSave: (String, String, MuscleGroup, List<MuscleGroup>) -> Unit) {
     var title by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.title.orEmpty()) }
     var description by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.description.orEmpty()) }
@@ -106,6 +104,7 @@ private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, onD
     AlertDialog(onDismissRequest = onDismiss, title = { Text(if (exercise == null) "New exercise" else "Edit exercise") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 OutlinedTextField(title, { title = it }, label = { Text("Exercise name") }, singleLine = true,
                     modifier = Modifier.testTag("catalog-exercise-name"))
                 OutlinedTextField(description, { description = it }, label = { Text("Description") },
@@ -140,12 +139,18 @@ fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean, onSt
         TemplateEditorScreen(model, state.selectedTemplate, workoutBlocked, onStart)
         return
     }
-    var creating by rememberSaveable { mutableStateOf(false) }
+    if (state.selectedTemplateId != null) {
+        LibraryPage("Workout template", model) {
+            item { Text(if (state.loading) "Loading template…" else "Template couldn't be loaded.") }
+            item { TextButton(onClick = model::showTemplateList, enabled = !state.loading) { Text("All templates") } }
+        }
+        return
+    }
     var includeArchived by rememberSaveable { mutableStateOf(false) }
     val visible = state.templates.filter { includeArchived || !it.isArchived }
     LibraryPage("Workout templates", model) {
         item(key = "controls") {
-            Button(onClick = { creating = true }, enabled = !state.loading) { Text("New template") }
+            Button(onClick = model::beginTemplateDetails, enabled = !state.busy) { Text("New template") }
             Row {
                 Checkbox(includeArchived, onCheckedChange = { includeArchived = it },
                     modifier = Modifier.semantics { contentDescription = "Show archived templates" })
@@ -159,26 +164,21 @@ fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean, onSt
                     Text(template.title, style = MaterialTheme.typography.titleLarge)
                     if (!template.description.isNullOrBlank()) Text(template.description)
                     if (template.isArchived) Text("Archived")
-                    TextButton(onClick = { model.openTemplate(template.id) }, enabled = !state.loading,
+                    TextButton(onClick = { model.openTemplate(template.id) }, enabled = !state.busy,
                         modifier = Modifier.testTag("open-template-${template.id}")) { Text("Open template") }
                 }
             }
         }
     }
-    if (creating) TemplateDetailsDialog(null, state.loading, { creating = false }) { title, description ->
-        model.saveTemplate(null, title, description); creating = false
-    }
+    if (model.templateDraft?.kind == "details") TemplateDetailsDialog(model)
 }
 
 @Composable
 private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEditorDetail,
     workoutBlocked: Boolean, onStart: (Long) -> Unit) {
-    val busy = model.state.loading
-    var editing by rememberSaveable(template.id) { mutableStateOf(false) }
-    var adding by rememberSaveable(template.id) { mutableStateOf(false) }
+    val busy = model.state.busy
     var archiving by rememberSaveable(template.id) { mutableStateOf(false) }
     var removing by rememberSaveable(template.id) { mutableStateOf<Long?>(null) }
-    var editingRest by rememberSaveable(template.id) { mutableStateOf<Long?>(null) }
     LibraryPage(template.title, model) {
         item(key = "controls") {
             TextButton(onClick = model::showTemplateList, enabled = !busy) { Text("All templates") }
@@ -188,12 +188,12 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
                 Button(onClick = { model.archiveTemplate(false) }, enabled = !busy) { Text("Restore template") }
             } else {
                 Row {
-                    TextButton(onClick = { editing = true }, enabled = !busy) { Text("Edit template") }
+                    TextButton(onClick = model::beginTemplateDetails, enabled = !busy) { Text("Edit template") }
                     TextButton(onClick = { archiving = true }, enabled = !busy) { Text("Archive template") }
                 }
                 Button(onClick = { onStart(template.id) }, enabled = !busy && !workoutBlocked) { Text("Start this workout") }
                 if (workoutBlocked) Text("Finish or discard your current workout before starting another.")
-                OutlinedButton(onClick = { adding = true }, enabled = !busy) { Text("Add template exercise") }
+                OutlinedButton(onClick = model::beginTemplateExercise, enabled = !busy) { Text("Add template exercise") }
             }
         }
         if (template.exercises.isEmpty()) item(key = "empty") { Text("This template has no exercises yet.") }
@@ -208,7 +208,7 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
                                 modifier = Modifier.testTag("template-up-${row.id}")) { Text("Up") }
                             TextButton(onClick = { model.moveExercise(row.id, index + 1) }, enabled = !busy && index < template.exercises.lastIndex,
                                 modifier = Modifier.testTag("template-down-${row.id}")) { Text("Down") }
-                            TextButton(onClick = { editingRest = row.id }, enabled = !busy,
+                            TextButton(onClick = { model.beginTemplateRest(row) }, enabled = !busy,
                                 modifier = Modifier.testTag("template-rest-${row.id}")) { Text("Edit rest") }
                         }
                         TextButton(onClick = { removing = row.id }, enabled = !busy,
@@ -218,71 +218,71 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
             }
         }
     }
-    if (editing) TemplateDetailsDialog(template, busy, { editing = false }) { title, description ->
-        model.saveTemplate(template.id, title, description); editing = false
-    }
-    if (adding) TemplateExercisePicker(model, { adding = false }) { id, rest ->
-        model.addExercise(id, rest); adding = false
-    }
+    if (model.templateDraft?.kind == "details") TemplateDetailsDialog(model)
+    if (model.templateDraft?.kind == "add") TemplateExercisePicker(model)
     if (archiving) Confirmation("Archive this template?", "You can restore it later. Existing workouts won't change.",
         "Archive", busy, { archiving = false }) { model.archiveTemplate(true); archiving = false }
     template.exercises.find { it.id == removing }?.let { row ->
         Confirmation("Remove ${row.title}?", "This only removes the exercise from this template.", "Remove", busy,
             { removing = null }) { model.removeExercise(row.id); removing = null }
     }
-    template.exercises.find { it.id == editingRest }?.let { row ->
-        var seconds by rememberSaveable(row.id) { mutableStateOf(row.restSeconds.toString()) }
+    model.templateDraft?.takeIf { it.kind == "rest" }?.let { draft ->
+        val seconds = draft.rest
         val value = seconds.toIntOrNull()
-        AlertDialog(onDismissRequest = { editingRest = null }, title = { Text("Rest target") },
-            text = { OutlinedTextField(seconds, { seconds = it }, label = { Text("Rest seconds") }, singleLine = true,
+        AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text("Rest target") },
+            text = { Column {
+                model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                OutlinedTextField(seconds, { model.updateTemplateDraft(rest = it) }, label = { Text("Rest seconds") }, singleLine = true,
                 modifier = Modifier.testTag("template-rest-input"), isError = value == null || value < 0,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)) },
-            confirmButton = { TextButton(onClick = { model.updateRest(row.id, value!!); editingRest = null },
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)) } },
+            confirmButton = { TextButton(onClick = { model.updateRest(draft.rowId!!, value!!) },
                 enabled = !busy && value != null && value >= 0) { Text("Save rest") } },
-            dismissButton = { TextButton(onClick = { editingRest = null }) { Text("Cancel") } })
+            dismissButton = { TextButton(onClick = model::closeTemplateDraft) { Text("Cancel") } })
     }
 }
 
 @Composable
-private fun TemplateDetailsDialog(template: TemplateEditorDetail?, busy: Boolean, onDismiss: () -> Unit,
-    onSave: (String, String) -> Unit) {
-    var title by rememberSaveable(template?.id) { mutableStateOf(template?.title.orEmpty()) }
-    var description by rememberSaveable(template?.id) { mutableStateOf(template?.description.orEmpty()) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text(if (template == null) "New template" else "Edit template") },
+private fun TemplateDetailsDialog(model: LibraryViewModel) {
+    val draft = model.templateDraft ?: return
+    AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text(if (draft.templateId == null) "New template" else "Edit template") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(title, { title = it }, label = { Text("Template name") }, singleLine = true,
+                model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                OutlinedTextField(draft.title, { model.updateTemplateDraft(title = it) }, label = { Text("Template name") }, singleLine = true,
                     modifier = Modifier.testTag("template-name"))
-                OutlinedTextField(description, { description = it }, label = { Text("Description") },
+                OutlinedTextField(draft.description, { model.updateTemplateDraft(description = it) }, label = { Text("Description") },
                     modifier = Modifier.testTag("template-description"))
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(title, description) }, enabled = !busy && title.isNotBlank()) { Text("Save template") } },
-        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+        confirmButton = { TextButton(onClick = { model.saveTemplate(draft.templateId, draft.title, draft.description) },
+            enabled = !model.state.busy && draft.title.isNotBlank()) { Text("Save template") } },
+        dismissButton = { TextButton(onClick = model::closeTemplateDraft) { Text("Cancel") } })
 }
 
 @Composable
-private fun TemplateExercisePicker(model: LibraryViewModel, onDismiss: () -> Unit, onAdd: (Long, Int) -> Unit) {
-    var search by rememberSaveable { mutableStateOf("") }
-    var rest by rememberSaveable { mutableStateOf("0") }
+private fun TemplateExercisePicker(model: LibraryViewModel) {
+    val draft = model.templateDraft ?: return
+    val search = draft.search
+    val rest = draft.rest
     val restValue = rest.toIntOrNull()
     val options = model.state.exercises.filter { !it.isArchived && it.title.contains(search, true) }
-    AlertDialog(onDismissRequest = onDismiss, title = { Text("Choose template exercise") },
+    AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text("Choose template exercise") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(search, { search = it }, label = { Text("Search exercises") }, singleLine = true)
-                OutlinedTextField(rest, { rest = it }, label = { Text("Rest seconds") }, singleLine = true,
+                model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+                OutlinedTextField(search, { model.updateTemplateDraft(search = it) }, label = { Text("Search exercises") }, singleLine = true)
+                OutlinedTextField(rest, { model.updateTemplateDraft(rest = it) }, label = { Text("Rest seconds") }, singleLine = true,
                     isError = restValue == null || restValue < 0, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                 if (options.isEmpty()) Text("No matching exercises. Add exercises in the Exercises tab.")
                 LazyColumn(Modifier.heightIn(max = 240.dp)) {
                     items(options, key = { it.id }) { exercise ->
-                        TextButton(onClick = { onAdd(exercise.id, restValue!!) },
-                            enabled = !model.state.loading && restValue != null && restValue >= 0,
+                        TextButton(onClick = { model.addExercise(exercise.id, restValue!!) },
+                            enabled = !model.state.busy && restValue != null && restValue >= 0,
                             modifier = Modifier.fillMaxWidth().testTag("template-picker-${exercise.id}")) { Text(exercise.title) }
                     }
                 }
             }
-        }, confirmButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+        }, confirmButton = { TextButton(onClick = model::closeTemplateDraft) { Text("Cancel") } })
 }
 
 @Composable

@@ -14,14 +14,14 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel) {
         if (tab == 0) workouts.refresh() else library.refresh()
     }
     BackHandler(enabled = tab != 0) {
-        if (tab == 2 && library.state.selectedTemplate != null) library.showTemplateList() else tab = 0
+        if (tab == 2 && library.state.selectedTemplateId != null) library.showTemplateList() else tab = 0
     }
     Column(Modifier.fillMaxSize()) {
         Box(Modifier.weight(1f)) {
             when (tab) {
                 0 -> WorkoutHomeScreen(workouts)
                 1 -> ExerciseLibraryScreen(library)
-                2 -> TemplateLibraryScreen(library, workouts.state.activeWorkout != null || workouts.state.loading) { id ->
+                2 -> TemplateLibraryScreen(library, workouts.state.activeWorkout != null || workouts.state.busy) { id ->
                     workouts.startFromTemplate(id)
                     tab = 0
                 }

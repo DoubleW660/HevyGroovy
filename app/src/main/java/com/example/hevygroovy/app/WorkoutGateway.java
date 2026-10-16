@@ -11,6 +11,7 @@ import java.util.List;
 public interface WorkoutGateway {
     interface Callback {
         void onSuccess(Snapshot snapshot);
+        /** CommittedRefreshException means the write succeeded and only a reload should be retried. */
         void onFailure(Exception error);
     }
 

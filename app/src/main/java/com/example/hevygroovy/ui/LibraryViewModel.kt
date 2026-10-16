@@ -3,6 +3,10 @@ package com.example.hevygroovy.ui
 import androidx.compose.runtime.*
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.createSavedStateHandle
+import androidx.lifecycle.viewmodel.CreationExtras
+import com.example.hevygroovy.app.CommittedRefreshException
 import com.example.hevygroovy.app.LibraryGateway
 import com.example.hevygroovy.dto.*
 import com.example.hevygroovy.entity.enums.MuscleGroup
@@ -13,19 +17,71 @@ data class LibraryState(
     val exercises: List<CatalogExercise> = emptyList(),
     val templates: List<TemplateCard> = emptyList(),
     val selectedTemplate: TemplateEditorDetail? = null,
+    val selectedTemplateId: Long? = null,
+    val savedChanges: Long = 0,
+    val refreshRequired: Boolean = false,
     val error: String? = null,
-)
+) {
+    val busy: Boolean get() = loading || refreshRequired
+}
 
-class LibraryViewModel(private val gateway: LibraryGateway) : ViewModel() {
-    var state by mutableStateOf(LibraryState())
+data class TemplateDraft(val kind: String, val templateId: Long? = null, val rowId: Long? = null,
+    val title: String = "", val description: String = "", val rest: String = "0", val search: String = "")
+
+class LibraryViewModel(private val gateway: LibraryGateway, private val savedState: SavedStateHandle = SavedStateHandle()) : ViewModel() {
+    var state by mutableStateOf(LibraryState(selectedTemplateId = savedState["selectedTemplateId"]))
+        private set
+    var templateDraft by mutableStateOf(savedState.get<String>("draftKind")?.let {
+        TemplateDraft(it, savedState["draftTemplateId"], savedState["draftRowId"],
+            savedState["draftTitle"] ?: "", savedState["draftDescription"] ?: "",
+            savedState["draftRest"] ?: "0", savedState["draftSearch"] ?: "")
+    })
         private set
     private var cleared = false
 
-    fun refresh() = execute { gateway.loadLibrary(state.selectedTemplate?.id, it) }
-    fun showTemplateList() { if (!state.loading) state = state.copy(selectedTemplate = null) }
+    fun refresh() = execute(mutation = false) { gateway.loadLibrary(state.selectedTemplateId, it) }
+    fun showTemplateList() {
+        if (state.loading) return
+        selectTemplate(null)
+        state = state.copy(selectedTemplate = null)
+        closeTemplateDraft()
+    }
     fun openTemplate(id: Long) {
-        if (state.templates.none { it.id == id }) return
-        execute { gateway.loadLibrary(id, it) }
+        if (state.busy || state.templates.none { it.id == id }) return
+        selectTemplate(id)
+        execute(mutation = false) { gateway.loadTemplate(id, it) }
+    }
+
+    private fun selectTemplate(id: Long?) {
+        savedState["selectedTemplateId"] = id
+        state = state.copy(selectedTemplateId = id)
+    }
+
+    fun beginTemplateDetails() {
+        if (state.busy) return
+        val template = state.selectedTemplate
+        setDraft(TemplateDraft("details", template?.id, title = template?.title.orEmpty(),
+            description = template?.description.orEmpty()))
+    }
+    fun beginTemplateExercise() { if (!state.busy) setDraft(TemplateDraft("add", state.selectedTemplateId)) }
+    fun beginTemplateRest(row: TemplateEditorDetail.ExerciseRow) {
+        if (!state.busy) setDraft(TemplateDraft("rest", state.selectedTemplateId, row.id, rest = row.restSeconds.toString()))
+    }
+    fun updateTemplateDraft(title: String? = null, description: String? = null, rest: String? = null, search: String? = null) {
+        val draft = templateDraft ?: return
+        setDraft(draft.copy(title = title ?: draft.title, description = description ?: draft.description,
+            rest = rest ?: draft.rest, search = search ?: draft.search))
+    }
+    fun closeTemplateDraft() = setDraft(null)
+    private fun setDraft(draft: TemplateDraft?) {
+        templateDraft = draft
+        savedState["draftKind"] = draft?.kind
+        savedState["draftTemplateId"] = draft?.templateId
+        savedState["draftRowId"] = draft?.rowId
+        savedState["draftTitle"] = draft?.title
+        savedState["draftDescription"] = draft?.description
+        savedState["draftRest"] = draft?.rest
+        savedState["draftSearch"] = draft?.search
     }
 
     fun saveExercise(id: Long?, title: String, description: String, muscle: MuscleGroup, secondary: List<MuscleGroup>) {
@@ -96,18 +152,30 @@ class LibraryViewModel(private val gateway: LibraryGateway) : ViewModel() {
 
     private fun editableTemplate(): TemplateEditorDetail? = state.selectedTemplate?.takeUnless { it.isArchived }
 
-    private fun execute(operation: (LibraryGateway.LibraryCallback) -> Unit) {
-        if (cleared || state.loading) return
+    private fun execute(mutation: Boolean = true, operation: (LibraryGateway.LibraryCallback) -> Unit) {
+        if (cleared || state.loading || (mutation && state.refreshRequired)) return
         state = state.copy(loading = true, error = null)
         operation(object : LibraryGateway.LibraryCallback {
             override fun onSuccess(snapshot: LibraryGateway.LibrarySnapshot) {
                 if (cleared) return
+                selectTemplate(snapshot.selectedTemplate?.id)
+                if (mutation) closeTemplateDraft()
                 state = LibraryState(loaded = true, exercises = snapshot.exercises.toList(),
-                    templates = snapshot.templates.toList(), selectedTemplate = snapshot.selectedTemplate)
+                    templates = snapshot.templates.toList(), selectedTemplate = snapshot.selectedTemplate,
+                    selectedTemplateId = snapshot.selectedTemplate?.id, savedChanges = state.savedChanges + if (mutation) 1 else 0)
             }
             override fun onFailure(error: Exception) {
                 if (cleared) return
-                state = state.copy(loading = false, error = "Couldn't update the library. Please try again.")
+                val committed = mutation && error is CommittedRefreshException
+                if (committed) {
+                    selectTemplate((error as CommittedRefreshException).selectedTemplateId)
+                    closeTemplateDraft()
+                }
+                state = state.copy(loading = false, refreshRequired = state.refreshRequired || committed,
+                    savedChanges = state.savedChanges + if (committed) 1 else 0,
+                    error = if (state.refreshRequired || committed) "Saved. Reload the library before making more changes."
+                        else if (mutation) "Couldn't save changes. Your draft is still here. Please try again."
+                        else "Couldn't load the library. Please try again.")
             }
         })
     }
@@ -115,10 +183,10 @@ class LibraryViewModel(private val gateway: LibraryGateway) : ViewModel() {
     override fun onCleared() { cleared = true }
 
     class Factory(private val gateway: LibraryGateway) : ViewModelProvider.Factory {
-        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        override fun <T : ViewModel> create(modelClass: Class<T>, extras: CreationExtras): T {
             require(modelClass == LibraryViewModel::class.java)
             @Suppress("UNCHECKED_CAST")
-            return LibraryViewModel(gateway) as T
+            return LibraryViewModel(gateway, extras.createSavedStateHandle()) as T
         }
     }
 }

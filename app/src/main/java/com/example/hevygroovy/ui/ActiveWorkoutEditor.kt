@@ -22,7 +22,7 @@ import com.example.hevygroovy.entity.enums.Unit as WeightUnit
 
 @Composable
 fun ActiveWorkoutHeader(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail, onDiscard: () -> Unit) {
-    val busy = model.state.loading
+    val busy = model.state.busy
     var editDetails by rememberSaveable(active.workoutId) { mutableStateOf(false) }
     var pickExercise by rememberSaveable(active.workoutId) { mutableStateOf(false) }
     var finish by rememberSaveable(active.workoutId) { mutableStateOf(false) }
@@ -44,12 +44,14 @@ fun ActiveWorkoutHeader(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail
         }
     }
     if (editDetails) {
+        SaveResultEffect(model.state.savedChanges) { editDetails = false }
         var name by rememberSaveable { mutableStateOf(active.nameSnapshot ?: "Workout") }
         var notes by rememberSaveable { mutableStateOf(active.notes.orEmpty()) }
         AlertDialog(
             onDismissRequest = { editDetails = false }, title = { Text("Workout details") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     OutlinedTextField(name, { name = it }, label = { Text("Workout name") }, singleLine = true,
                         modifier = Modifier.testTag("workout-name"))
                     OutlinedTextField(notes, { notes = it }, label = { Text("Workout notes") }, maxLines = 5,
@@ -57,7 +59,7 @@ fun ActiveWorkoutHeader(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail
                 }
             },
             confirmButton = {
-                TextButton(onClick = { model.updateWorkout(name, notes); editDetails = false }, enabled = !busy && name.isNotBlank()) {
+                TextButton(onClick = { model.updateWorkout(name, notes) }, enabled = !busy && name.isNotBlank()) {
                     Text("Save workout")
                 }
             },
@@ -84,7 +86,10 @@ private fun ExercisePicker(model: WorkoutHomeViewModel, onDismiss: () -> Unit) {
     var title by rememberSaveable { mutableStateOf("") }
     var muscle by rememberSaveable { mutableStateOf(MuscleGroup.OTHER) }
     var expanded by remember { mutableStateOf(false) }
-    val busy = model.state.loading
+    val busy = model.state.busy
+    SaveResultEffect(model.state.savedChanges) {
+        if (creating && !model.state.refreshRequired) { search = title.trim(); creating = false } else onDismiss()
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
         title = { Text(if (creating) "Create exercise" else "Choose exercise") },
@@ -107,7 +112,7 @@ private fun ExercisePicker(model: WorkoutHomeViewModel, onDismiss: () -> Unit) {
                     if (options.isEmpty()) Text("No matching exercises. Create one to get started.")
                     LazyColumn(Modifier.heightIn(max = 300.dp)) {
                         items(options, key = { it.id }) { exercise ->
-                            TextButton(onClick = { model.addExercise(exercise.id); onDismiss() }, enabled = !busy,
+                            TextButton(onClick = { model.addExercise(exercise.id) }, enabled = !busy,
                                 modifier = Modifier.fillMaxWidth().testTag("exercise-option-${exercise.id}")) { Text(exercise.title) }
                         }
                     }
@@ -120,8 +125,6 @@ private fun ExercisePicker(model: WorkoutHomeViewModel, onDismiss: () -> Unit) {
             if (creating) {
                 TextButton(onClick = {
                     model.createExercise(title, muscle)
-                    search = title.trim()
-                    creating = false
                 }, enabled = !busy && title.isNotBlank()) { Text("Save exercise") }
             } else {
                 TextButton(onClick = { title = search; creating = true }, enabled = !busy) { Text("Create exercise") }
@@ -133,7 +136,7 @@ private fun ExercisePicker(model: WorkoutHomeViewModel, onDismiss: () -> Unit) {
 
 @Composable
 fun WorkoutExerciseCard(model: WorkoutHomeViewModel, row: ActiveWorkoutExercise, position: Int, count: Int) {
-    val busy = model.state.loading
+    val busy = model.state.busy
     val name = row.exerciseNameSnapshot ?: "Exercise"
     var editDetails by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
     var remove by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
@@ -182,6 +185,7 @@ fun WorkoutExerciseCard(model: WorkoutHomeViewModel, row: ActiveWorkoutExercise,
         )
     }
     if (editDetails) {
+        SaveResultEffect(model.state.savedChanges) { editDetails = false }
         var notes by rememberSaveable { mutableStateOf(row.notes.orEmpty()) }
         var rest by rememberSaveable { mutableStateOf(row.restTimeSeconds.toString()) }
         val restValue = rest.toIntOrNull()
@@ -189,26 +193,28 @@ fun WorkoutExerciseCard(model: WorkoutHomeViewModel, row: ActiveWorkoutExercise,
             onDismissRequest = { editDetails = false }, title = { Text("Notes & rest") },
             text = {
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     OutlinedTextField(notes, { notes = it }, label = { Text("Exercise notes") })
                     OutlinedTextField(rest, { rest = it }, label = { Text("Rest seconds") }, singleLine = true,
                         isError = restValue == null || restValue < 0, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
                 }
             },
             confirmButton = { TextButton(onClick = {
-                model.updateExercise(row.workoutExerciseId, notes, restValue!!); editDetails = false
+                model.updateExercise(row.workoutExerciseId, notes, restValue!!)
             }, enabled = !busy && restValue != null && restValue >= 0) { Text("Save details") } },
             dismissButton = { TextButton(onClick = { editDetails = false }) { Text("Cancel") } },
         )
     }
     row.sets.find { it.id == editingSetId }?.let { set ->
-        SetEditorDialog(set, busy, onDismiss = { editingSetId = null },
-            onSave = { request -> model.updateSet(set.id, request); editingSetId = null },
-            onDelete = { model.deleteSet(set.id); editingSetId = null })
+        SaveResultEffect(model.state.savedChanges) { editingSetId = null }
+        SetEditorDialog(set, busy, model.state.error, onDismiss = { editingSetId = null },
+            onSave = { request -> model.updateSet(set.id, request) },
+            onDelete = { model.deleteSet(set.id) })
     }
 }
 
 @Composable
-private fun SetEditorDialog(set: ActiveSetEntry, busy: Boolean, onDismiss: () -> Unit,
+private fun SetEditorDialog(set: ActiveSetEntry, busy: Boolean, error: String?, onDismiss: () -> Unit,
                             onSave: (UpdateSetEntryRequest) -> Unit, onDelete: () -> Unit) {
     var weight by rememberSaveable(set.id) { mutableStateOf(set.weight.toString()) }
     var reps by rememberSaveable(set.id) { mutableStateOf(set.reps.toString()) }
@@ -237,6 +243,7 @@ private fun SetEditorDialog(set: ActiveSetEntry, busy: Boolean, onDismiss: () ->
         onDismissRequest = onDismiss, title = { Text("Edit set ${set.setNumber}") },
         text = {
             Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 OutlinedTextField(weight, { weight = it }, label = { Text("Weight") }, singleLine = true,
                     isError = !validWeight, modifier = Modifier.testTag("set-weight"),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal))

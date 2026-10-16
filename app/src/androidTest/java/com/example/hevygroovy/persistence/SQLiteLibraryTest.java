@@ -13,6 +13,31 @@ import static org.junit.Assert.*;
 @RunWith(AndroidJUnit4.class)
 public class SQLiteLibraryTest {
     @Test
+    public void detailLookupJoinsCurrentTitlesScopesTemplateAndSortsRows() {
+        TemplateWorkout mine = template();
+        TemplateWorkout other = template();
+        Exercise bench = exercise("Bench");
+        Exercise squat = exercise("Squat");
+        TemplateExercise later = row(mine.getId(), squat.getId(), 4);
+        later.setRestTimeSeconds(90);
+        rows.save(later);
+        TemplateExercise first = row(mine.getId(), bench.getId(), 0);
+        TemplateExercise tied = row(mine.getId(), squat.getId(), 0);
+        row(other.getId(), bench.getId(), 0);
+        bench.setTitle("Renamed bench");
+        bench.setArchived(true);
+        exercises.save(bench);
+        List<com.example.hevygroovy.model.TemplateExerciseItemModel> detail = rows.findDetailsByTemplateWorkoutId(mine.getId());
+        assertEquals(3, detail.size());
+        assertEquals(first.getId(), detail.get(0).getTemplateExerciseId());
+        assertEquals(tied.getId(), detail.get(1).getTemplateExerciseId());
+        assertEquals(later.getId(), detail.get(2).getTemplateExerciseId());
+        assertEquals("Renamed bench", detail.get(0).getExerciseTitle());
+        assertNull(detail.get(0).getRestTargetSeconds());
+        assertEquals(Integer.valueOf(90), detail.get(2).getRestTargetSeconds());
+        assertTrue(rows.findDetailsByTemplateWorkoutId(999L).isEmpty());
+    }
+    @Test
     public void templateListingFiltersUserAndArchiveStateInRepository() {
         TemplateWorkout mine = template();
         TemplateWorkout archived = template();

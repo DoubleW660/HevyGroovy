@@ -372,7 +372,7 @@ class TemplateServiceImplTest {
     }
 
     @Test
-    void getTemplateDetail_shouldReturnSortedExercises() {
+    void getTemplateDetail_shouldUseSingleDetailLookupWithoutPerExerciseReads() {
         TemplateWorkout template = new TemplateWorkout();
         template.setUserId(1L);
         template.setId(100L);
@@ -380,34 +380,22 @@ class TemplateServiceImplTest {
         template.setDescription("Upper body");
         template.setArchived(false);
 
-        TemplateExercise second = new TemplateExercise();
-        second.setId(2L);
-        second.setTemplateWorkoutId(100L);
+        com.example.hevygroovy.model.TemplateExerciseItemModel second = new com.example.hevygroovy.model.TemplateExerciseItemModel();
+        second.setTemplateExerciseId(2L);
         second.setExerciseId(22L);
         second.setOrderIndex(1);
-        second.setRestTimeSeconds(120);
+        second.setRestTargetSeconds(120);
+        second.setExerciseTitle("Barbell Row");
 
-        TemplateExercise first = new TemplateExercise();
-        first.setId(1L);
-        first.setTemplateWorkoutId(100L);
+        com.example.hevygroovy.model.TemplateExerciseItemModel first = new com.example.hevygroovy.model.TemplateExerciseItemModel();
+        first.setTemplateExerciseId(1L);
         first.setExerciseId(11L);
         first.setOrderIndex(0);
-        first.setRestTimeSeconds(60);
-
-        Exercise exercise1 = new Exercise();
-        exercise1.setId(11L);
-        exercise1.setTitle("Bench Press");
-
-        Exercise exercise2 = new Exercise();
-        exercise2.setId(22L);
-        exercise2.setTitle("Barbell Row");
+        first.setRestTargetSeconds(60);
+        first.setExerciseTitle("Bench Press");
 
         when(templateWorkoutRepository.findById(100L)).thenReturn(Optional.of(template));
-        when(templateExerciseRepository.findByTemplateWorkoutId(100L))
-                .thenReturn(new ArrayList<>(List.of(second, first)));
-
-        when(exerciseService.requireExercise(11L)).thenReturn(exercise1);
-        when(exerciseService.requireExercise(22L)).thenReturn(exercise2);
+        when(templateExerciseRepository.findDetailsByTemplateWorkoutId(100L)).thenReturn(List.of(first, second));
 
         TemplateDetailModel result = templateService.getTemplateDetail(1L, 100L);
 
@@ -421,6 +409,9 @@ class TemplateServiceImplTest {
 
         assertEquals(1, result.getExercises().get(1).getOrderIndex());
         assertEquals("Barbell Row", result.getExercises().get(1).getExerciseTitle());
+        verify(templateExerciseRepository).findDetailsByTemplateWorkoutId(100L);
+        verify(templateExerciseRepository, never()).findByTemplateWorkoutId(anyLong());
+        verifyNoInteractions(exerciseService);
     }
 
     @Test

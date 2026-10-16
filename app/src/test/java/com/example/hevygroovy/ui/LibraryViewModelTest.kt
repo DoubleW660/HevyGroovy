@@ -1,6 +1,8 @@
 package com.example.hevygroovy.ui
 
 import com.example.hevygroovy.app.LibraryGateway
+import com.example.hevygroovy.app.CommittedRefreshException
+import androidx.lifecycle.SavedStateHandle
 import com.example.hevygroovy.dto.*
 import com.example.hevygroovy.entity.enums.MuscleGroup
 import com.example.hevygroovy.model.*
@@ -9,6 +11,77 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 
 class LibraryViewModelTest {
+    @Test
+    fun failedSaveKeepsDraftAndCanBeRetried() {
+        val gateway = FakeGateway()
+        val model = LibraryViewModel(gateway)
+        model.beginTemplateDetails()
+        model.updateTemplateDraft(title = "Upper", description = "Keep this draft")
+        model.saveTemplate(null, "Upper", "Keep this draft")
+        gateway.fail()
+        assertEquals("Keep this draft", model.templateDraft?.description)
+        assertEquals(0L, model.state.savedChanges)
+        assertFalse(model.state.busy)
+        model.saveTemplate(null, "Upper", "Keep this draft")
+        gateway.succeed(detail())
+        assertNull(model.templateDraft)
+        assertEquals(1L, model.state.savedChanges)
+    }
+
+    @Test
+    fun committedCreateWithRefreshFailureOnlyAllowsReadRetryAndKeepsCreatedId() {
+        val gateway = FakeGateway()
+        val model = LibraryViewModel(gateway)
+        model.beginTemplateDetails()
+        model.saveTemplate(null, "Upper", "")
+        gateway.fail(CommittedRefreshException(IllegalStateException("Read failed"), 7L))
+        assertNull(model.templateDraft)
+        assertTrue(model.state.refreshRequired)
+        assertEquals(1L, model.state.savedChanges)
+        model.saveTemplate(null, "Upper", "")
+        assertEquals(listOf("create:Upper"), gateway.calls)
+        model.refresh(); gateway.fail()
+        assertTrue(model.state.refreshRequired)
+        model.refresh(); gateway.succeed(detail())
+        assertEquals(listOf("create:Upper", "load:7", "load:7"), gateway.calls)
+        assertFalse(model.state.busy)
+        assertEquals(7L, model.state.selectedTemplate?.id)
+        assertEquals(1L, model.state.savedChanges)
+    }
+
+    @Test
+    fun newViewModelRestoresTemplateSelectionAndUnsavedEditorDraftBeforeLoading() {
+        val handle = SavedStateHandle()
+        val firstGateway = FakeGateway()
+        val first = LibraryViewModel(firstGateway, handle)
+        first.refresh(); firstGateway.succeed(detail())
+        first.beginTemplateDetails()
+        first.updateTemplateDraft(title = "Unsaved name", description = "Unsaved notes")
+        // Copy only saved primitive values into a new handle and a completely new ViewModel.
+        val restoredHandle = SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) })
+        val gateway = FakeGateway()
+        val restored = LibraryViewModel(gateway, restoredHandle)
+        assertEquals(7L, restored.state.selectedTemplateId)
+        assertNull(restored.state.selectedTemplate)
+        restored.refresh()
+        assertEquals(listOf("load:7"), gateway.calls)
+        gateway.succeed(detail())
+        assertEquals("Unsaved name", restored.templateDraft?.title)
+        assertEquals("Unsaved notes", restored.templateDraft?.description)
+        restored.showTemplateList()
+        assertNull(restored.state.selectedTemplateId)
+        assertNull(restored.templateDraft)
+    }
+
+    @Test
+    fun openingTemplateUsesDetailLoadAndDoesNotCountAsASave() {
+        val gateway = FakeGateway()
+        val model = LibraryViewModel(gateway)
+        model.refresh(); gateway.succeed()
+        model.openTemplate(7); gateway.succeed(detail())
+        assertEquals(listOf("load:null", "detail:7"), gateway.calls)
+        assertEquals(0L, model.state.savedChanges)
+    }
     @Test
     fun refreshIsExplicitAndRepeatedRequestsAreIgnoredWhileLoading() {
         val gateway = FakeGateway()
@@ -81,6 +154,9 @@ class LibraryViewModelTest {
         override fun loadLibrary(templateId: Long?, callback: LibraryGateway.LibraryCallback) {
             calls += "load:$templateId"; this.callback = callback
         }
+        override fun loadTemplate(templateId: Long, callback: LibraryGateway.LibraryCallback) {
+            calls += "detail:$templateId"; this.callback = callback
+        }
         override fun createTemplate(request: CreateTemplateRequest, callback: LibraryGateway.LibraryCallback) {
             calls += "create:${request.title}"; this.callback = callback
         }
@@ -92,6 +168,6 @@ class LibraryViewModelTest {
             val template = TemplateCard(TemplateSummaryModel().apply { templateWorkoutId = 7L; title = "Upper" })
             callback.onSuccess(LibraryGateway.LibrarySnapshot(listOf(exercise), listOf(template), detail))
         }
-        fun fail() { callback.onFailure(IllegalStateException("Test failure")) }
+        fun fail(error: Exception = IllegalStateException("Test failure")) { callback.onFailure(error) }
     }
 }

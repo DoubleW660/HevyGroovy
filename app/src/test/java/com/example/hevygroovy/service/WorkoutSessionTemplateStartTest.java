@@ -30,7 +30,6 @@ class WorkoutSessionTemplateStartTest {
     @Mock private TemplateExerciseRepository templateExercises;
     @Mock private WorkoutExerciseRepository workoutExercises;
     @Mock private SetEntryRepository sets;
-    @Mock private TemplateService templateService;
     @Mock private ExerciseService exercises;
 
     private WorkoutSessionServiceImpl service;
@@ -38,7 +37,7 @@ class WorkoutSessionTemplateStartTest {
     @BeforeEach
     void setUp() {
         service = new WorkoutSessionServiceImpl(workouts, templates, templateExercises,
-                workoutExercises, sets, templateService, exercises);
+                workoutExercises, sets, exercises);
     }
 
     @Test

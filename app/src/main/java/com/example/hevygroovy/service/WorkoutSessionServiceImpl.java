@@ -30,7 +30,6 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     private final TemplateExerciseRepository templateExerciseRepository;
     private final WorkoutExerciseRepository workoutExerciseRepository;
     private final SetEntryRepository setEntryRepository;
-    private final TemplateService templateService;
     private final ExerciseService exerciseService;
 
     public WorkoutSessionServiceImpl(
@@ -39,7 +38,6 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
             TemplateExerciseRepository templateExerciseRepository,
             WorkoutExerciseRepository workoutExerciseRepository,
             SetEntryRepository setEntryRepository,
-            TemplateService templateService,
             ExerciseService exerciseService
     ) {
         this.loggedWorkoutRepository = loggedWorkoutRepository;
@@ -47,7 +45,6 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
         this.templateExerciseRepository = templateExerciseRepository;
         this.workoutExerciseRepository = workoutExerciseRepository;
         this.setEntryRepository = setEntryRepository;
-        this.templateService = templateService;
         this.exerciseService = exerciseService;
     }
 

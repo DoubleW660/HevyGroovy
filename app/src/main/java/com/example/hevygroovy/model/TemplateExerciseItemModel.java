@@ -48,7 +48,7 @@ public class TemplateExerciseItemModel {
         return restTargetSeconds;
     }
 
-    public void setRestTargetSeconds(int restTargetSeconds) {
+    public void setRestTargetSeconds(Integer restTargetSeconds) {
         this.restTargetSeconds = restTargetSeconds;
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.hevygroovy.app.WorkoutGateway
+import com.example.hevygroovy.app.CommittedRefreshException
 import com.example.hevygroovy.dto.ActiveWorkoutDetail
 import com.example.hevygroovy.dto.WorkoutHistory
 import com.example.hevygroovy.dto.ExerciseOption
@@ -18,8 +19,12 @@ data class WorkoutHomeState(
     val activeWorkout: ActiveWorkoutDetail? = null,
     val history: List<WorkoutHistory> = emptyList(),
     val exercises: List<ExerciseOption> = emptyList(),
+    val savedChanges: Long = 0,
+    val refreshRequired: Boolean = false,
     val error: String? = null,
-)
+) {
+    val busy: Boolean get() = loading || refreshRequired
+}
 
 class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
     var state by mutableStateOf(WorkoutHomeState())
@@ -32,7 +37,7 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
     fun refresh() {
         // Initial load is allowed; subsequent calls are serialized by the loading flag.
         if (state.loaded && state.loading) return
-        execute { gateway.load(it) }
+        execute(mutation = false) { gateway.load(it) }
     }
 
     fun startWorkout() {
@@ -104,11 +109,11 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
 
     private fun withExercise(rowId: Long, action: (WorkoutGateway.Callback) -> Unit) {
         if (state.activeWorkout?.exercises?.none { it.workoutExerciseId == rowId } != false) return
-        execute(action)
+        execute(operation = action)
     }
 
-    private fun execute(operation: (WorkoutGateway.Callback) -> Unit) {
-        if (requestInFlight || cleared) return
+    private fun execute(mutation: Boolean = true, operation: (WorkoutGateway.Callback) -> Unit) {
+        if (requestInFlight || cleared || (mutation && state.refreshRequired)) return
         requestInFlight = true
         state = state.copy(loading = true, error = null)
         operation(object : WorkoutGateway.Callback {
@@ -121,13 +126,19 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway) : ViewModel() {
                     activeWorkout = snapshot.activeWorkout,
                     history = snapshot.history.toList(),
                     exercises = snapshot.exercises.toList(),
+                    savedChanges = state.savedChanges + if (mutation) 1 else 0,
                 )
             }
 
             override fun onFailure(error: Exception) {
                 requestInFlight = false
                 if (cleared) return
-                state = state.copy(loading = false, error = "Couldn't update workouts. Please try again.")
+                val committed = mutation && error is CommittedRefreshException
+                state = state.copy(loading = false, refreshRequired = state.refreshRequired || committed,
+                    savedChanges = state.savedChanges + if (committed) 1 else 0,
+                    error = if (state.refreshRequired || committed) "Saved. Reload workouts before making more changes."
+                        else if (mutation) "Couldn't save changes. Your draft is still here. Please try again."
+                        else "Couldn't load workouts. Please try again.")
             }
         })
     }

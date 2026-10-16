@@ -16,9 +16,7 @@ import java.util.Date
 fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel) {
     val state = viewModel.state
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
-    val snackbar = remember { SnackbarHostState() }
-    LaunchedEffect(state.error) { state.error?.let { snackbar.showSnackbar(it) } }
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }) { padding ->
+    Scaffold { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(20.dp),
@@ -48,7 +46,7 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel) {
                         Card(Modifier.fillMaxWidth()) {
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                                 Text("Ready for your next session?", style = MaterialTheme.typography.titleLarge)
-                                Button(onClick = viewModel::startWorkout, enabled = !state.loading && state.error == null) {
+                                Button(onClick = viewModel::startWorkout, enabled = !state.busy && state.error == null) {
                                     Text("Start empty workout")
                                 }
                             }
@@ -89,7 +87,7 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel) {
             title = { Text("Discard workout?") },
             text = { Text("This removes this workout and all its sets. This cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = { confirmDiscard = false; viewModel.discardWorkout() }, enabled = !state.loading) {
+                TextButton(onClick = { confirmDiscard = false; viewModel.discardWorkout() }, enabled = !state.busy) {
                     Text("Discard")
                 }
             },

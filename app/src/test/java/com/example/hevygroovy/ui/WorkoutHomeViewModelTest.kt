@@ -8,6 +8,24 @@ import org.junit.jupiter.api.Test
 
 class WorkoutHomeViewModelTest {
     @Test
+    fun committedWriteClosesFormOnceAndBlocksMutationsUntilReadRecoverySucceeds() {
+        val gateway = FakeGateway()
+        val model = WorkoutHomeViewModel(gateway)
+        gateway.succeed(activeWithSet(true))
+        model.finishWorkout()
+        gateway.fail(com.example.hevygroovy.app.CommittedRefreshException(IllegalStateException("Read failed"), null))
+        assertEquals(1L, model.state.savedChanges)
+        assertTrue(model.state.busy)
+        model.finishWorkout(); model.discardWorkout(); model.addSet(10)
+        assertEquals(listOf("load", "finish:100"), gateway.calls)
+        model.refresh(); gateway.fail()
+        assertTrue(model.state.refreshRequired)
+        model.refresh(); gateway.succeed()
+        assertFalse(model.state.busy)
+        assertNull(model.state.activeWorkout)
+        assertEquals(1L, model.state.savedChanges)
+    }
+    @Test
     fun finishRequiresCompletedSetAndThenCallsGatewayOnce() {
         val gateway = FakeGateway()
         val model = WorkoutHomeViewModel(gateway)
@@ -103,6 +121,7 @@ class WorkoutHomeViewModelTest {
         gateway.fail()
         assertFalse(model.state.loaded)
         assertNotNull(model.state.error)
+        assertEquals(0L, model.state.savedChanges)
         model.refresh()
         gateway.succeed()
         assertNull(model.state.error)
@@ -172,6 +191,6 @@ class WorkoutHomeViewModelTest {
         fun succeed(active: ActiveWorkoutDetail? = null) {
             callback.onSuccess(WorkoutGateway.Snapshot(active, emptyList()))
         }
-        fun fail() { callback.onFailure(IllegalStateException("Test failure")) }
+        fun fail(error: Exception = IllegalStateException("Test failure")) { callback.onFailure(error) }
     }
 }

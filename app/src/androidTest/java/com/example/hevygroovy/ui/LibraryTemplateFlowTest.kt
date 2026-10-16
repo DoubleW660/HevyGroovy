@@ -21,7 +21,7 @@ class LibraryTemplateFlowTest {
         lateinit var workouts: WorkoutHomeViewModel
         lateinit var library: LibraryViewModel
         InstrumentationRegistry.getInstrumentation().runOnMainSync {
-            workouts = WorkoutHomeViewModel(gateway); library = LibraryViewModel(gateway)
+            workouts = WorkoutHomeViewModel(gateway.workouts); library = LibraryViewModel(gateway.library)
         }
         try {
             compose.setContent { HevyGroovyTheme { WorkoutApp(workouts, library) } }

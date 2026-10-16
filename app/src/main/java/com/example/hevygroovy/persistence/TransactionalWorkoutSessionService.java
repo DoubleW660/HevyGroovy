@@ -23,6 +23,16 @@ public final class TransactionalWorkoutSessionService implements WorkoutSessionS
     }
 
     @Override
+    public LoggedWorkout updateWorkoutDetails(long userId, long workoutId, String name, String notes) {
+        return transactions.run(() -> delegate.updateWorkoutDetails(userId, workoutId, name, notes));
+    }
+
+    @Override
+    public WorkoutExercise updateExerciseDetails(long userId, long rowId, String notes, int seconds) {
+        return transactions.run(() -> delegate.updateExerciseDetails(userId, rowId, notes, seconds));
+    }
+
+    @Override
     public LoggedWorkout renameWorkout(long userId, long workoutId, String name) {
         return transactions.run(() -> delegate.renameWorkout(userId, workoutId, name));
     }

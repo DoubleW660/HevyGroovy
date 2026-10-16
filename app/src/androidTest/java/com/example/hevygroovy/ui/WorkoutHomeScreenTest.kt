@@ -30,6 +30,16 @@ class WorkoutHomeScreenTest {
     }
 
     private class FakeGateway : WorkoutGateway {
+        override fun finish(workoutId: Long, callback: WorkoutGateway.Callback) = error("Unexpected finish")
+        override fun updateWorkout(workoutId: Long, name: String, notes: String, callback: WorkoutGateway.Callback) = error("Unexpected edit")
+        override fun createExercise(title: String, primaryMuscle: com.example.hevygroovy.entity.enums.MuscleGroup, callback: WorkoutGateway.Callback) = error("Unexpected create")
+        override fun addExercise(workoutId: Long, exerciseId: Long, callback: WorkoutGateway.Callback) = error("Unexpected add")
+        override fun removeExercise(workoutExerciseId: Long, callback: WorkoutGateway.Callback) = error("Unexpected remove")
+        override fun moveExercise(workoutExerciseId: Long, position: Int, callback: WorkoutGateway.Callback) = error("Unexpected move")
+        override fun updateExercise(workoutExerciseId: Long, notes: String, restSeconds: Int, callback: WorkoutGateway.Callback) = error("Unexpected edit")
+        override fun addSet(workoutExerciseId: Long, callback: WorkoutGateway.Callback) = error("Unexpected add")
+        override fun updateSet(setId: Long, request: com.example.hevygroovy.dto.UpdateSetEntryRequest, callback: WorkoutGateway.Callback) = error("Unexpected edit")
+        override fun deleteSet(setId: Long, callback: WorkoutGateway.Callback) = error("Unexpected delete")
         var discards = 0
         override fun load(callback: WorkoutGateway.Callback) {
             val workout = LoggedWorkout().apply { id = 100L; userId = 1L; nameSnapshot = "Leg day" }

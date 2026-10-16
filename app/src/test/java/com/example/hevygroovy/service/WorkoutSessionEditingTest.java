@@ -21,6 +21,36 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class WorkoutSessionEditingTest {
     @Test
+    void combinedWorkoutEditValidatesBeforeMutatingAndSavesOnce() {
+        LoggedWorkout workout = ownedWorkout();
+        workout.setNameSnapshot("Original");
+        workout.setNotes("Original note");
+        assertThrows(RuntimeException.class, () -> service.updateWorkoutDetails(1L, 100L, " ", "Changed"));
+        assertEquals("Original", workout.getNameSnapshot());
+        assertEquals("Original note", workout.getNotes());
+        when(workouts.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        service.updateWorkoutDetails(1L, 100L, "  Upper   body ", "Updated");
+        assertEquals("Upper body", workout.getNameSnapshot());
+        assertEquals("Updated", workout.getNotes());
+        verify(workouts).save(workout);
+    }
+
+    @Test
+    void combinedExerciseEditValidatesBeforeMutatingAndSavesOnce() {
+        ownedWorkout();
+        WorkoutExercise row = ownedRow();
+        row.setNotes("Original");
+        row.setRestTimeSeconds(60);
+        assertThrows(RuntimeException.class, () -> service.updateExerciseDetails(1L, 10L, "Changed", -1));
+        assertEquals("Original", row.getNotes());
+        assertEquals(60, row.getRestTimeSeconds());
+        when(rows.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        service.updateExerciseDetails(1L, 10L, "Brace", 90);
+        assertEquals("Brace", row.getNotes());
+        assertEquals(90, row.getRestTimeSeconds());
+        verify(rows).save(row);
+    }
+    @Test
     void renameNormalizesNameAndRejectsBlankWithoutMutation() {
         LoggedWorkout workout = ownedWorkout();
         workout.setNameSnapshot("Original");
@@ -225,6 +255,8 @@ class WorkoutSessionEditingTest {
     }
 
     private void assertEditsRejected() {
+        assertThrows(RuntimeException.class, () -> service.updateWorkoutDetails(1L, 100L, "Legs", "Note"));
+        assertThrows(RuntimeException.class, () -> service.updateExerciseDetails(1L, 10L, "Note", 90));
         assertThrows(RuntimeException.class, () -> service.renameWorkout(1L, 100L, "Legs"));
         assertThrows(RuntimeException.class, () -> service.updateWorkoutNotes(1L, 100L, "note"));
         assertThrows(RuntimeException.class, () -> service.discardWorkout(1L, 100L));

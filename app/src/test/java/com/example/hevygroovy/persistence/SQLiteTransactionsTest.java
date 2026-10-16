@@ -114,6 +114,8 @@ class SQLiteTransactionsTest {
         List<Consumer<WorkoutSessionService>> operations = List.of(
                 service -> service.getActiveWorkout(1L),
                 service -> service.renameWorkout(1L, 100L, "Legs"),
+                service -> service.updateWorkoutDetails(1L, 100L, "Legs", "Note"),
+                service -> service.updateExerciseDetails(1L, 10L, "Brace", 90),
                 service -> service.updateWorkoutNotes(1L, 100L, null),
                 service -> service.discardWorkout(1L, 100L),
                 service -> service.startEmptyWorkout(1L),

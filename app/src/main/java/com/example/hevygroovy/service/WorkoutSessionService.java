@@ -20,6 +20,10 @@ public interface WorkoutSessionService {
     /** Null or blank notes clear the current note. */
     LoggedWorkout updateWorkoutNotes(long userId, long workoutId, String notes);
 
+    LoggedWorkout updateWorkoutDetails(long userId, long workoutId, String name, String notes);
+
+    WorkoutExercise updateExerciseDetails(long userId, long workoutExerciseId, String notes, int restSeconds);
+
     /** Permanently removes an owned active workout and its child rows. */
     void discardWorkout(long userId, long workoutId);
 

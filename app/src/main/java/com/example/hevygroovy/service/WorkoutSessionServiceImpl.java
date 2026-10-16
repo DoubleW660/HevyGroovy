@@ -285,6 +285,29 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     }
 
     @Override
+    public LoggedWorkout updateWorkoutDetails(long userId, long workoutId, String name, String notes) {
+        LoggedWorkout workout = requireOwnedWorkout(userId, workoutId);
+        requireActiveWorkout(workout);
+        if (name == null || name.isBlank()) {
+            throw new RuntimeException("Workout name is required");
+        }
+        workout.setNameSnapshot(name.trim().replaceAll("\\s+", " "));
+        workout.setNotes(notes);
+        return loggedWorkoutRepository.save(workout);
+    }
+
+    @Override
+    public WorkoutExercise updateExerciseDetails(long userId, long workoutExerciseId, String notes, int restSeconds) {
+        WorkoutExercise exercise = requireOwnedActiveExercise(userId, workoutExerciseId);
+        if (restSeconds < 0) {
+            throw new RuntimeException("Rest seconds cannot be negative");
+        }
+        exercise.setNotes(notes);
+        exercise.setRestTimeSeconds(restSeconds);
+        return workoutExerciseRepository.save(exercise);
+    }
+
+    @Override
     public LoggedWorkout renameWorkout(long userId, long workoutId, String name) {
         LoggedWorkout workout = requireOwnedWorkout(userId, workoutId);
         requireActiveWorkout(workout);

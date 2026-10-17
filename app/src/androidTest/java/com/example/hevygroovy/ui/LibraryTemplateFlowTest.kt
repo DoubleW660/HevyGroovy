@@ -1,6 +1,7 @@
 package com.example.hevygroovy.ui
 
 import androidx.compose.ui.test.*
+import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.hevygroovy.app.AppContainer
@@ -68,12 +69,17 @@ class LibraryTemplateFlowTest {
             addTemplateExercise(library, exerciseId)
             val firstId = library.state.selectedTemplate!!.exercises.first().id
             val secondId = library.state.selectedTemplate!!.exercises.last().id
-            compose.onNodeWithTag("template-up-$secondId").performScrollTo().performClick()
+            compose.onNodeWithTag("library-list").performScrollToNode(hasTestTag("reorder-template-exercise-$secondId"))
+            val moveUp = compose.onNodeWithTag("reorder-template-exercise-$secondId").performScrollTo()
+                .fetchSemanticsNode().config[SemanticsActions.CustomActions].single { it.label == "Move up" }
+            compose.runOnUiThread { assertTrue(moveUp.action()) }
             awaitLibrary(library)
             assertEquals(secondId, library.state.selectedTemplate!!.exercises.first().id)
+            compose.onNodeWithTag("library-list").performScrollToNode(hasTestTag("template-remove-$firstId"))
             compose.onNodeWithTag("template-remove-$firstId").performScrollTo().performClick()
             compose.onNodeWithTag("confirm-library-action").performClick()
             awaitLibrary(library)
+            compose.onNodeWithTag("library-list").performScrollToNode(hasTestTag("template-rest-$secondId"))
             compose.onNodeWithTag("template-rest-$secondId").performScrollTo().performClick()
             compose.onNodeWithTag("template-rest-input").performTextReplacement("90")
             compose.onNodeWithText("Save rest").performClick()

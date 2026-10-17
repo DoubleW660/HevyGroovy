@@ -18,6 +18,28 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class WorkoutHistoryQueryServiceImplTest {
+    @Test void routineHistoryAndCompletionDatesAreScopedBoundedAndDoNotReadChildren() {
+        java.util.Map<Long, Long> dates = new java.util.HashMap<>(); dates.put(9L, 2000L);
+        when(workouts.findLastCompletedAtByTemplate(1)).thenReturn(dates);
+        when(workouts.findCompletedTemplateSummaries(1, 9, 12)).thenReturn(List.of(summary(100, 1, 5, 250)));
+        java.util.Map<Long, Long> result = service.getLastCompletedAtByTemplate(1);
+        dates.clear();
+        assertEquals(2000L, result.get(9L));
+        assertThrows(UnsupportedOperationException.class, result::clear);
+        List<WorkoutHistory> history = service.getTemplateWorkoutHistory(1, 9, 12);
+        assertEquals(100, history.get(0).getWorkoutId());
+        assertThrows(UnsupportedOperationException.class, history::clear);
+        verifyNoInteractions(exercises, sets);
+    }
+
+    @Test void invalidRoutineHistoryRequestsAndZeroLimitAvoidStorage() {
+        assertThrows(IllegalArgumentException.class, () -> service.getLastCompletedAtByTemplate(0));
+        assertThrows(IllegalArgumentException.class, () -> service.getTemplateWorkoutHistory(0, 1, 12));
+        assertThrows(IllegalArgumentException.class, () -> service.getTemplateWorkoutHistory(1, 0, 12));
+        assertThrows(IllegalArgumentException.class, () -> service.getTemplateWorkoutHistory(1, 1, -1));
+        assertTrue(service.getTemplateWorkoutHistory(1, 1, 0).isEmpty());
+        verifyNoInteractions(workouts, exercises, sets);
+    }
     @Test
     void unilateralHistoryDoublesVolumeWithoutChangingStoredSetsRepsOrMaxLoad() {
         when(workouts.findById(100L)).thenReturn(Optional.of(workout(100L, 1L, 1000L, 2000L)));

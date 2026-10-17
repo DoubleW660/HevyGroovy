@@ -9,7 +9,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.input.KeyboardType
@@ -17,12 +22,18 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hevygroovy.dto.*
 import com.example.hevygroovy.entity.enums.MuscleGroup
+import java.text.DateFormat
+import java.util.Date
 
 @Composable
-private fun LibraryPage(title: String, model: LibraryViewModel, readyTag: String = "library-ready", content: LazyListScope.() -> Unit) {
+private fun LibraryPage(title: String, model: LibraryViewModel, readyTag: String = "library-ready",
+    listState: LazyListState = rememberLazyListState(), listModifier: Modifier = Modifier,
+    userScrollEnabled: Boolean = true, overlay: @Composable () -> Unit = {}, content: LazyListScope.() -> Unit) {
     val state = model.state
     Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) readyTag else "library-loading")) { padding ->
-        LazyColumn(Modifier.fillMaxSize().padding(padding).testTag("library-list"), contentPadding = PaddingValues(20.dp),
+        Box(Modifier.fillMaxSize().padding(padding)) {
+        LazyColumn(Modifier.fillMaxSize().testTag("library-list").then(listModifier), state = listState,
+            userScrollEnabled = userScrollEnabled, contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)) {
             item(key = "heading") {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -30,7 +41,7 @@ private fun LibraryPage(title: String, model: LibraryViewModel, readyTag: String
                     Text(title, style = MaterialTheme.typography.headlineLarge)
                 }
             }
-            if (state.loading) item(key = "loading") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
+            if (state.loading && !state.loaded) item(key = "loading") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             state.error?.let { error ->
                 item(key = "error") {
                     Text(error, color = MaterialTheme.colorScheme.error)
@@ -38,6 +49,8 @@ private fun LibraryPage(title: String, model: LibraryViewModel, readyTag: String
                 }
             }
             content()
+        }
+        overlay()
         }
     }
 }
@@ -214,12 +227,25 @@ fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean,
         return
     }
     var includeArchived by rememberSaveable { mutableStateOf(false) }
-    val visible = state.templates.filter { includeArchived || !it.isArchived }
+    var sortMenu by remember { mutableStateOf(false) }
+    val visible = sortedTemplates(state.templates, state.lastCompletedAtByTemplate, model.templateSort)
+        .filter { includeArchived || !it.isArchived }
     LibraryPage("Workout", model) {
         if (header != null) item(key = "quick-start") { header() }
         item(key = "controls") {
             Text("My routines", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(12.dp))
+            Box {
+                OutlinedButton(onClick = { sortMenu = true }, modifier = Modifier.testTag("template-sort")) {
+                    Text("Sort: " + model.templateSort.label)
+                }
+                DropdownMenu(sortMenu, { sortMenu = false }) {
+                    TemplateSort.entries.forEach { sort ->
+                        DropdownMenuItem(text = { Text(sort.label) }, modifier = Modifier.testTag("template-sort-" + sort.name),
+                            onClick = { model.selectTemplateSort(sort); sortMenu = false })
+                    }
+                }
+            }
             Button(onClick = model::beginTemplateDetails, enabled = !state.busy,
                 modifier = Modifier.testTag(if (state.loaded && !state.busy) "template-list-ready" else "template-list-loading")) { Text("New routine") }
             Row {
@@ -230,9 +256,13 @@ fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean,
         }
         if (state.loaded && visible.isEmpty()) item(key = "empty") { Text("Build a routine with your favorite exercises.") }
         items(visible, key = { it.id }) { template ->
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Card(Modifier.fillMaxWidth().testTag("template-card-" + template.id), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.padding(16.dp)) {
                     Text(template.title, style = MaterialTheme.typography.titleLarge)
+                    val completed = state.lastCompletedAtByTemplate[template.id]
+                    Text(if (completed == null) "Never completed" else "Last completed: " +
+                        DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(completed)),
+                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     if (!template.description.isNullOrBlank()) Text(template.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (template.isArchived) Text("Archived")
                     TextButton(onClick = { model.openTemplate(template.id) }, enabled = !state.busy,
@@ -250,7 +280,19 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
     val busy = model.state.busy
     var archiving by rememberSaveable(template.id) { mutableStateOf(false) }
     var removing by rememberSaveable(template.id) { mutableStateOf<Long?>(null) }
-    LibraryPage(template.title, model, readyTag = "template-ready") {
+    val listState = rememberLazyListState()
+    val rowIds = template.exercises.map { it.id }
+    val reorder = rememberExerciseReorder(listState, template.id, rowIds, busy)
+    val byId = template.exercises.associateBy { it.id }
+    val rows = (reorder.pendingOrder ?: rowIds).mapNotNull(byId::get)
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    LibraryPage(template.title, model, readyTag = "template-ready", listState = listState,
+        listModifier = Modifier.exerciseReorderGestures(reorder, rowIds, !busy && !template.isArchived,
+            onBegin = { focus.clearFocus(); keyboard?.hide() }, onMove = model::moveExercise),
+        userScrollEnabled = reorder.draggedId == null,
+        overlay = { ExerciseDragPreview(reorder, byId[reorder.draggedId]?.title) }) {
+        item(key = "progress") { RoutineProgressChart(template.id, model.state.templateHistory) }
         item(key = "controls") {
             TextButton(onClick = model::showTemplateList, enabled = !busy,
                 modifier = Modifier.testTag("template-list-back")) { Text("All routines") }
@@ -269,17 +311,28 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
             }
         }
         if (template.exercises.isEmpty()) item(key = "empty") { Text("Add exercises to build your routine.") }
-        itemsIndexed(template.exercises, key = { _, row -> row.id }) { index, row ->
-            Card(Modifier.fillMaxWidth()) {
+        itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
+            ExerciseReorderItem(reorder, row.id, index, rows.size) {
+            Card(Modifier.fillMaxWidth().testTag("template-exercise-" + row.id)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text("${index + 1}. ${row.title}", style = MaterialTheme.typography.titleLarge)
+                    Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).testTag("reorder-template-exercise-" + row.id)
+                        .exerciseReorderHeader(reorder, row.id).semantics {
+                            contentDescription = if (template.isArchived) row.title else "Reorder " + row.title + ". Touch and hold, then drag."
+                            if (!template.isArchived) customActions = buildList {
+                                if (index > 0) add(CustomAccessibilityAction("Move up") {
+                                    if (busy) false else { model.moveExercise(row.id, index - 1); true }
+                                })
+                                if (index < rows.lastIndex) add(CustomAccessibilityAction("Move down") {
+                                    if (busy) false else { model.moveExercise(row.id, index + 1); true }
+                                })
+                            }
+                        }, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
+                        if (!template.isArchived) ExerciseDragHandle()
+                        Text(row.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                    }
                     Text("Rest: ${row.restSeconds} seconds")
                     if (!template.isArchived) {
                         Row {
-                            TextButton(onClick = { model.moveExercise(row.id, index - 1) }, enabled = !busy && index > 0,
-                                modifier = Modifier.testTag("template-up-${row.id}")) { Text("Up") }
-                            TextButton(onClick = { model.moveExercise(row.id, index + 1) }, enabled = !busy && index < template.exercises.lastIndex,
-                                modifier = Modifier.testTag("template-down-${row.id}")) { Text("Down") }
                             TextButton(onClick = { model.beginTemplateRest(row) }, enabled = !busy,
                                 modifier = Modifier.testTag("template-rest-${row.id}")) { Text("Edit rest") }
                         }
@@ -287,6 +340,7 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
                             modifier = Modifier.testTag("template-remove-${row.id}")) { Text("Remove") }
                     }
                 }
+            }
             }
         }
     }

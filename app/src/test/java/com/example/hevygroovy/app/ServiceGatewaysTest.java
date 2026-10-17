@@ -11,6 +11,19 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class ServiceGatewaysTest {
+    @Test void librarySnapshotUsesUserScopedCompletionDatesAndTwelveSelectedRoutineSessions() {
+        WorkoutHistoryQueryService history = services.getHistory();
+        when(history.getLastCompletedAtByTemplate(1)).thenReturn(java.util.Map.of(7L, 3000L));
+        when(templates.getTemplateDetail(1, 7)).thenReturn(new TemplateDetailModel());
+        LibraryGateway.LibraryCallback callback = mock(LibraryGateway.LibraryCallback.class);
+        new ServiceLibraryGateway(worker).loadTemplate(7, callback);
+        org.mockito.ArgumentCaptor<LibraryGateway.LibrarySnapshot> result = org.mockito.ArgumentCaptor.forClass(LibraryGateway.LibrarySnapshot.class);
+        verify(callback).onSuccess(result.capture());
+        assertEquals(3000L, result.getValue().getLastCompletedAtByTemplate().get(7L));
+        verify(history).getLastCompletedAtByTemplate(1);
+        verify(history).getTemplateWorkoutHistory(1, 7, 12);
+        verify(history, never()).getWorkoutHistory(anyLong());
+    }
     private AppServices services;
     private ExerciseService exercises;
     private TemplateService templates;

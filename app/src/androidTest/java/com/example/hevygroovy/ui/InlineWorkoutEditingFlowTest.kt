@@ -255,22 +255,32 @@ class InlineWorkoutEditingFlowTest {
                 awaitLoaded(model)
                 // Keep the touch assertion independent of keyboard focus, blur saves and IME resizing.
                 Espresso.closeSoftKeyboard()
-                compose.onNodeWithTag("workout-list").performScrollToNode(
-                    hasTestTag("reorder-exercise-${rows[0]}"))
+                compose.onNodeWithTag("workout-list").performScrollToIndex(2)
                 compose.waitForIdle()
-                val dragDistance = 100f * context.resources.displayMetrics.density
                 val list = compose.onNodeWithTag("workout-list")
                 val header = compose.onNodeWithTag("reorder-exercise-${rows[0]}").assertIsDisplayed()
-                val start = header.fetchSemanticsNode().boundsInRoot.center -
-                    list.fetchSemanticsNode().boundsInRoot.topLeft
+                val original = header.fetchSemanticsNode().boundsInRoot
+                val listBounds = list.fetchSemanticsNode().boundsInRoot
+                val grab = Offset(original.width * 0.3f, original.height * 0.25f)
+                val start = original.topLeft + grab - listBounds.topLeft
                 compose.mainClock.autoAdvance = false
                 try {
                     var holdMillis = 0L
                     list.performTouchInput { holdMillis = viewConfiguration.longPressTimeoutMillis; down(start) }
-                    // Process the long press and collapsed layout before injecting movement.
+                    // Holding must preserve the exact grab point and the list geometry.
                     compose.mainClock.advanceTimeBy(holdMillis + 100)
-                    compose.onNodeWithTag("collapsed-exercise-${rows[0]}").assertExists()
-                    list.performTouchInput { moveTo(start + Offset(0f, dragDistance), 200); up() }
+                    val preview = compose.onNodeWithTag("exercise-drag-preview").fetchSemanticsNode().boundsInRoot
+                    assertEquals(original.left, preview.left, 2f)
+                    assertEquals(original.top, preview.top, 2f)
+                    assertEquals(original.top, header.fetchSemanticsNode().boundsInRoot.top, 2f)
+                    val end = Offset(start.x + 7f, listBounds.height - 12f)
+                    list.performTouchInput { moveTo(end, 300) }
+                    compose.mainClock.advanceTimeBy(1400)
+                    val moving = compose.onNodeWithTag("exercise-drag-preview").fetchSemanticsNode().boundsInRoot
+                    assertEquals(listBounds.left + end.x - grab.x, moving.left, 2f)
+                    assertEquals(listBounds.top + end.y - grab.y, moving.top, 2f)
+                    compose.onAllNodes(hasTestTag("reorder-drop-" + rows.last())).assertCountEquals(1)
+                    list.performTouchInput { up() }
                 } finally {
                     compose.mainClock.autoAdvance = true
                 }

@@ -198,8 +198,7 @@ fun WorkoutExerciseCard(
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(reorderModifier.fillMaxWidth().heightIn(min = 44.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Text("☰", color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.titleMedium)
+                ExerciseDragHandle()
                 Text(name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                 if (collapsed) Text((position + 1).toString(), color = MaterialTheme.colorScheme.primary)
             }

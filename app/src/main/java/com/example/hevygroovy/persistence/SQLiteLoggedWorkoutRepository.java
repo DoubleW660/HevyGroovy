@@ -7,6 +7,8 @@ import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.repo.LoggedWorkoutRepository;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.LinkedHashMap;
 import java.util.Optional;
 import com.example.hevygroovy.dto.WorkoutHistory;
 import java.time.Duration;
@@ -21,11 +23,37 @@ public final class SQLiteLoggedWorkoutRepository implements LoggedWorkoutReposit
 
     @Override
     public List<WorkoutHistory> findCompletedSummaries(long userId, int limit, int offset) {
+        return completedSummaries(userId, null, limit, offset);
+    }
+
+    @Override
+    public Map<Long, Long> findLastCompletedAtByTemplate(long userId) {
+        Map<Long, Long> result = new LinkedHashMap<>();
+        try (Cursor cursor = db.rawQuery("SELECT template_id, MAX(ended_at) FROM logged_workout "
+                + "WHERE user_id=? AND ended_at IS NOT NULL AND template_id IS NOT NULL GROUP BY template_id",
+                new String[]{Long.toString(userId)})) {
+            while (cursor.moveToNext()) result.put(cursor.getLong(0), cursor.getLong(1));
+        }
+        return Map.copyOf(result);
+    }
+
+    @Override
+    public List<WorkoutHistory> findCompletedTemplateSummaries(long userId, long templateId, int limit) {
+        return completedSummaries(userId, templateId, limit, 0);
+    }
+
+    private List<WorkoutHistory> completedSummaries(long userId, Long templateId, int limit, int offset) {
         if (limit < 0 || offset < 0) {
             throw new IllegalArgumentException("Limit and offset cannot be negative");
         }
+        String order = templateId == null ? "started_at DESC, id DESC" : "ended_at DESC, id DESC";
+        List<String> args = new ArrayList<>();
+        args.add(Long.toString(userId));
+        if (templateId != null) args.add(Long.toString(templateId));
+        args.add(Integer.toString(limit)); args.add(Integer.toString(offset));
         String sql = "WITH page AS (SELECT * FROM logged_workout WHERE user_id = ? "
-                + "AND ended_at IS NOT NULL ORDER BY started_at DESC, id DESC LIMIT ? OFFSET ?), "
+                + (templateId == null ? "" : "AND template_id = ? ")
+                + "AND ended_at IS NOT NULL ORDER BY " + order + " LIMIT ? OFFSET ?), "
                 + "exercise_totals AS (SELECT we.logged_workout_id AS wid, COUNT(*) AS exercises "
                 + "FROM workout_exercise we JOIN page p ON p.id = we.logged_workout_id GROUP BY wid), "
                 + "set_totals AS (SELECT we.logged_workout_id AS wid, COUNT(*) AS sets, SUM(s.reps) AS reps, "
@@ -36,10 +64,9 @@ public final class SQLiteLoggedWorkoutRepository implements LoggedWorkoutReposit
                 + "JOIN page p ON p.id = we.logged_workout_id WHERE s.completed = 1 GROUP BY wid) "
                 + "SELECT p.*, COALESCE(e.exercises,0), COALESCE(s.sets,0), COALESCE(s.reps,0), "
                 + "COALESCE(s.volume,0) FROM page p LEFT JOIN exercise_totals e ON e.wid = p.id "
-                + "LEFT JOIN set_totals s ON s.wid = p.id ORDER BY p.started_at DESC, p.id DESC";
+                + "LEFT JOIN set_totals s ON s.wid = p.id ORDER BY p." + order.replace(", id", ", p.id");
         List<WorkoutHistory> result = new ArrayList<>();
-        try (Cursor cursor = db.rawQuery(sql, new String[]{Long.toString(userId),
-                Integer.toString(limit), Integer.toString(offset)})) {
+        try (Cursor cursor = db.rawQuery(sql, args.toArray(new String[0]))) {
             while (cursor.moveToNext()) {
                 long start = cursor.getLong(cursor.getColumnIndexOrThrow("started_at"));
                 long end = cursor.getLong(cursor.getColumnIndexOrThrow("ended_at"));

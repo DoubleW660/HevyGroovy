@@ -2,6 +2,7 @@ package com.example.hevygroovy.app;
 
 import com.example.hevygroovy.dto.*;
 import java.util.List;
+import java.util.Map;
 
 /** Async library operations; immutable results are delivered on the main thread. */
 public interface LibraryGateway {
@@ -14,13 +15,24 @@ public interface LibraryGateway {
         private final List<CatalogExercise> exercises;
         private final List<TemplateCard> templates;
         private final TemplateEditorDetail selectedTemplate;
+        private final Map<Long, Long> lastCompletedAtByTemplate;
+        private final List<WorkoutHistory> templateHistory;
         public LibrarySnapshot(List<CatalogExercise> exercises, List<TemplateCard> templates, TemplateEditorDetail selectedTemplate) {
+            this(exercises, templates, selectedTemplate, Map.of(), List.of());
+        }
+        public LibrarySnapshot(List<CatalogExercise> exercises, List<TemplateCard> templates,
+                TemplateEditorDetail selectedTemplate, Map<Long, Long> lastCompletedAtByTemplate,
+                List<WorkoutHistory> templateHistory) {
             this.exercises = List.copyOf(exercises); this.templates = List.copyOf(templates);
             this.selectedTemplate = selectedTemplate;
+            this.lastCompletedAtByTemplate = Map.copyOf(lastCompletedAtByTemplate);
+            this.templateHistory = List.copyOf(templateHistory);
         }
         public List<CatalogExercise> getExercises() { return exercises; }
         public List<TemplateCard> getTemplates() { return templates; }
         public TemplateEditorDetail getSelectedTemplate() { return selectedTemplate; }
+        public Map<Long, Long> getLastCompletedAtByTemplate() { return lastCompletedAtByTemplate; }
+        public List<WorkoutHistory> getTemplateHistory() { return templateHistory; }
     }
     void loadLibrary(Long templateId, LibraryCallback callback);
     /** Opens detail using cached lists; explicit loadLibrary refreshes those lists. */

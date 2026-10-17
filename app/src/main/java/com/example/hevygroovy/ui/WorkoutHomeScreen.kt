@@ -1,12 +1,6 @@
 package com.example.hevygroovy.ui
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.background
-import androidx.compose.foundation.gestures.awaitEachGesture
-import androidx.compose.foundation.gestures.awaitFirstDown
-import androidx.compose.foundation.gestures.awaitLongPressOrCancellation
-import androidx.compose.foundation.gestures.drag
-import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
@@ -17,15 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.hapticfeedback.HapticFeedbackType
-import androidx.compose.ui.input.pointer.pointerInput
-import androidx.compose.ui.input.pointer.positionChange
-import androidx.compose.ui.layout.boundsInRoot
-import androidx.compose.ui.layout.onGloballyPositioned
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
@@ -37,25 +23,18 @@ import com.example.hevygroovy.entity.enums.SetType
 import com.example.hevygroovy.entity.enums.Unit as WeightUnit
 import java.text.DateFormat
 import java.util.Date
-import kotlin.math.roundToInt
 
 @Composable
 fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = true) {
     val state = viewModel.state
-    val latestState = rememberUpdatedState(state)
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
-    val reorder = remember { WorkoutExerciseReorder() }
+    val active = state.activeWorkout
+    val rowIds = active?.exercises.orEmpty().map { it.workoutExerciseId }
+    val reorder = rememberExerciseReorder(listState, active?.workoutId, rowIds, state.busy)
     var suppressAccessibilityBlurSave by remember { mutableStateOf(false) }
-    val headerBounds = remember { mutableMapOf<Long, Rect>() }
-    var listBounds by remember { mutableStateOf(Rect.Zero) }
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
-    val haptic = LocalHapticFeedback.current
-    val rowStep = with(LocalDensity.current) { 84.dp.toPx() }
-    val scrollEdge = with(LocalDensity.current) { 72.dp.toPx() }
-    val scrollStep = with(LocalDensity.current) { 9.dp.toPx() }
-    val active = state.activeWorkout
     val inlineDrafts = rememberSaveable(active?.workoutId, saver = InlineSetDraftMapSaver) {
         mutableStateMapOf<Long, InlineSetDraft>()
     }
@@ -66,10 +45,8 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
             inlineDrafts.keys.toList().filter { it !in persistedSets }.forEach(inlineDrafts::remove)
         }
     }
-    val orderedExercises = active?.exercises.orEmpty().toMutableList().apply {
-        val source = indexOfFirst { it.workoutExerciseId == reorder.exerciseId }
-        if (source >= 0 && reorder.targetIndex in indices) add(reorder.targetIndex, removeAt(source))
-    }
+    val exercisesById = active?.exercises.orEmpty().associateBy { it.workoutExerciseId }
+    val orderedExercises = (reorder.pendingOrder ?: rowIds).mapNotNull(exercisesById::get)
     LaunchedEffect(suppressAccessibilityBlurSave) {
         if (suppressAccessibilityBlurSave) {
             // Keep the guard through focus dispatch, including focus events applied after recomposition.
@@ -77,55 +54,14 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
             suppressAccessibilityBlurSave = false
         }
     }
-    LaunchedEffect(reorder.exerciseId) {
-        while (reorder.exerciseId != null) {
-            withFrameNanos { }
-            val amount = when {
-                reorder.pointerY < scrollEdge -> -scrollStep
-                reorder.pointerY > listBounds.height - scrollEdge -> scrollStep
-                else -> 0f
-            }
-            if (amount != 0f) {
-                val consumed = listState.scrollBy(amount)
-                reorder.move(consumed, rowStep, latestState.value.activeWorkout?.exercises?.size ?: 0)
-            }
-        }
-    }
     Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) "workouts-ready" else "workouts-loading")) { padding ->
+        Box(Modifier.fillMaxSize().padding(padding)) {
         LazyColumn(
-            modifier = Modifier.fillMaxSize().padding(padding).testTag("workout-list")
-                .onGloballyPositioned { listBounds = it.boundsInRoot() }
-                .pointerInput(active?.workoutId) {
-                    // Recognize only exercise headers. The detector stays on this list as cards collapse.
-                    awaitEachGesture {
-                        val down = awaitFirstDown(requireUnconsumed = false)
-                        val rowId = headerBounds.entries.firstOrNull {
-                            it.value.contains(down.position + listBounds.topLeft)
-                        }?.key
-                        if (rowId == null || latestState.value.busy) return@awaitEachGesture
-                        val pressed = awaitLongPressOrCancellation(down.id) ?: return@awaitEachGesture
-                        val rows = latestState.value.activeWorkout?.exercises.orEmpty()
-                        val source = rows.indexOfFirst { it.workoutExerciseId == rowId }
-                        if (source < 0) return@awaitEachGesture
-                        reorder.begin(rowId, source, pressed.position.y)
-                        focus.clearFocus(); keyboard?.hide()
-                        haptic.performHapticFeedback(HapticFeedbackType.LongPress)
-                        try {
-                            val dropped = drag(pressed.id) { change ->
-                                reorder.pointerY = change.position.y
-                                reorder.move(change.positionChange().y, rowStep, rows.size)
-                                change.consume()
-                            }
-                            val target = reorder.targetIndex
-                            reorder.cancel()
-                            if (dropped && target != source && !latestState.value.busy) {
-                                viewModel.moveExercise(rowId, target)
-                            }
-                        } finally { reorder.cancel() }
-                    }
-                },
+            modifier = Modifier.fillMaxSize().testTag("workout-list")
+                .exerciseReorderGestures(reorder, rowIds, !state.busy,
+                    onBegin = { focus.clearFocus(); keyboard?.hide() }, onMove = viewModel::moveExercise),
             state = listState,
-            userScrollEnabled = reorder.exerciseId == null,
+            userScrollEnabled = reorder.draggedId == null,
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
@@ -133,7 +69,7 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                 Text(if (showHistory) "HevyGroovy" else "Workout", style = MaterialTheme.typography.headlineLarge)
                 Text(if (showHistory) "Your workouts" else "One set at a time.", color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
-            if (state.loading) {
+            if (state.loading && !state.loaded) {
                 item(key = "loading") { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) }
             }
             state.error?.let { message ->
@@ -157,11 +93,6 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                                 }
                             }
                         }
-                    } else if (reorder.exerciseId != null) {
-                        Card(Modifier.fillMaxWidth()) {
-                            Text("Drag to reorder · release to save", Modifier.padding(16.dp),
-                                color = MaterialTheme.colorScheme.primary)
-                        }
                     } else {
                         ActiveWorkoutHeader(viewModel, active, onDiscard = { confirmDiscard = true },
                             hasUnsavedSets = hasUnsavedSets)
@@ -169,18 +100,13 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                 }
                 if (active != null) {
                     itemsIndexed(orderedExercises, key = { _, exercise -> "exercise-${exercise.workoutExerciseId}" }) { index, exercise ->
-                        DisposableEffect(exercise.workoutExerciseId) {
-                            onDispose { headerBounds.remove(exercise.workoutExerciseId) }
-                        }
                         val name = exercise.exerciseNameSnapshot ?: "Exercise"
+                        ExerciseReorderItem(reorder, exercise.workoutExerciseId, index, active.exercises.size) {
                         WorkoutExerciseCard(viewModel, exercise, index, active.exercises.size,
-                            collapsed = reorder.exerciseId != null,
-                            canPersist = { reorder.exerciseId == null && !suppressAccessibilityBlurSave },
+                            canPersist = { reorder.draggedId == null && !suppressAccessibilityBlurSave },
                             onDraftChanged = { id, draft -> inlineDrafts[id] = draft },
                             reorderModifier = Modifier.testTag("reorder-exercise-${exercise.workoutExerciseId}")
-                                .onGloballyPositioned { headerBounds[exercise.workoutExerciseId] = it.boundsInRoot() }
-                                .background(if (reorder.exerciseId == exercise.workoutExerciseId)
-                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.12f) else MaterialTheme.colorScheme.surface)
+                                .exerciseReorderHeader(reorder, exercise.workoutExerciseId)
                                 .semantics {
                                     contentDescription = "Reorder $name. Touch and hold, then drag."
                                     customActions = buildList {
@@ -200,6 +126,7 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                                         })
                                     }
                                 })
+                        }
                     }
                 }
                 if (showHistory) {
@@ -224,6 +151,8 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                 }
             }
         }
+        ExerciseDragPreview(reorder, exercisesById[reorder.draggedId]?.exerciseNameSnapshot)
+        }
     }
     if (confirmDiscard && state.activeWorkout != null) {
         AlertDialog(
@@ -238,28 +167,6 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
             dismissButton = { TextButton(onClick = { confirmDiscard = false }) { Text("Keep workout") } },
         )
     }
-}
-
-private class WorkoutExerciseReorder {
-    var exerciseId by mutableStateOf<Long?>(null)
-        private set
-    var targetIndex by mutableIntStateOf(0)
-        private set
-    var pointerY = 0f
-    private var sourceIndex = 0
-    private var distance = 0f
-
-    fun begin(id: Long, source: Int, y: Float) {
-        exerciseId = id; sourceIndex = source; targetIndex = source; distance = 0f; pointerY = y
-    }
-
-    fun move(delta: Float, step: Float, count: Int) {
-        if (exerciseId == null || count == 0) return
-        distance += delta
-        targetIndex = (sourceIndex + (distance / step).roundToInt()).coerceIn(0, count - 1)
-    }
-
-    fun cancel() { exerciseId = null; distance = 0f }
 }
 
 private val InlineSetDraftMapSaver = listSaver<SnapshotStateMap<Long, InlineSetDraft>, String>(

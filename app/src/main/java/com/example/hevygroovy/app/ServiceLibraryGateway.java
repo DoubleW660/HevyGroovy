@@ -34,7 +34,10 @@ final class ServiceLibraryGateway implements LibraryGateway {
                         .map(TemplateCard::new).collect(Collectors.toUnmodifiableList());
                 return new LibrarySnapshot(catalogCache, templateCache,
                         targetId == null ? null : new TemplateEditorDetail(worker.services().getTemplates()
-                                .getTemplateDetail(worker.userId(), targetId)));
+                                .getTemplateDetail(worker.userId(), targetId)),
+                        worker.services().getHistory().getLastCompletedAtByTemplate(worker.userId()),
+                        targetId == null ? List.of() : worker.services().getHistory()
+                                .getTemplateWorkoutHistory(worker.userId(), targetId, 12));
             } catch (Exception error) {
                 if (mutation != null) throw new CommittedRefreshException(error, targetId);
                 throw error;

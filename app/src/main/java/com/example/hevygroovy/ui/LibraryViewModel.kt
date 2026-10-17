@@ -18,6 +18,8 @@ data class LibraryState(
     val templates: List<TemplateCard> = emptyList(),
     val selectedTemplate: TemplateEditorDetail? = null,
     val selectedTemplateId: Long? = null,
+    val lastCompletedAtByTemplate: Map<Long, Long> = emptyMap(),
+    val templateHistory: List<WorkoutHistory> = emptyList(),
     val savedChanges: Long = 0,
     val exerciseChanges: Long = 0,
     val refreshRequired: Boolean = false,
@@ -33,6 +35,13 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
     val performanceTiming: UiPerformanceTiming = UiPerformanceTiming()) : ViewModel() {
     var state by mutableStateOf(LibraryState(selectedTemplateId = savedState["selectedTemplateId"]))
         private set
+    var templateSort by mutableStateOf(TemplateSort.entries.find { it.name == savedState.get<String>("templateSort") }
+        ?: TemplateSort.OldestCompleted)
+        private set
+    fun selectTemplateSort(sort: TemplateSort) {
+        templateSort = sort
+        savedState["templateSort"] = sort.name
+    }
     var templateDraft by mutableStateOf(savedState.get<String>("draftKind")?.let {
         TemplateDraft(it, savedState["draftTemplateId"], savedState["draftRowId"],
             savedState["draftTitle"] ?: "", savedState["draftDescription"] ?: "",
@@ -45,7 +54,7 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
     fun showTemplateList() {
         if (state.loading) return
         selectTemplate(null)
-        state = state.copy(selectedTemplate = null)
+        state = state.copy(selectedTemplate = null, templateHistory = emptyList())
         closeTemplateDraft()
     }
     fun openTemplate(id: Long) {
@@ -170,6 +179,8 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
                 if (mutation) closeTemplateDraft()
                 state = LibraryState(loaded = true, exercises = snapshot.exercises.toList(),
                     templates = snapshot.templates.toList(), selectedTemplate = snapshot.selectedTemplate,
+                    lastCompletedAtByTemplate = snapshot.lastCompletedAtByTemplate.toMap(),
+                    templateHistory = snapshot.templateHistory.toList(),
                     selectedTemplateId = snapshot.selectedTemplate?.id, savedChanges = state.savedChanges + if (mutation) 1 else 0,
                     exerciseChanges = state.exerciseChanges + if (exerciseMutation) 1 else 0)
                 performanceTiming.ready()

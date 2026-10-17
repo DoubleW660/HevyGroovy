@@ -68,6 +68,20 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
     }
 
     @Override
+    public Map<Long, Long> getLastCompletedAtByTemplate(long userId) {
+        if (userId <= 0) throw new IllegalArgumentException("Invalid user ID");
+        return Map.copyOf(loggedWorkoutRepository.findLastCompletedAtByTemplate(userId));
+    }
+
+    @Override
+    public List<WorkoutHistory> getTemplateWorkoutHistory(long userId, long templateId, int limit) {
+        if (userId <= 0 || templateId <= 0) throw new IllegalArgumentException("Invalid user or template ID");
+        if (limit < 0) throw new IllegalArgumentException("Limit cannot be negative");
+        return limit == 0 ? List.of() : List.copyOf(
+                loggedWorkoutRepository.findCompletedTemplateSummaries(userId, templateId, limit));
+    }
+
+    @Override
     public WorkoutHistoryDetail getWorkoutHistoryDetail(
             long userId,
             long workoutId

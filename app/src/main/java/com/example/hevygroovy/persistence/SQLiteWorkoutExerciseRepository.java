@@ -164,8 +164,9 @@ public final class SQLiteWorkoutExerciseRepository implements WorkoutExerciseRep
 
     private List<WorkoutExercise> query(String selection, long id) {
         List<WorkoutExercise> result = new ArrayList<>();
-        try (Cursor cursor = db.query("workout_exercise", null, selection,
-                new String[]{Long.toString(id)}, null, null, "order_index, id")) {
+        try (Cursor cursor = db.rawQuery("SELECT we.*, COALESCE(e.unilateral,0) AS exercise_unilateral "
+                + "FROM workout_exercise we LEFT JOIN exercise e ON e.id=we.exercise_id "
+                + "WHERE we." + selection + " ORDER BY we.order_index, we.id", new String[]{Long.toString(id)})) {
             while (cursor.moveToNext()) {
                 WorkoutExercise row = new WorkoutExercise();
                 row.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));
@@ -175,6 +176,7 @@ public final class SQLiteWorkoutExerciseRepository implements WorkoutExerciseRep
                 row.setOrderIndex(cursor.getInt(cursor.getColumnIndexOrThrow("order_index")));
                 row.setRestTimeSeconds(cursor.getInt(cursor.getColumnIndexOrThrow("rest_time_seconds")));
                 row.setNotes(cursor.getString(cursor.getColumnIndexOrThrow("notes")));
+                row.setUnilateral(cursor.getInt(cursor.getColumnIndexOrThrow("exercise_unilateral")) != 0);
                 result.add(row);
             }
         }

@@ -19,6 +19,10 @@ converted from normalized kg × reps without changing saved performances. Improv
 exceed the previous value by more than 0.000001; ties do not earn new awards.
 The first eligible performance establishes initial records.
 
+[Unilateral exercises](exercise-laterality.md) multiply volume by two to count both
+sides. Weight, reps, and estimated 1RM stay per side. Changing an exercise's movement
+type recalculates past volume records from the unchanged logged sets.
+
 ## During and after training
 
 A successful set save/completion that improves a record shows an in-app notice.

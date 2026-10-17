@@ -42,7 +42,7 @@ public class SQLiteFileMigrationTest {
         assertEquals(0, completed(db, 1));
         assertEquals(1, completed(db, 2));
         assertEquals("0", completionDefault(db));
-        assertEquals(7, db.getVersion());
+        assertEquals(8, db.getVersion());
     }
 
     @Test
@@ -87,6 +87,7 @@ public class SQLiteFileMigrationTest {
         db.execSQL("DROP TABLE template_catalog_entry");
         db.execSQL("DROP TABLE exercise_catalog_entry");
         db.execSQL("DROP TABLE workout_import_entry");
+        db.execSQL("ALTER TABLE exercise DROP COLUMN unilateral");
         db.execSQL("DROP TABLE set_entry");
         db.execSQL("CREATE TABLE set_entry (id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "workout_exercise_id INTEGER NOT NULL REFERENCES workout_exercise(id), "
@@ -120,10 +121,11 @@ public class SQLiteFileMigrationTest {
         db.execSQL("DROP TABLE template_catalog_entry");
         db.execSQL("DROP TABLE exercise_catalog_entry");
         db.execSQL("DROP TABLE workout_import_entry");
+        db.execSQL("ALTER TABLE exercise DROP COLUMN unilateral");
         db.setVersion(4);
         helper.close();
         db = openCurrent();
-        assertEquals(7, db.getVersion());
+        assertEquals(8, db.getVersion());
         try (Cursor row = db.rawQuery("SELECT description,archived FROM exercise WHERE id=1", null)) {
             assertTrue(row.moveToFirst()); assertEquals("Keep my notes", row.getString(0)); assertEquals(1, row.getInt(1));
         }
@@ -146,15 +148,49 @@ public class SQLiteFileMigrationTest {
         db.execSQL("INSERT INTO exercise_catalog_entry VALUES('existing',1,'source')");
         db.execSQL("DROP TABLE template_catalog_entry");
         db.execSQL("DROP TABLE workout_import_entry");
+        db.execSQL("ALTER TABLE exercise DROP COLUMN unilateral");
         db.setVersion(5);
         helper.close();
         db = openCurrent();
-        assertEquals(7, db.getVersion());
+        assertEquals(8, db.getVersion());
         try (Cursor row = db.rawQuery("SELECT source_id FROM exercise_catalog_entry WHERE catalog_key='existing'", null)) {
             assertTrue(row.moveToFirst()); assertEquals("source", row.getString(0));
         }
         try (Cursor row = db.rawQuery("SELECT COUNT(*) FROM template_catalog_entry", null)) {
             assertTrue(row.moveToFirst()); assertEquals(0, row.getInt(0));
+        }
+    }
+
+    @Test public void versionSevenAddsLateralityPreservingRenamedCatalogEntriesAndRawSets() {
+        helper = new WorkoutDatabase(context, name);
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.execSQL("INSERT INTO exercise(id,title) VALUES(1,'Renamed single press'),"
+                + "(2,'Single Leg Press (Machine)'),(3,'Leg Press (Machine)')");
+        db.execSQL("INSERT INTO exercise_catalog_entry(catalog_key,exercise_id) "
+                + "VALUES('personal/single-leg-press-machine',1)");
+        db.execSQL("INSERT INTO logged_workout(id,user_id,started_at,ended_at) VALUES(1,1,100,200)");
+        db.execSQL("INSERT INTO workout_exercise(id,logged_workout_id,exercise_id,order_index) VALUES(1,1,1,0)");
+        db.execSQL("INSERT INTO set_entry(workout_exercise_id,set_number,reps,weight,unit,set_type,created_at,completed) "
+                + "VALUES(1,1,17,140,'LB','NORMAL',100,1)");
+        db.execSQL("ALTER TABLE exercise DROP COLUMN unilateral");
+        db.setVersion(7);
+        helper.close();
+        db = openCurrent();
+        assertEquals(8, db.getVersion());
+        try (Cursor rows = db.rawQuery("SELECT unilateral FROM exercise ORDER BY id", null)) {
+            assertTrue(rows.moveToNext()); assertEquals(1, rows.getInt(0));
+            assertTrue(rows.moveToNext()); assertEquals(1, rows.getInt(0));
+            assertTrue(rows.moveToNext()); assertEquals(0, rows.getInt(0));
+        }
+        try (Cursor set = db.rawQuery("SELECT reps,weight,unit,completed FROM set_entry", null)) {
+            assertTrue(set.moveToFirst()); assertEquals(17, set.getInt(0)); assertEquals(140, set.getDouble(1), 0D);
+            assertEquals("LB", set.getString(2)); assertEquals(1, set.getInt(3));
+        }
+        db.execSQL("UPDATE exercise SET unilateral=0 WHERE id=1");
+        helper.close();
+        try (SQLiteAppStorage storage = new SQLiteAppStorage(context, name, true)) {
+            assertFalse(storage.getExercises().getExercise(1).isUnilateral());
+            assertEquals(2380 * 0.45359237, storage.getHistory().getWorkoutHistoryDetail(1, 1).getTotalVolume(), 0.000001);
         }
     }
 

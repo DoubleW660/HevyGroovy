@@ -19,6 +19,7 @@ data class LibraryState(
     val selectedTemplate: TemplateEditorDetail? = null,
     val selectedTemplateId: Long? = null,
     val savedChanges: Long = 0,
+    val exerciseChanges: Long = 0,
     val refreshRequired: Boolean = false,
     val error: String? = null,
 ) {
@@ -85,28 +86,31 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
         savedState["draftSearch"] = draft?.search
     }
 
-    fun saveExercise(id: Long?, title: String, description: String, muscle: MuscleGroup, secondary: List<MuscleGroup>) {
+    fun saveExercise(id: Long?, title: String, description: String, muscle: MuscleGroup, secondary: List<MuscleGroup>,
+        unilateral: Boolean? = null) {
         if (title.isBlank()) { state = state.copy(error = "Enter an exercise name."); return }
         if (id == null) {
             val request = CreateExerciseRequest().apply {
                 this.title = title; this.description = description; primaryMuscleGroup = muscle
                 secondaryMuscleGroups = secondary.toList()
+                isUnilateral = unilateral ?: false
             }
-            execute { gateway.createCatalogExercise(request, it) }
+            execute(exerciseMutation = true) { gateway.createCatalogExercise(request, it) }
         } else {
             if (state.exercises.none { it.id == id }) return
             val request = UpdateExerciseRequest().apply {
                 this.title = title; this.description = description; primaryMuscleGroup = muscle
                 secondaryMuscleGroups = secondary.toList()
+                if (unilateral != null) setUnilateral(unilateral)
             }
-            execute { gateway.updateCatalogExercise(id, request, it) }
+            execute(exerciseMutation = true) { gateway.updateCatalogExercise(id, request, it) }
         }
     }
 
     fun archiveExercise(id: Long, archived: Boolean) {
         val exercise = state.exercises.find { it.id == id } ?: return
         if (exercise.isArchived == archived) return
-        execute { gateway.setExerciseArchived(id, archived, it) }
+        execute(exerciseMutation = true) { gateway.setExerciseArchived(id, archived, it) }
     }
 
     fun saveTemplate(id: Long?, title: String, description: String) {
@@ -154,6 +158,7 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
     private fun editableTemplate(): TemplateEditorDetail? = state.selectedTemplate?.takeUnless { it.isArchived }
 
     private fun execute(mutation: Boolean = true, traceName: String = if (mutation) "library_update" else "library_load",
+        exerciseMutation: Boolean = false,
         operation: (LibraryGateway.LibraryCallback) -> Unit) {
         if (cleared || state.loading || (mutation && state.refreshRequired)) return
         performanceTiming.begin(traceName)
@@ -165,7 +170,8 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
                 if (mutation) closeTemplateDraft()
                 state = LibraryState(loaded = true, exercises = snapshot.exercises.toList(),
                     templates = snapshot.templates.toList(), selectedTemplate = snapshot.selectedTemplate,
-                    selectedTemplateId = snapshot.selectedTemplate?.id, savedChanges = state.savedChanges + if (mutation) 1 else 0)
+                    selectedTemplateId = snapshot.selectedTemplate?.id, savedChanges = state.savedChanges + if (mutation) 1 else 0,
+                    exerciseChanges = state.exerciseChanges + if (exerciseMutation) 1 else 0)
                 performanceTiming.ready()
             }
             override fun onFailure(error: Exception) {
@@ -178,6 +184,7 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
                 }
                 state = state.copy(loading = false, refreshRequired = state.refreshRequired || committed,
                     savedChanges = state.savedChanges + if (committed) 1 else 0,
+                    exerciseChanges = state.exerciseChanges + if (committed && exerciseMutation) 1 else 0,
                     error = if (state.refreshRequired || committed) "Saved. Reload the library before making more changes."
                         else if (mutation) "Couldn't save changes. Your draft is still here. Please try again."
                         else "Couldn't load the library. Please try again.")

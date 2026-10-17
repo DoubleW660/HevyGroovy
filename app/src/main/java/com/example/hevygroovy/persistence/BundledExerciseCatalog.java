@@ -65,6 +65,7 @@ final class BundledExerciseCatalog {
                     exercise.setDescription(entry.description);
                     exercise.setPrimaryMuscleGroup(entry.primary);
                     exercise.setSecondaryMuscleGroups(entry.secondary);
+                    exercise.setUnilateral(entry.unilateral);
                     exerciseId = repository.save(exercise).getId();
                     exercisesByTitle.put(titleKey, exerciseId);
                 }
@@ -103,6 +104,11 @@ final class BundledExerciseCatalog {
             }
             if (!keys.add(key)) { throw new JSONException("Duplicate catalog key: " + key); }
             String description = nullableString(row.opt("description"), "description");
+            Object unilateralValue = row.opt("unilateral");
+            if (unilateralValue != null && !(unilateralValue instanceof Boolean)) {
+                throw new JSONException("unilateral must be a boolean");
+            }
+            boolean unilateral = Boolean.TRUE.equals(unilateralValue);
             String primary = nullableString(row.opt("primaryMuscle"), "primaryMuscle");
             String sourceId = nullableString(row.opt("sourceId"), "sourceId");
             if (sourceId != null && sourceId.trim().isEmpty()) {
@@ -114,7 +120,7 @@ final class BundledExerciseCatalog {
                 secondary.add(muscle(requiredString(secondaryRows.get(muscle), "secondaryMuscles")));
             }
             entries.add(new Entry(key, title, description,
-                    primary == null ? null : muscle(primary), secondary, sourceId));
+                    primary == null ? null : muscle(primary), secondary, sourceId, unilateral));
         }
         return entries;
     }
@@ -149,15 +155,17 @@ final class BundledExerciseCatalog {
         final MuscleGroup primary;
         final List<MuscleGroup> secondary;
         final String sourceId;
+        final boolean unilateral;
 
         Entry(String key, String title, String description, MuscleGroup primary,
-              List<MuscleGroup> secondary, String sourceId) {
+              List<MuscleGroup> secondary, String sourceId, boolean unilateral) {
             this.key = key;
             this.title = title;
             this.description = description;
             this.primary = primary;
             this.secondary = secondary;
             this.sourceId = sourceId;
+            this.unilateral = unilateral;
         }
     }
 }

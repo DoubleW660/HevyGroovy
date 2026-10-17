@@ -205,6 +205,8 @@ fun WorkoutExerciseCard(
             }
             if (!collapsed) savedRows.SaveableStateProvider(row.workoutExerciseId) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    if (row.isUnilateral) Text("Unilateral · reps per side · volume × 2",
+                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     if (records.isNotEmpty()) {
                         TextButton(onClick = { showRecords = true },
                             modifier = Modifier.testTag("active-records-" + row.workoutExerciseId)) {

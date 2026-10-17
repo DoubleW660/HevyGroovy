@@ -79,7 +79,7 @@ public final class PersonalRecordServiceImpl implements PersonalRecordService {
                     throw new IllegalStateException("Record sets require a valid weight and unit");
                 }
                 double kg = set.getWeight() * (set.getUnit() == Unit.LB ? 0.45359237 : 1);
-                double volume = kg * set.getReps();
+                double volume = kg * set.getReps() * row.getVolumeMultiplier();
                 if (!Double.isFinite(volume)) throw new IllegalStateException("Record volume must be finite");
                 firstRows.putIfAbsent(row.getExerciseId(), row);
                 volumes.merge(row.getExerciseId(), volume, Double::sum);

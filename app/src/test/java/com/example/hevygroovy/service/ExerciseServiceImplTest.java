@@ -21,6 +21,28 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ExerciseServiceImplTest {
     @Test
+    void lateralityDefaultsToBilateralAndPartialUpdatesPreserveTheChoice() {
+        when(exerciseRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        CreateExerciseRequest create = new CreateExerciseRequest();
+        create.setTitle("Single leg press");
+        create.setPrimaryMuscleGroup(MuscleGroup.QUADRICEPS);
+        assertFalse(exerciseService.createExercise(create).isUnilateral());
+        create.setUnilateral(true);
+        assertTrue(exerciseService.createExercise(create).isUnilateral());
+
+        Exercise existing = new Exercise();
+        existing.setUnilateral(true);
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(existing));
+        UpdateExerciseRequest update = new UpdateExerciseRequest();
+        update.setTitle("Renamed press");
+        assertTrue(exerciseService.updateExercise(1L, update).isUnilateral());
+        update.setUnilateral(false);
+        assertFalse(exerciseService.updateExercise(1L, update).isUnilateral());
+        update.setUnilateral(true);
+        assertTrue(exerciseService.updateExercise(1L, update).isUnilateral());
+    }
+
+    @Test
     void nullSecondaryListIsEmptyAndIncomingListsAreCopied() {
         when(exerciseRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         CreateExerciseRequest request = new CreateExerciseRequest();

@@ -51,7 +51,7 @@ public class PersonalWorkoutHistoryImportTest {
             assertEquals(29, history.size());
             assertEquals(384, history.stream().mapToInt(WorkoutHistory::getTotalSets).sum());
             assertEquals(3423, history.stream().mapToInt(WorkoutHistory::getTotalReps).sum());
-            assertEquals(205827.743715825, history.stream().mapToDouble(WorkoutHistory::getTotalVolume).sum(), 0.000001);
+            assertEquals(211368.374515375, history.stream().mapToDouble(WorkoutHistory::getTotalVolume).sum(), 0.000001);
             assertEquals(16, history.get(0).getTotalSets());
             assertTrue(storage.getHistory().getWorkoutHistory(33).isEmpty());
         }
@@ -155,11 +155,12 @@ public class PersonalWorkoutHistoryImportTest {
             SQLiteDatabase db = helper.getWritableDatabase();
             db.execSQL("INSERT INTO logged_workout(user_id,started_at,name_snapshot,notes) VALUES(1,100,'Existing','Keep me')");
             db.execSQL("DROP TABLE workout_import_entry");
+            db.execSQL("ALTER TABLE exercise DROP COLUMN unilateral");
             db.setVersion(6);
         }
         try (WorkoutDatabase helper = new WorkoutDatabase(context, name)) {
             SQLiteDatabase db = helper.getWritableDatabase();
-            assertEquals(7, db.getVersion());
+            assertEquals(8, db.getVersion());
             assertEquals("Keep me", text(db, "SELECT notes FROM logged_workout"));
             assertEquals(1, count(db, "SELECT COUNT(*) FROM logged_workout WHERE ended_at IS NULL"));
             assertEquals(0, count(db, "SELECT COUNT(*) FROM workout_import_entry"));

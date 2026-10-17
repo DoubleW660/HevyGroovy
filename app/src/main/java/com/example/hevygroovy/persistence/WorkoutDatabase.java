@@ -11,7 +11,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
     }
 
     public WorkoutDatabase(Context context, String name) {
-        super(context.getApplicationContext(), name, null, 7);
+        super(context.getApplicationContext(), name, null, 8);
         setWriteAheadLoggingEnabled(true);
     }
 
@@ -64,7 +64,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 1 || newVersion > 7 || oldVersion >= newVersion) {
+        if (oldVersion < 1 || newVersion > 8 || oldVersion >= newVersion) {
             throw new IllegalStateException("Missing database migration from " + oldVersion + " to " + newVersion);
         }
         if (oldVersion < 2 && newVersion >= 2) {
@@ -100,6 +100,18 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
         if (oldVersion < 7 && newVersion >= 7) {
             createWorkoutImportTable(db);
         }
+        if (oldVersion < 8 && newVersion >= 8) {
+            // v1 upgrades created the current library tables above.
+            if (oldVersion >= 2) {
+                db.execSQL("ALTER TABLE exercise ADD COLUMN unilateral INTEGER NOT NULL DEFAULT 0 "
+                        + "CHECK(unilateral IN (0,1))");
+            }
+            // The user confirmed per-side logging for this exercise. Stable catalog mappings
+            // also cover a renamed library entry; other exercises remain user-configurable.
+            db.execSQL("UPDATE exercise SET unilateral=1 WHERE id IN (SELECT exercise_id "
+                    + "FROM exercise_catalog_entry WHERE catalog_key='personal/single-leg-press-machine') "
+                    + "OR lower(trim(title))='single leg press (machine)'");
+        }
     }
 
     private void createWorkoutImportTable(SQLiteDatabase db) {
@@ -130,7 +142,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE exercise (id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "title TEXT NOT NULL, description TEXT, primary_muscle TEXT, "
                 + "secondary_muscles TEXT NOT NULL DEFAULT '', archived INTEGER NOT NULL DEFAULT 0 "
-                + "CHECK(archived IN (0,1)))");
+                + "CHECK(archived IN (0,1)), unilateral INTEGER NOT NULL DEFAULT 0 CHECK(unilateral IN (0,1)))");
         db.execSQL("CREATE INDEX exercise_title ON exercise(title COLLATE NOCASE)");
         db.execSQL("CREATE TABLE template_workout (id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "user_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT, "

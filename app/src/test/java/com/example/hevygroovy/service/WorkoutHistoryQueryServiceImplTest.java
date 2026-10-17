@@ -19,6 +19,26 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class WorkoutHistoryQueryServiceImplTest {
     @Test
+    void unilateralHistoryDoublesVolumeWithoutChangingStoredSetsRepsOrMaxLoad() {
+        when(workouts.findById(100L)).thenReturn(Optional.of(workout(100L, 1L, 1000L, 2000L)));
+        WorkoutExercise row = exercise(10L, 0);
+        row.setUnilateral(true);
+        when(exercises.findByLoggedWorkoutId(100L)).thenReturn(List.of(row));
+        SetEntry performed = set(10L, 1, 140, 17, Unit.LB);
+        when(sets.findByLoggedWorkoutId(100L)).thenReturn(List.of(performed));
+        WorkoutHistoryDetail detail = service.getWorkoutHistoryDetail(1L, 100L);
+        WorkoutExerciseHistory result = detail.getExercises().get(0);
+        assertTrue(result.isUnilateral());
+        assertEquals(4760 * 0.45359237, detail.getTotalVolume(), 0.000001);
+        assertEquals(detail.getTotalVolume(), result.getBestSetVolume(), 0D);
+        assertEquals(17, detail.getTotalReps());
+        assertEquals(1, detail.getTotalSets());
+        assertEquals(140 * 0.45359237, result.getHeaviestWeight(), 0.000001);
+        assertEquals(140, result.getSets().get(0).getWeight(), 0D);
+        assertEquals(17, result.getSets().get(0).getReps());
+    }
+
+    @Test
     void pageUsesOneSummaryQueryWithoutLoadingChildren() {
         WorkoutHistory summary = summary(100L, 0, 0, 0);
         when(workouts.findCompletedSummaries(1L, 20, 40)).thenReturn(List.of(summary));

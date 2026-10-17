@@ -23,6 +23,7 @@ public final class SQLiteExerciseRepository implements ExerciseRepository {
         values.put("secondary_muscles", row.getSecondaryMuscleGroups().stream()
                 .map(Enum::name).collect(Collectors.joining(",")));
         values.put("archived", row.isArchived() ? 1 : 0);
+        values.put("unilateral", row.isUnilateral() ? 1 : 0);
         row.setId(SQLiteRows.save(db, "exercise", row.getId(), values));
         return row;
     }
@@ -64,6 +65,7 @@ public final class SQLiteExerciseRepository implements ExerciseRepository {
         }
         row.setSecondaryMuscleGroups(muscles);
         row.setArchived(cursor.getInt(cursor.getColumnIndexOrThrow("archived")) != 0);
+        row.setUnilateral(cursor.getInt(cursor.getColumnIndexOrThrow("unilateral")) != 0);
         return row;
     }
 }

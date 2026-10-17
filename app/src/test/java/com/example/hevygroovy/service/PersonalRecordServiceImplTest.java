@@ -34,6 +34,22 @@ class PersonalRecordServiceImplTest {
     void setup() { service = new PersonalRecordServiceImpl(records, workouts, exercises, sets); }
 
     @Test
+    void unilateralVolumeCountsBothSidesWhileWeightAndRepsRemainPerSide() {
+        WorkoutExercise exercise = row(10, 7, 0);
+        exercise.setUnilateral(true);
+        prepare(null, List.of(exercise), List.of(set(101, 10, 1, 140, 17, Unit.LB)));
+        when(records.findBestRecords(1, List.of(7L), null, 100)).thenReturn(List.of());
+        List<PersonalRecord> result = service.getWorkoutRecords(1, 100);
+        assertEquals(4, result.size());
+        assertEquals(140 * 0.45359237, result.get(0).getValue(), 0.000001);
+        assertEquals(17, result.get(1).getValue(), 0D);
+        assertEquals(4760 * 0.45359237, result.get(2).getValue(), 0.000001);
+        assertEquals(4760 * 0.45359237, result.get(3).getValue(), 0.000001);
+        assertEquals(140, result.get(2).getWeight(), 0D);
+        assertEquals(17, result.get(2).getReps());
+    }
+
+    @Test
     void allTimeRecordsAreCopiedAndUseOnlyFinishedRepositoryQuery() {
         PersonalRecord record = prior(RecordType.HEAVIEST_WEIGHT, 50);
         List<PersonalRecord> source = new ArrayList<>(List.of(record));

@@ -34,6 +34,8 @@ public class BundledCatalogTest {
         helper.close();
         try (SQLiteAppStorage storage = new SQLiteAppStorage(context, name, true, 7L)) {
             assertEquals(48, storage.getExercises().listExercises(null, true).size());
+            assertEquals(1, storage.getExercises().listExercises(null, true).stream().filter(row -> row.isUnilateral()).count());
+            assertTrue(storage.getExercises().listExercises("Single Leg Press (Machine)", true).get(0).isUnilateral());
             assertEquals(4, storage.getTemplates().listTemplates(7L, true).size());
             assertTrue(storage.getTemplates().listTemplates(1L, true).isEmpty());
             assertTrue(storage.getHistory().getWorkoutHistory(7L).isEmpty());

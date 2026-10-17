@@ -53,7 +53,7 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
     var guideId by rememberSaveable { mutableStateOf<Long?>(null) }
     // Restore a selected records sheet after recreation without issuing reads while scrolling.
     val recordExerciseId = records?.state?.selectedExerciseId
-    LaunchedEffect(recordExerciseId) {
+    LaunchedEffect(recordExerciseId, records?.state?.loaded) {
         if (recordExerciseId != null && !records.state.loaded && !records.state.loading && records.state.error == null) {
             records.refresh(recordExerciseId)
         }
@@ -77,6 +77,8 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
                     Text(exercise.title, style = MaterialTheme.typography.titleLarge)
                     Text(exercise.primaryMuscle?.displayName() ?: "Other", style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary)
+                    Text(if (exercise.isUnilateral) "Unilateral · volume × 2" else "Bilateral · volume × 1",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (!exercise.description.isNullOrBlank()) Text(exercise.description,
                         maxLines = 3, overflow = TextOverflow.Ellipsis)
                     if (exercise.isArchived) Text("Archived")
@@ -116,8 +118,8 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
     val editing = state.exercises.find { it.id == editingId }
     if (creating || editing != null) {
         SaveResultEffect(state.savedChanges) { creating = false; editingId = null }
-        ExerciseCatalogDialog(editing, state.busy, state.error, onDismiss = { creating = false; editingId = null }) { title, description, primary, secondary ->
-            model.saveExercise(editing?.id, title, description, primary, secondary)
+        ExerciseCatalogDialog(editing, state.busy, state.error, onDismiss = { creating = false; editingId = null }) { title, description, primary, secondary, unilateral ->
+            model.saveExercise(editing?.id, title, description, primary, secondary, unilateral)
         }
     }
     state.exercises.find { it.id == archiveId }?.let { exercise ->
@@ -146,11 +148,12 @@ private fun ExerciseGuideDialog(exercise: CatalogExercise, onDismiss: () -> Unit
 
 @Composable
 private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, error: String?, onDismiss: () -> Unit,
-    onSave: (String, String, MuscleGroup, List<MuscleGroup>) -> Unit) {
+    onSave: (String, String, MuscleGroup, List<MuscleGroup>, Boolean) -> Unit) {
     var title by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.title.orEmpty()) }
     var description by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.description.orEmpty()) }
     var primary by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.primaryMuscle ?: MuscleGroup.OTHER) }
     var secondary by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.secondaryMuscles?.toList() ?: emptyList()) }
+    var unilateral by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.isUnilateral ?: false) }
     var primaryMenu by remember { mutableStateOf(false) }
     var secondaryMenu by remember { mutableStateOf(false) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(if (exercise == null) "New exercise" else "Edit exercise") },
@@ -161,6 +164,17 @@ private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, err
                     modifier = Modifier.testTag("catalog-exercise-name"))
                 OutlinedTextField(description, { description = it }, label = { Text("Description") },
                     modifier = Modifier.testTag("catalog-exercise-description"))
+                Text("Movement type", style = MaterialTheme.typography.titleSmall)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    FilterChip(!unilateral, onClick = { unilateral = false }, label = { Text("Bilateral") },
+                        modifier = Modifier.testTag("catalog-bilateral"))
+                    FilterChip(unilateral, onClick = { unilateral = true }, label = { Text("Unilateral") },
+                        modifier = Modifier.testTag("catalog-unilateral"))
+                }
+                Text(if (unilateral) "Enter weight and reps per side. Volume = weight × reps × 2."
+                    else "Volume = weight × reps.", style = MaterialTheme.typography.bodySmall)
+                Text("Applies to existing history and records.", style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Box {
                     OutlinedButton(onClick = { primaryMenu = true }) { Text("Primary: ${primary.displayName()}") }
                     DropdownMenu(primaryMenu, { primaryMenu = false }) {
@@ -179,7 +193,7 @@ private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, err
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(title, description, primary, secondary) },
+        confirmButton = { TextButton(onClick = { onSave(title, description, primary, secondary, unilateral) },
             enabled = !busy && title.isNotBlank()) { Text("Save exercise") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }

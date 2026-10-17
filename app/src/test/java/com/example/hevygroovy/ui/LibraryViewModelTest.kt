@@ -12,6 +12,27 @@ import org.mockito.Mockito
 
 class LibraryViewModelTest {
     @Test
+    fun exerciseMovementChoiceIsSavedAndSignalsDependentViewsOnlyAfterCommit() {
+        val gateway = FakeGateway()
+        val model = LibraryViewModel(gateway)
+        model.saveExercise(null, "Single leg press", "", MuscleGroup.QUADRICEPS, emptyList(), true)
+        assertTrue(gateway.createdExercise!!.isUnilateral)
+        assertEquals(0L, model.state.exerciseChanges)
+        gateway.fail()
+        assertEquals(0L, model.state.exerciseChanges)
+        model.refresh(); gateway.succeed()
+        model.saveExercise(9, "Single leg press", "", MuscleGroup.QUADRICEPS, emptyList(), false)
+        assertEquals(false, gateway.updatedExercise!!.unilateral)
+        gateway.succeed()
+        assertEquals(1L, model.state.exerciseChanges)
+        model.refresh(); gateway.succeed()
+        assertEquals(1L, model.state.exerciseChanges)
+        model.saveExercise(9, "Renamed", "", MuscleGroup.QUADRICEPS, emptyList())
+        assertNull(gateway.updatedExercise!!.unilateral)
+        gateway.fail(CommittedRefreshException(IllegalStateException("Read failed"), null))
+        assertEquals(2L, model.state.exerciseChanges)
+    }
+    @Test
     fun failedSaveKeepsDraftAndCanBeRetried() {
         val gateway = FakeGateway()
         val model = LibraryViewModel(gateway)
@@ -150,6 +171,8 @@ class LibraryViewModelTest {
 
     private class FakeGateway : LibraryGateway by Mockito.mock(LibraryGateway::class.java) {
         val calls = mutableListOf<String>()
+        var createdExercise: CreateExerciseRequest? = null
+        var updatedExercise: UpdateExerciseRequest? = null
         private lateinit var callback: LibraryGateway.LibraryCallback
         override fun loadLibrary(templateId: Long?, callback: LibraryGateway.LibraryCallback) {
             calls += "load:$templateId"; this.callback = callback
@@ -159,6 +182,12 @@ class LibraryViewModelTest {
         }
         override fun createTemplate(request: CreateTemplateRequest, callback: LibraryGateway.LibraryCallback) {
             calls += "create:${request.title}"; this.callback = callback
+        }
+        override fun createCatalogExercise(request: CreateExerciseRequest, callback: LibraryGateway.LibraryCallback) {
+            createdExercise = request; this.callback = callback
+        }
+        override fun updateCatalogExercise(id: Long, request: UpdateExerciseRequest, callback: LibraryGateway.LibraryCallback) {
+            updatedExercise = request; this.callback = callback
         }
         override fun updateTemplateRest(templateId: Long, rowId: Long, restSeconds: Int, callback: LibraryGateway.LibraryCallback) {
             calls += "rest:$templateId:$rowId:$restSeconds"; this.callback = callback

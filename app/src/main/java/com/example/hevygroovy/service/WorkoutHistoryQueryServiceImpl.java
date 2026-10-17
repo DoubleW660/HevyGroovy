@@ -114,7 +114,7 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
             double estimatedOneRepMax = 0;
             for (SetEntry set : sets) {
                 double weight = weightInKg(set);
-                double setVolume = weight * set.getReps();
+                double setVolume = weight * set.getReps() * row.getVolumeMultiplier();
                 reps += set.getReps();
                 volume += setVolume;
                 heaviest = Math.max(heaviest, weight);
@@ -126,7 +126,7 @@ public class WorkoutHistoryQueryServiceImpl implements WorkoutHistoryQueryServic
             details.add(new WorkoutExerciseHistory(row.getId(), row.getExerciseId(),
                     row.getExerciseNameSnapshot(), row.getOrderIndex(), row.getNotes(),
                     sets.size(), reps, volume, heaviest, estimatedOneRepMax, bestVolume,
-                    recordCount > 0, recordCount, sets));
+                    recordCount > 0, recordCount, sets, row.isUnilateral()));
             totalSets += sets.size();
             totalReps += reps;
             totalVolume += volume;

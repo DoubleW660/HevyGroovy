@@ -286,6 +286,8 @@ private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<
             Text(exercise.exerciseName, style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
             PersonalRecordBadge(records)
+            if (exercise.isUnilateral) Text("Unilateral · reps per side · volume × 2",
+                style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
             Text("${historyCount(exercise.totalSets, "completed set")} · ${historyNumber(exercise.totalVolume.inWeightUnit(unit))} ${unit.symbol} volume",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (exercise.estimatedOneRepMax > 0) {

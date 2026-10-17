@@ -32,6 +32,19 @@ public class WorkoutExerciseHistory {
     private int personalRecordCount;
 
     private final List<ActiveSetEntry> sets;
+    private boolean unilateral;
+
+    public boolean isUnilateral() { return unilateral; }
+
+    public WorkoutExerciseHistory(long workoutExerciseId, long exerciseId, String exerciseName,
+            int orderIndex, String notes, int totalSets, int totalReps, double totalVolume,
+            double heaviestWeight, double estimatedOneRepMax, double bestSetVolume,
+            boolean personalRecord, int personalRecordCount, List<SetEntry> sets, boolean unilateral) {
+        this(workoutExerciseId, exerciseId, exerciseName, orderIndex, notes, totalSets, totalReps,
+                totalVolume, heaviestWeight, estimatedOneRepMax, bestSetVolume, personalRecord,
+                personalRecordCount, sets);
+        this.unilateral = unilateral;
+    }
 
     public WorkoutExerciseHistory(
             long workoutExerciseId,

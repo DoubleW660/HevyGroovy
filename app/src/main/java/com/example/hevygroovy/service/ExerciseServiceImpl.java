@@ -44,6 +44,7 @@ public class ExerciseServiceImpl implements ExerciseService{
         exercise.setTitle(title);
         exercise.setDescription(description);
         exercise.setArchived(false);
+        exercise.setUnilateral(request.isUnilateral());
         exercise.setPrimaryMuscleGroup(request.getPrimaryMuscleGroup());
         exercise.setSecondaryMuscleGroups(secondary);
 
@@ -88,6 +89,9 @@ public class ExerciseServiceImpl implements ExerciseService{
         }
 
 
+        if (request.getUnilateral() != null) {
+            exercise.setUnilateral(request.getUnilateral());
+        }
         Exercise saved = exerciseRepository.save(exercise);
 
         return toModel(saved);
@@ -174,6 +178,7 @@ public class ExerciseServiceImpl implements ExerciseService{
         model.setTitle(exercise.getTitle());
         model.setDescription(exercise.getDescription());
         model.setArchived(exercise.isArchived());
+        model.setUnilateral(exercise.isUnilateral());
         model.setPrimaryMuscleGroup(exercise.getPrimaryMuscleGroup());
         model.setSecondaryMuscleGroups(
                 new ArrayList<>(exercise.getSecondaryMuscleGroups())

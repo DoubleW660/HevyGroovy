@@ -22,6 +22,68 @@ class HistoryDeleteAndUnitsFlowTest {
     private val instrumentation = InstrumentationRegistry.getInstrumentation()
     private val context get() = instrumentation.targetContext
 
+    @Test fun editingExerciseMovementTypeRecalculatesExistingHistoryWithoutRestarting() {
+        val database = "movement-ui-" + UUID.randomUUID() + ".db"
+        val preferences = UserPreferences(context)
+        val previousUnit = preferences.readDefaultUnit()
+        preferences.setDefaultUnit(WeightUnit.LB)
+        val user = LocalUserIdentity(context).userId
+        var exercise = 0L
+        var workout = 0L
+        SQLiteAppStorage(context, database).use { storage ->
+            exercise = storage.exercises.createExercise(CreateExerciseRequest().apply {
+                title = "Single leg press"; primaryMuscleGroup = MuscleGroup.QUADRICEPS
+            }).exerciseId
+            workout = storage.workoutSessions.startEmptyWorkout(user).id
+            val row = storage.workoutSessions.addExerciseToWorkout(user, workout, exercise).id
+            val set = storage.setEntries.addSet(user, row).id
+            storage.setEntries.updateSet(user, set, UpdateSetEntryRequest().apply {
+                weight = 140.0; reps = 17; unit = WeightUnit.LB; completed = true
+            })
+            storage.workoutSessions.finishWorkout(user, workout)
+        }
+        try {
+            AppContainer(context, database).use { container ->
+                val models = models(container)
+                show(models)
+                compose.waitUntil(10_000) { models.profile.state.loaded }
+                compose.onNodeWithTag("history-tab").performClick()
+                open(models.history, workout)
+                compose.onNode(hasText("2,380") and hasAnyAncestor(hasTestTag("history-total-volume")))
+                    .assertIsDisplayed()
+
+                listOf(true, false).forEachIndexed { index, unilateral ->
+                    compose.onNodeWithTag("exercises-tab").performClick()
+                    compose.waitUntil(10_000) { models.library.state.loaded && !models.library.state.loading }
+                    compose.onNodeWithTag("edit-exercise-" + exercise).performScrollTo().performClick()
+                    val choice = if (unilateral) "catalog-unilateral" else "catalog-bilateral"
+                    compose.onNodeWithTag(choice).performScrollTo().performClick().assertIsSelected()
+                    compose.onNodeWithText("Save exercise").performClick()
+                    val expected = (if (unilateral) 4760 else 2380) * 0.45359237
+                    compose.waitUntil(10_000) {
+                        models.library.state.exerciseChanges == index + 1L && !models.library.state.loading &&
+                            !models.workouts.state.loading && !models.history.state.loading &&
+                            !models.history.state.detailLoading &&
+                            kotlin.math.abs(models.history.state.detail!!.totalVolume - expected) < 0.000001
+                    }
+                    compose.onNodeWithTag("history-tab").performClick()
+                    compose.waitUntil(10_000) { !models.history.state.detailLoading }
+                    compose.onNode(hasText(if (unilateral) "4,760" else "2,380") and
+                        hasAnyAncestor(hasTestTag("history-total-volume"))).assertIsDisplayed()
+                    compose.runOnIdle {
+                        assertEquals(unilateral, models.history.state.detail!!.exercises.single().isUnilateral)
+                        assertEquals(17, models.history.state.detail!!.totalReps)
+                        assertEquals(140.0, models.history.state.detail!!.exercises.single().sets.single().weight, 0.0)
+                        assertEquals(expected, models.workouts.state.history.single().totalVolume, 0.000001)
+                    }
+                }
+            }
+        } finally {
+            preferences.setDefaultUnit(previousUnit)
+            context.deleteDatabase(database)
+        }
+    }
+
     @Test fun historyTotalsRecordsAndEstimatesUseSavedProfileUnitAndUpdateWhenItChanges() {
         val database = "history-units-" + UUID.randomUUID() + ".db"
         val preferences = UserPreferences(context)

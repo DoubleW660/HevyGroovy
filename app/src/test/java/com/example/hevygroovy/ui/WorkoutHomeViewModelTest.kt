@@ -8,6 +8,24 @@ import org.junit.jupiter.api.Test
 
 class WorkoutHomeViewModelTest {
     @Test
+    fun changingMovementTypeResetsVolumeNoticeBaselineWithoutAnnouncingTheSettingChange() {
+        val gateway = FakeGateway()
+        val model = WorkoutHomeViewModel(gateway)
+        gateway.succeed(activeWithSet(true, true), listOf(volumeRecord(1000.0)))
+        model.refresh()
+        gateway.succeed(activeWithSet(true, false), listOf(volumeRecord(500.0)))
+        assertEquals(0L, model.state.recordNoticeVersion)
+        model.updateSet(50, com.example.hevygroovy.dto.UpdateSetEntryRequest().apply { completed = true })
+        gateway.succeed(activeWithSet(true, false), listOf(volumeRecord(600.0)))
+        assertEquals(1L, model.state.recordNoticeVersion)
+        assertEquals(600.0, model.state.recordNotice.single().value)
+    }
+
+    private fun volumeRecord(value: Double) = com.example.hevygroovy.dto.PersonalRecord(
+        com.example.hevygroovy.entity.enums.RecordType.WORKOUT_VOLUME,
+        1L, "Bench", 100L, 10L, 0L, value, 0.0,
+        com.example.hevygroovy.entity.enums.Unit.KG, 8, 1000L)
+    @Test
     fun recordsAnnounceOnlyHigherSuccessfulSetSavesAndDoNotRepeatAfterUndo() {
         val gateway = FakeGateway()
         val model = WorkoutHomeViewModel(gateway)
@@ -127,9 +145,9 @@ class WorkoutHomeViewModelTest {
         assertEquals("addSet:10", gateway.calls.last())
     }
 
-    private fun activeWithSet(completed: Boolean): ActiveWorkoutDetail {
+    private fun activeWithSet(completed: Boolean, unilateral: Boolean = false): ActiveWorkoutDetail {
         val set = com.example.hevygroovy.entity.SetEntry().apply { id = 50L; setCompleted(completed) }
-        val row = com.example.hevygroovy.entity.WorkoutExercise().apply { id = 10L }
+        val row = com.example.hevygroovy.entity.WorkoutExercise().apply { id = 10L; setUnilateral(unilateral) }
         val workout = LoggedWorkout().apply { id = 100L; userId = 1L }
         return ActiveWorkoutDetail(workout, listOf(com.example.hevygroovy.dto.ActiveWorkoutExercise(
             row, listOf(com.example.hevygroovy.dto.ActiveSetEntry(set)))))

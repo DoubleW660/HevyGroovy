@@ -37,6 +37,13 @@ Records, previous performance, and visible history are refreshed after success.
 Volume totals and estimated 1RM follow the profile unit; database calculations
 remain normalized to kilograms.
 
+[Exercise movement type](exercise-laterality.md) now determines volume across existing
+history. Single Leg Press (Machine) is unilateral: its October 14 performance changes
+from 2,380 to 4,760 lb × reps. With that preset, imported history totals
+465,987.5 lb × reps (211,368.374515375 kg × reps). The conversion script's volume
+summary describes raw exported weight × reps before exercise multipliers: 453,772.5
+lb × reps. Source weights, reps, timestamps, and import receipts remain unchanged.
+
 Named test databases import history only with an explicit opt-in. Existing catalog
 opt-in constructors keep their original behavior.
 

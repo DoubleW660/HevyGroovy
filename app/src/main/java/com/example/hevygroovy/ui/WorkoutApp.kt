@@ -85,11 +85,15 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
             AppTab.Profile -> profile.refresh()
         }
     }
-    LaunchedEffect(history.state.deletedWorkouts) {
-        if (history.state.deletedWorkouts > 0) {
+    LaunchedEffect(history.state.deletedWorkouts, library.state.exerciseChanges) {
+        if (history.state.deletedWorkouts > 0 || library.state.exerciseChanges > 0) {
             records?.invalidate()
             snapshotFlow { workouts.state.loading }.first { !it }
             workouts.refresh()
+            if (library.state.exerciseChanges > 0 && history.state.loaded) {
+                snapshotFlow { history.state.loading }.first { !it }
+                history.refresh()
+            }
         }
     }
     LaunchedEffect(active?.workoutId, workouts.state.savedChanges) {

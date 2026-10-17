@@ -133,7 +133,9 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
                 requestInFlight = false
                 if (cleared) return
                 val sameWorkout = state.activeWorkout?.workoutId == snapshot.activeWorkout?.workoutId
-                if (!sameWorkout) observedRecords.clear()
+                val previousModes = state.activeWorkout?.exercises?.associate { it.exerciseId to it.isUnilateral }
+                val currentModes = snapshot.activeWorkout?.exercises?.associate { it.exerciseId to it.isUnilateral }
+                if (!sameWorkout || previousModes != currentModes) observedRecords.clear()
                 val notices = if (announceRecords && sameWorkout && snapshot.activeWorkout != null) {
                     snapshot.activeRecords.filter { record ->
                         record.value > (observedRecords[record.exerciseId to record.type] ?: 0.0) + 0.000001

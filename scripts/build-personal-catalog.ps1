@@ -46,6 +46,7 @@ $entries = @($rows.exercise_title | Sort-Object -Unique | ForEach-Object {
     }
     [ordered]@{
         catalogKey=(Catalog-Key $title); title=$title
+        unilateral=($title -eq 'Single Leg Press (Machine)')
         description=if ($verified) { ($source.instructions -join "`n`n") } else { '' }
         primaryMuscle=$primary; secondaryMuscles=$secondary
         sourceId=if ($verified) { $match.sourceId } else { $null }

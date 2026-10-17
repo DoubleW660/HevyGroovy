@@ -11,6 +11,10 @@ public class ExerciseModel {
     private String title;
     private String description;
     private boolean archived;
+    private boolean unilateral;
+
+    public boolean isUnilateral() { return unilateral; }
+    public void setUnilateral(boolean unilateral) { this.unilateral = unilateral; }
 
     private MuscleGroup primaryMuscleGroup;
 

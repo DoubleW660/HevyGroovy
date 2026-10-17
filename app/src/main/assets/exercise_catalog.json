@@ -673,6 +673,7 @@
     {
       "catalogKey": "personal/single-leg-press-machine",
       "title": "Single Leg Press (Machine)",
+      "unilateral": true,
       "description": "",
       "primaryMuscle": "QUADRICEPS",
       "secondaryMuscles": [],

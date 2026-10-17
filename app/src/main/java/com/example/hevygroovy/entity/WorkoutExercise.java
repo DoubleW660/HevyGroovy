@@ -8,6 +8,12 @@ public class WorkoutExercise {
     private String exerciseNameSnapshot;
     private int orderIndex;
     private String notes;
+    // Read projection of the current exercise setting; applies to all historical performances.
+    private boolean unilateral;
+
+    public boolean isUnilateral() { return unilateral; }
+    public void setUnilateral(boolean unilateral) { this.unilateral = unilateral; }
+    public int getVolumeMultiplier() { return unilateral ? 2 : 1; }
 
     private int restTimeSeconds;
 

@@ -20,6 +20,10 @@ public class Exercise {
     private List<MuscleGroup> secondaryMuscleGroups = new ArrayList<>();
 
     private boolean archived;
+    private boolean unilateral;
+
+    public boolean isUnilateral() { return unilateral; }
+    public void setUnilateral(boolean unilateral) { this.unilateral = unilateral; }
 
     public boolean isArchived() {
         return archived;

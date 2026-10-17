@@ -16,6 +16,7 @@ public final class ActiveWorkoutExercise {
     private final Long previousWorkoutId;
     private final Long previousEndedAtEpochMillis;
     private final double estimatedOneRepMax;
+    private final boolean unilateral;
 
     public ActiveWorkoutExercise(WorkoutExercise exercise, List<ActiveSetEntry> sets) {
         this(exercise, sets, List.of(), null, null);
@@ -30,6 +31,7 @@ public final class ActiveWorkoutExercise {
         orderIndex = exercise.getOrderIndex();
         restTimeSeconds = exercise.getRestTimeSeconds();
         notes = exercise.getNotes();
+        unilateral = exercise.isUnilateral();
         this.sets = List.copyOf(sets);
         this.previousSets = List.copyOf(previousSets);
         this.previousWorkoutId = previousWorkoutId;
@@ -51,4 +53,5 @@ public final class ActiveWorkoutExercise {
     public Long getPreviousEndedAtEpochMillis() { return previousEndedAtEpochMillis; }
     /** Best current completed working-set Epley estimate in KG; zero means unavailable. */
     public double getEstimatedOneRepMax() { return estimatedOneRepMax; }
+    public boolean isUnilateral() { return unilateral; }
 }

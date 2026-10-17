@@ -66,7 +66,7 @@ fun PersonalRecordSection(
                 Text("Finish workout to save these records.", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary)
             }
-            Text("Completed working sets count. Warm-ups are excluded. Volume uses ${displayUnit.symbol} × reps.",
+            Text("Completed working sets count. Warm-ups are excluded. Volume uses ${displayUnit.symbol} × reps; unilateral exercises count both sides.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }

@@ -9,6 +9,11 @@ import java.util.List;
 public class UpdateExerciseRequest {
 
     private String title;
+    private Boolean unilateral;
+
+    /** Null preserves the current setting. */
+    public Boolean getUnilateral() { return unilateral; }
+    public void setUnilateral(Boolean unilateral) { this.unilateral = unilateral; }
 
     private String description;
     private boolean descriptionProvided;

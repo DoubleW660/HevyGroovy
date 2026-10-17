@@ -8,6 +8,10 @@ import java.util.List;
 public class CreateExerciseRequest {
 
     private String title;
+    private boolean unilateral;
+
+    public boolean isUnilateral() { return unilateral; }
+    public void setUnilateral(boolean unilateral) { this.unilateral = unilateral; }
 
     private String description;
 

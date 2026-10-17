@@ -2,7 +2,8 @@
 
 The bundled import uses exercise names from `workout_data.csv` for workouts dated
 **August 1, 2026 onward**. The CSV is treated strictly as data. Its earlier sessions
-and completed workout/set history are not imported.
+are excluded. The separate history import now includes the completed workouts and
+sets from the same period; see [personal-workout-history.md](personal-workout-history.md).
 
 ## Included data
 
@@ -38,8 +39,8 @@ later edits and archive decisions. Routine mappings are scoped to the local user
 Exercises and routines import in one transaction. Existing workouts and history
 remain untouched. Named test databases opt in explicitly.
 
-Schema v5 adds exercise provenance, and v6 adds user-scoped routine provenance.
-Fresh installs and existing v4/v5 databases converge on v6 without destructive resets.
+Schema v5 adds exercise provenance, v6 adds user-scoped routine provenance, and v7
+adds workout import receipts. Existing databases migrate without destructive resets.
 
 ## Source and reproduction
 
@@ -66,9 +67,16 @@ Keep the upstream license alongside regenerated assets.
 
 Personal records are now calculated from finished workouts stored in the app; see
 [personal-records.md](personal-records.md) for categories and rules. The catalog
-import does not create PRs or past workout history. Estimated 1RM remains deferred.
+import alone does not create past workout history. The separate workout history
+import supplies past performances for records and estimated 1RM; see
+[strength-estimates.md](strength-estimates.md).
 
 ## Verification
+
+The October 17, 2026 update also imports finished workout history. All 221 JVM
+tests, 84 device tests, and lint pass; the regular phone app contains 29 imported
+workouts and 384 sets with existing data preserved. See
+[personal-workout-history.md](personal-workout-history.md) for import verification.
 
 Verified on the connected Samsung Galaxy S23 Ultra (SM-S918U), Android 16, on
 October 16, 2026: 189 JVM tests and all 58 device tests passed; Android lint and

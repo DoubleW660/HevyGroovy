@@ -125,6 +125,7 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                     }
                 },
             state = listState,
+            userScrollEnabled = reorder.exerciseId == null,
             contentPadding = PaddingValues(20.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {

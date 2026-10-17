@@ -1,0 +1,5097 @@
+{
+  "schemaVersion": 1,
+  "since": "2026-08-01",
+  "sourceTimezone": "America/New_York",
+  "workouts": [
+    {
+      "sourceKey": "hevy-history-v1/03beb668f56f24c683502f703d1275b0350f533773848a6026456d1643ae61a3",
+      "title": "Lower 2",
+      "startedAtEpochMillis": 1785705360000,
+      "endedAtEpochMillis": 1785707940000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/deadlift-barbell",
+          "nameSnapshot": "Deadlift (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 45.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 135.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 155.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hack-squat",
+          "nameSnapshot": "Hack Squat",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hammer-curl-dumbbell",
+          "nameSnapshot": "Hammer Curl (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/bicep-curl-cable",
+          "nameSnapshot": "Bicep Curl (Cable)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 50.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/good-morning-barbell",
+          "nameSnapshot": "Good Morning (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 50.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hip-thrust-barbell",
+          "nameSnapshot": "Hip Thrust (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/29e1246ddafb559bb884044771a1ec25576febd027c8b74a5b2a3901afb26d0f",
+      "title": "Upper 1",
+      "startedAtEpochMillis": 1785794520000,
+      "endedAtEpochMillis": 1785795600000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/triceps-rope-pushdown",
+          "nameSnapshot": "Triceps Rope Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-bench-press-dumbbell",
+          "nameSnapshot": "Incline Bench Press (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-chest-fly-dumbbell",
+          "nameSnapshot": "Incline Chest Fly (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lat-pulldown-cable",
+          "nameSnapshot": "Lat Pulldown (Cable)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 145.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/overhead-press-barbell",
+          "nameSnapshot": "Overhead Press (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 45.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 85.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lateral-raise-dumbbell",
+          "nameSnapshot": "Lateral Raise (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/dumbbell-row",
+          "nameSnapshot": "Dumbbell Row",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 50.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/face-pull",
+          "nameSnapshot": "Face Pull",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/cable-crunch",
+          "nameSnapshot": "Cable Crunch",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/b2411c983834e2473ca19d4a922080dd0583c6237fcbf4b8d90fc14b7f58b8b0",
+      "title": "Lower 1",
+      "startedAtEpochMillis": 1785968880000,
+      "endedAtEpochMillis": 1785970680000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/squat-barbell",
+          "nameSnapshot": "Squat (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 45.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 175.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/african-curls",
+          "nameSnapshot": "African Curls",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-leg-romanian-deadlift-barbell",
+          "nameSnapshot": "Single Leg Romanian Deadlift (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/bicep-curl-cable",
+          "nameSnapshot": "Bicep Curl (Cable)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 65.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lunge-dumbbell",
+          "nameSnapshot": "Lunge (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/standing-calf-raise-barbell",
+          "nameSnapshot": "Standing Calf Raise (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 175.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/cable-crunch",
+          "nameSnapshot": "Cable Crunch",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/back-extension-hyperextension",
+          "nameSnapshot": "Back Extension (Hyperextension)",
+          "notes": "30s hold",
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": null,
+              "unit": "LB",
+              "reps": 1,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": null,
+              "unit": "LB",
+              "reps": 1,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/647de230363b498b0a61ced0b66bc01dc6c8af3c142ee66b6b3887146b65968c",
+      "title": "Upper 2",
+      "startedAtEpochMillis": 1786199640000,
+      "endedAtEpochMillis": 1786201080000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/bent-over-row-barbell",
+          "nameSnapshot": "Bent Over Row (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 45.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 150.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-pushdown",
+          "nameSnapshot": "Triceps Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/chest-dip-weighted",
+          "nameSnapshot": "Chest Dip (Weighted)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": null,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-chest-fly-dumbbell",
+          "nameSnapshot": "Incline Chest Fly (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/shoulder-press-dumbbell",
+          "nameSnapshot": "Shoulder Press (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 55.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-arm-lat-pulldown",
+          "nameSnapshot": "Single Arm Lat Pulldown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 0,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/kelso-shrug",
+          "nameSnapshot": "Kelso Shrug",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 0,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/24973069ad6e57ecc28155cd62c55bda5754b7ebfa7e27f45012e5f5bff8dbd8",
+      "title": "Upper 1",
+      "startedAtEpochMillis": 1786400820000,
+      "endedAtEpochMillis": 1786402560000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/triceps-rope-pushdown",
+          "nameSnapshot": "Triceps Rope Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 65.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-bench-press-dumbbell",
+          "nameSnapshot": "Incline Bench Press (Dumbbell)",
+          "notes": "Lower",
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 0,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-chest-fly-dumbbell",
+          "nameSnapshot": "Incline Chest Fly (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lat-pulldown-cable",
+          "nameSnapshot": "Lat Pulldown (Cable)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 145.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/overhead-press-barbell",
+          "nameSnapshot": "Overhead Press (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 45.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 85.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lateral-raise-dumbbell",
+          "nameSnapshot": "Lateral Raise (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/dumbbell-row",
+          "nameSnapshot": "Dumbbell Row",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 45.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/face-pull",
+          "nameSnapshot": "Face Pull",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/cable-crunch",
+          "nameSnapshot": "Cable Crunch",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/923925ec28a25d8a7b64ecedf8d673d67087eee48ee31b0394bee20b08edf49b",
+      "title": "Lower 1",
+      "startedAtEpochMillis": 1786572600000,
+      "endedAtEpochMillis": 1786574100000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/squat-barbell",
+          "nameSnapshot": "Squat (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 45.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 135.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/african-curls",
+          "nameSnapshot": "African Curls",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-leg-romanian-deadlift-barbell",
+          "nameSnapshot": "Single Leg Romanian Deadlift (Barbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/bicep-curl-cable",
+          "nameSnapshot": "Bicep Curl (Cable)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 65.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/c87df7373695c3b15342ae7953a4b407c64ad99aefd04da36007e6344a62b74e",
+      "title": "Lower 1",
+      "startedAtEpochMillis": 1787780880000,
+      "endedAtEpochMillis": 1787784420000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/hack-squat-machine",
+          "nameSnapshot": "Hack Squat (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/african-curls",
+          "nameSnapshot": "African Curls",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 25.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 25.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-leg-romanian-deadlift-dumbbell",
+          "nameSnapshot": "Single Leg Romanian Deadlift (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/da1e0a6b035420ad559dbb42cbb98b73e11da8f2c740865d0fc0c53c4c0029a7",
+      "title": "Upper 2",
+      "startedAtEpochMillis": 1787958420000,
+      "endedAtEpochMillis": 1787960760000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-pushdown",
+          "nameSnapshot": "Triceps Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 50.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-bench-press-dumbbell",
+          "nameSnapshot": "Incline Bench Press (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-chest-fly-dumbbell",
+          "nameSnapshot": "Incline Chest Fly (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-shoulder-press-machine",
+          "nameSnapshot": "Seated Shoulder Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "nameSnapshot": "Lat Pulldown (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 150.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 145.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/7190a8bc973384bc69fa0b854502b0356b2653c736916a12a78078fc25e92be6",
+      "title": "Lower 2",
+      "startedAtEpochMillis": 1788088980000,
+      "endedAtEpochMillis": 1788090720000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/romanian-deadlift-smith-machine",
+          "nameSnapshot": "Romanian Deadlift (Smith Machine)",
+          "notes": "Add another warm up in here 90 to 180 huge jump",
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 200.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 200.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hammer-curl-dumbbell",
+          "nameSnapshot": "Hammer Curl (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/cdfeb4ea366f18f45313b375f7215e3658f711767dff7841478e5258edb2e4ce",
+      "title": "Upper 1",
+      "startedAtEpochMillis": 1788217800000,
+      "endedAtEpochMillis": 1788220080000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/pull-up-assisted",
+          "nameSnapshot": "Pull Up (Assisted)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": null,
+              "unit": "LB",
+              "reps": 3,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": null,
+              "unit": "LB",
+              "reps": 1,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 4,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 150.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 150.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-rope-pushdown",
+          "nameSnapshot": "Triceps Rope Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/chest-dip-assisted",
+          "nameSnapshot": "Chest Dip (Assisted)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": null,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 45.0,
+              "unit": "LB",
+              "reps": 3,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": null,
+              "unit": "LB",
+              "reps": 4,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lateral-raise-dumbbell",
+          "nameSnapshot": "Lateral Raise (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 25.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/395ebbef56f3cd39676b00db24758a2ffa9d3d7fb4ef7efeb289871b558366a7",
+      "title": "Upper 2",
+      "startedAtEpochMillis": 1788562620000,
+      "endedAtEpochMillis": 1788565380000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 155.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 155.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-pushdown",
+          "nameSnapshot": "Triceps Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 50.0,
+              "unit": "LB",
+              "reps": 4,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-bench-press-dumbbell",
+          "nameSnapshot": "Incline Bench Press (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 65.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 65.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-chest-fly-dumbbell",
+          "nameSnapshot": "Incline Chest Fly (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-shoulder-press-machine",
+          "nameSnapshot": "Seated Shoulder Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 85.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 85.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "nameSnapshot": "Lat Pulldown (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 155.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 155.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 107.5,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/31e5a2a936e2c75fc34403e27f9244a8badef3012c295cfedf8a122a443a3c50",
+      "title": "Lower 2",
+      "startedAtEpochMillis": 1788696600000,
+      "endedAtEpochMillis": 1788699720000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/romanian-deadlift-smith-machine",
+          "nameSnapshot": "Romanian Deadlift (Smith Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 145.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hack-squat-machine",
+          "nameSnapshot": "Hack Squat (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 95.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 95.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 320.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 320.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hammer-curl-dumbbell",
+          "nameSnapshot": "Hammer Curl (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/bicep-curl-machine",
+          "nameSnapshot": "Bicep Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/c6b7c5204310956244f725ee0eeda9e741b19eb981d18295059e79f10aec5083",
+      "title": "Upper 1",
+      "startedAtEpochMillis": 1788822420000,
+      "endedAtEpochMillis": 1788826620000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/triceps-extension-machine",
+          "nameSnapshot": "Triceps Extension (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 125.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/iso-lateral-chest-press-machine",
+          "nameSnapshot": "Iso-Lateral Chest Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 200.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/butterfly-pec-deck",
+          "nameSnapshot": "Butterfly (Pec Deck)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 125.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 125.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/pull-up-assisted",
+          "nameSnapshot": "Pull Up (Assisted)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": null,
+              "unit": "LB",
+              "reps": 1,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 4,
+              "weight": 95.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 152.5,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 152.5,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/rear-delt-reverse-fly-machine",
+          "nameSnapshot": "Rear Delt Reverse Fly (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lateral-raise-dumbbell",
+          "nameSnapshot": "Lateral Raise (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 20.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/4927c0b03db70486facdc566e74197b9c18124c47ff0c29af54f873fb9b47951",
+      "title": "Lower 1",
+      "startedAtEpochMillis": 1788995100000,
+      "endedAtEpochMillis": 1789001700000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/leg-press-machine",
+          "nameSnapshot": "Leg Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 250.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 4,
+              "weight": 270.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-leg-press-machine",
+          "nameSnapshot": "Single Leg Press (Machine)",
+          "notes": "Focus glutes",
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 120.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/african-curls",
+          "nameSnapshot": "African Curls",
+          "notes": "I lost count just move up to 30s",
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 25.0,
+              "unit": "LB",
+              "reps": 14,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 25.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "nameSnapshot": "Preacher Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 82.5,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 325.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 325.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 115.0,
+              "unit": "LB",
+              "reps": 14,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 120.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/7568cd45aca34f809365688639649aba00a61f8c5f14c3c1ae2ad7bfe37f00e3",
+      "title": "Lower 1",
+      "startedAtEpochMillis": 1789598100000,
+      "endedAtEpochMillis": 1789600680000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/leg-press-machine",
+          "nameSnapshot": "Leg Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 290.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 4,
+              "weight": 310.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-leg-press-machine",
+          "nameSnapshot": "Single Leg Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 125.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 125.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/african-curls",
+          "nameSnapshot": "African Curls",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 0,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "nameSnapshot": "Preacher Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 85.0,
+              "unit": "LB",
+              "reps": 0,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 327.5,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 327.5,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/2e39dd8cae3c813da01b969c3d6f48d18b87df469aad0bdd1de5fee6c8671590",
+      "title": "Upper 2",
+      "startedAtEpochMillis": 1789770540000,
+      "endedAtEpochMillis": 1789773360000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "nameSnapshot": "Lat Pulldown (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 160.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 160.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-pushdown",
+          "nameSnapshot": "Triceps Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 60.0,
+              "unit": "LB",
+              "reps": 3,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 4,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 4,
+              "weight": 50.0,
+              "unit": "LB",
+              "reps": 2,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-bench-press-dumbbell",
+          "nameSnapshot": "Incline Bench Press (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/butterfly-pec-deck",
+          "nameSnapshot": "Butterfly (Pec Deck)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 107.5,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 107.5,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 160.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 160.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-shoulder-press-machine",
+          "nameSnapshot": "Seated Shoulder Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 102.5,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/f37d4d7100fb377f8d186c532085b1d72d6c927b2cdc5396da572ae720130501",
+      "title": "Lower 2",
+      "startedAtEpochMillis": 1789902300000,
+      "endedAtEpochMillis": 1789905120000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/romanian-deadlift-smith-machine",
+          "nameSnapshot": "Romanian Deadlift (Smith Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 230.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hack-squat-machine",
+          "nameSnapshot": "Hack Squat (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 160.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 160.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 102.5,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 340.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 340.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hammer-curl-dumbbell",
+          "nameSnapshot": "Hammer Curl (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "nameSnapshot": "Preacher Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 85.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 85.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/b2baa685ae557faced078b04500a56e6aeba47fba433d9dd72e345650ea83bc3",
+      "title": "Upper 1",
+      "startedAtEpochMillis": 1790033220000,
+      "endedAtEpochMillis": 1790038200000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "nameSnapshot": "Lat Pulldown (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 165.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 167.5,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 162.5,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 162.5,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-extension-machine",
+          "nameSnapshot": "Triceps Extension (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 135.0,
+              "unit": "LB",
+              "reps": 14,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 137.5,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/iso-lateral-chest-press-machine",
+          "nameSnapshot": "Iso-Lateral Chest Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 120.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 220.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 240.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/butterfly-pec-deck",
+          "nameSnapshot": "Butterfly (Pec Deck)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 127.5,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 127.5,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/lateral-raise-dumbbell",
+          "nameSnapshot": "Lateral Raise (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 25.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/rear-delt-reverse-fly-machine",
+          "nameSnapshot": "Rear Delt Reverse Fly (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 65.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 65.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/f81d6e2ca1fa11c5afa2a68f6c6723356585d269b2fcfa093d7f81a687c31ef1",
+      "title": "Lower 1",
+      "startedAtEpochMillis": 1790206440000,
+      "endedAtEpochMillis": 1790209620000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/leg-press-machine",
+          "nameSnapshot": "Leg Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 320.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 4,
+              "weight": 340.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 112.5,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-leg-press-machine",
+          "nameSnapshot": "Single Leg Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/african-curls",
+          "nameSnapshot": "African Curls",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 18,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 14,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "nameSnapshot": "Preacher Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 95.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 92.5,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 342.5,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 342.5,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 125.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/50c4b07a9801be0fe59709f0ba1713a4eebd9222e7964fdffeed00145b674c3b",
+      "title": "Upper 2",
+      "startedAtEpochMillis": 1790379240000,
+      "endedAtEpochMillis": 1790384220000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "nameSnapshot": "Lat Pulldown (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 165.0,
+              "unit": "LB",
+              "reps": 14,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 170.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-pushdown",
+          "nameSnapshot": "Triceps Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 55.0,
+              "unit": "LB",
+              "reps": 3,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/iso-lateral-chest-press-machine",
+          "nameSnapshot": "Iso-Lateral Chest Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 260.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 250.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/butterfly-pec-deck",
+          "nameSnapshot": "Butterfly (Pec Deck)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 120.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 120.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 165.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 165.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-shoulder-press-machine",
+          "nameSnapshot": "Seated Shoulder Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 95.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 95.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 125.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 125.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/56ff77b6a8d5b4d37c527c63d6589f175012dbf51aebfb194b62430458180a3a",
+      "title": "Lower 2",
+      "startedAtEpochMillis": 1790509920000,
+      "endedAtEpochMillis": 1790512920000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/single-leg-romanian-deadlift-dumbbell",
+          "nameSnapshot": "Single Leg Romanian Deadlift (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hack-squat-machine",
+          "nameSnapshot": "Hack Squat (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 347.5,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 347.5,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "nameSnapshot": "Preacher Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 80.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/87cfbd5d4fcf6f278d4be029c7eb3298bae532773ca16e8688a496481c8515fc",
+      "title": "Upper 1",
+      "startedAtEpochMillis": 1790636400000,
+      "endedAtEpochMillis": 1790639760000,
+      "notes": "Just tired. Pushing hard as fuck and not being 100% on nutrition",
+      "templateKey": "personal-routine/upper-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "nameSnapshot": "Lat Pulldown (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 170.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 170.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 165.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 165.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-rope-pushdown",
+          "nameSnapshot": "Triceps Rope Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 55.0,
+              "unit": "LB",
+              "reps": 3,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/iso-lateral-chest-press-machine",
+          "nameSnapshot": "Iso-Lateral Chest Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 230.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 230.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/623faa92b35b945a4eb36b9079af714ff1a8d75d36bf3ed81aaacc17c540e7bb",
+      "title": "Lower 1",
+      "startedAtEpochMillis": 1790810700000,
+      "endedAtEpochMillis": 1790815680000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/leg-press-machine",
+          "nameSnapshot": "Leg Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 340.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 4,
+              "weight": 360.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 115.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 115.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-leg-press-machine",
+          "nameSnapshot": "Single Leg Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 135.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 135.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/african-curls",
+          "nameSnapshot": "African Curls",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 14,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "nameSnapshot": "Preacher Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 345.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 345.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/c2ea43a0b5d514da7b8fb511239630214869e96b060eec928585488fc362edac",
+      "title": "Upper 2",
+      "startedAtEpochMillis": 1790981940000,
+      "endedAtEpochMillis": 1790984940000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "nameSnapshot": "Lat Pulldown (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 175.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 177.5,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 170.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 172.5,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-pushdown",
+          "nameSnapshot": "Triceps Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 65.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-bench-press-dumbbell",
+          "nameSnapshot": "Incline Bench Press (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/butterfly-pec-deck",
+          "nameSnapshot": "Butterfly (Pec Deck)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 127.5,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 127.5,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-shoulder-press-machine",
+          "nameSnapshot": "Seated Shoulder Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 97.5,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 97.5,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/e8a0ba3cd74147246f88d848a6ecad2381a03aace419be46271639ce05c28e59",
+      "title": "Lower 2",
+      "startedAtEpochMillis": 1791113820000,
+      "endedAtEpochMillis": 1791119040000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/single-leg-romanian-deadlift-dumbbell",
+          "nameSnapshot": "Single Leg Romanian Deadlift (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hack-squat-machine",
+          "nameSnapshot": "Hack Squat (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 170.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 170.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 360.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 360.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hammer-curl-dumbbell",
+          "nameSnapshot": "Hammer Curl (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 40.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 40.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-incline-curl-dumbbell",
+          "nameSnapshot": "Seated Incline Curl (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 30.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/56165f5ff2a8e8fa4caf5d70a9774e031e667d2066d0df5f610d1de36aaac682",
+      "title": "Upper 2",
+      "startedAtEpochMillis": 1791586500000,
+      "endedAtEpochMillis": 1791592440000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "nameSnapshot": "Lat Pulldown (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 177.5,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 150.0,
+              "unit": "LB",
+              "reps": 12,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 150.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-extension-machine",
+          "nameSnapshot": "Triceps Extension (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 20,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 110.0,
+              "unit": "LB",
+              "reps": 14,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/iso-lateral-chest-press-machine",
+          "nameSnapshot": "Iso-Lateral Chest Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 182.5,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/butterfly-pec-deck",
+          "nameSnapshot": "Butterfly (Pec Deck)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 127.5,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 127.5,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-shoulder-press-machine",
+          "nameSnapshot": "Seated Shoulder Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/f2c4b7c656501ceca48fcee4a8f4e49b569bb9d8d05d834fd6f952c942799996",
+      "title": "Lower 2",
+      "startedAtEpochMillis": 1791719040000,
+      "endedAtEpochMillis": 1791722040000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-2",
+      "exercises": [
+        {
+          "exerciseKey": "personal/leg-extension-machine",
+          "nameSnapshot": "Leg Extension (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 120.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 120.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-leg-romanian-deadlift-dumbbell",
+          "nameSnapshot": "Single Leg Romanian Deadlift (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hack-squat-machine",
+          "nameSnapshot": "Hack Squat (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 185.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 117.5,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 117.5,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 362.5,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 362.5,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/hammer-curl-dumbbell",
+          "nameSnapshot": "Hammer Curl (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 40.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 40.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "nameSnapshot": "Preacher Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/8bf62f9e2b24ebaaed55639b733843b186cbc91cc4160551721f6b5e81e56eee",
+      "title": "Upper 1",
+      "startedAtEpochMillis": 1791846000000,
+      "endedAtEpochMillis": 1791849000000,
+      "notes": null,
+      "templateKey": "personal-routine/upper-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/lat-pulldown-machine",
+          "nameSnapshot": "Lat Pulldown (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 175.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-row-machine",
+          "nameSnapshot": "Seated Row (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 170.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 170.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/triceps-rope-pushdown",
+          "nameSnapshot": "Triceps Rope Pushdown",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 55.0,
+              "unit": "LB",
+              "reps": 3,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/incline-bench-press-dumbbell",
+          "nameSnapshot": "Incline Bench Press (Dumbbell)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 75.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 6,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-shoulder-press-machine",
+          "nameSnapshot": "Seated Shoulder Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 95.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 85.0,
+              "unit": "LB",
+              "reps": 2,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 85.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/butterfly-pec-deck",
+          "nameSnapshot": "Butterfly (Pec Deck)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "DROP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/rear-delt-reverse-fly-machine",
+          "nameSnapshot": "Rear Delt Reverse Fly (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 67.5,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 70.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 130.0,
+              "unit": "LB",
+              "reps": 8,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "sourceKey": "hevy-history-v1/f5fa7eb55d70cfc3901915c5d1f202dd7c7c1a2c37aecbbc0f3447cbcfd74c80",
+      "title": "Lower 1",
+      "startedAtEpochMillis": 1792018860000,
+      "endedAtEpochMillis": 1792022280000,
+      "notes": null,
+      "templateKey": "personal-routine/lower-1",
+      "exercises": [
+        {
+          "exerciseKey": "personal/leg-press-machine",
+          "nameSnapshot": "Leg Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 90.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 180.0,
+              "unit": "LB",
+              "reps": 5,
+              "setType": "WARMUP",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 3,
+              "weight": 380.0,
+              "unit": "LB",
+              "reps": 15,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 4,
+              "weight": 390.0,
+              "unit": "LB",
+              "reps": 13,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-leg-curl-machine",
+          "nameSnapshot": "Seated Leg Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 117.5,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 117.5,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/single-leg-press-machine",
+          "nameSnapshot": "Single Leg Press (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 140.0,
+              "unit": "LB",
+              "reps": 7,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/african-curls",
+          "nameSnapshot": "African Curls",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 14,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 35.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/seated-calf-raise",
+          "nameSnapshot": "Seated Calf Raise",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 360.0,
+              "unit": "LB",
+              "reps": 14,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 360.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/crunch-machine",
+          "nameSnapshot": "Crunch (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 145.0,
+              "unit": "LB",
+              "reps": 10,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            },
+            {
+              "setNumber": 2,
+              "weight": 145.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "NORMAL",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/bicep-curl-machine",
+          "nameSnapshot": "Bicep Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 100.0,
+              "unit": "LB",
+              "reps": 11,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        },
+        {
+          "exerciseKey": "personal/preacher-curl-machine",
+          "nameSnapshot": "Preacher Curl (Machine)",
+          "notes": null,
+          "sets": [
+            {
+              "setNumber": 1,
+              "weight": 105.0,
+              "unit": "LB",
+              "reps": 9,
+              "setType": "FAILURE",
+              "rpe": null,
+              "restSeconds": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

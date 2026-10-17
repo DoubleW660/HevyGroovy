@@ -259,21 +259,21 @@ class InlineWorkoutEditingFlowTest {
                     hasTestTag("reorder-exercise-${rows[0]}"))
                 compose.waitForIdle()
                 val dragDistance = 100f * context.resources.displayMetrics.density
-                compose.onNodeWithTag("reorder-exercise-${rows[0]}").assertIsDisplayed()
-                    .performTouchInput {
-                        down(center)
-                        // Compose's longClick sends stationary MOVE events while holding.
-                        // A timestamp jump alone can let the first moved event win over the timeout.
-                        var heldMillis = 0L
-                        while (heldMillis < viewConfiguration.longPressTimeoutMillis + 100) {
-                            moveBy(Offset.Zero, delayMillis = eventPeriodMillis)
-                            heldMillis += eventPeriodMillis
-                        }
-                        repeat(8) {
-                            moveBy(Offset(0f, dragDistance / 8), delayMillis = eventPeriodMillis)
-                        }
-                        up()
-                    }
+                val list = compose.onNodeWithTag("workout-list")
+                val header = compose.onNodeWithTag("reorder-exercise-${rows[0]}").assertIsDisplayed()
+                val start = header.fetchSemanticsNode().boundsInRoot.center -
+                    list.fetchSemanticsNode().boundsInRoot.topLeft
+                compose.mainClock.autoAdvance = false
+                try {
+                    var holdMillis = 0L
+                    list.performTouchInput { holdMillis = viewConfiguration.longPressTimeoutMillis; down(start) }
+                    // Process the long press and collapsed layout before injecting movement.
+                    compose.mainClock.advanceTimeBy(holdMillis + 100)
+                    compose.onNodeWithTag("collapsed-exercise-${rows[0]}").assertExists()
+                    list.performTouchInput { moveTo(start + Offset(0f, dragDistance), 200); up() }
+                } finally {
+                    compose.mainClock.autoAdvance = true
+                }
                 compose.waitUntil(10_000) {
                     !model.state.loading && model.state.activeWorkout?.exercises
                         ?.map { it.workoutExerciseId } == rows.reversed()

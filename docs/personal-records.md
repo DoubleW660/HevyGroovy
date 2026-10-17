@@ -43,8 +43,9 @@ separate metric in the active workout, history, and exercise record view; see
 [the calculation and previous-performance rules](strength-estimates.md).
 Records for each weight/rep combination remain a separate future feature.
 
-The prior CSV import populated exercise names and routine structures only. Past
-CSV workouts have not been imported, so they are not record baselines.
+The [workout history import](personal-workout-history.md) adds August-onward CSV
+performances as record baselines. Historical awards are calculated against earlier
+finished workouts, so importing history does not produce live record notifications.
 
 ## Verification
 

@@ -180,8 +180,10 @@ public class PersonalWorkoutHistoryImportTest {
         JSONObject exercise = new JSONObject().put("exerciseKey", exerciseKey).put("nameSnapshot", "Imported exercise")
                 .put("notes", JSONObject.NULL).put("sets", new JSONArray().put(set));
         JSONObject workout = new JSONObject().put("sourceKey", key).put("title", "Imported")
-                .put("startedAtEpochMillis", key.equals("second") ? 3000 : 1000)
-                .put("endedAtEpochMillis", key.equals("second") ? 4000 : 2000)
+                .put("startedAtEpochMillis", java.time.Instant.parse("2026-08-02T12:00:00Z").toEpochMilli()
+                        + (key.equals("second") ? 2000 : 0))
+                .put("endedAtEpochMillis", java.time.Instant.parse("2026-08-02T12:00:00Z").toEpochMilli()
+                        + (key.equals("second") ? 3000 : 1000))
                 .put("notes", JSONObject.NULL).put("templateKey", JSONObject.NULL)
                 .put("exercises", new JSONArray().put(exercise));
         return new JSONObject().put("schemaVersion", 1).put("since", "2026-08-01")

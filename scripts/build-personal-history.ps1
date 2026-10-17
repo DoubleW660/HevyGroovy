@@ -191,7 +191,7 @@ foreach ($startedAt in @($sessions.Keys | Sort-Object)) {
             $occurrenceCount++
             if ($null -ne $exerciseNotes) { $exerciseNoteCount++ }
         } elseif ($setIndex -ne $previousSetIndex + 1) {
-            throw "Noncontiguous set_index at CSV row $record: expected $($previousSetIndex + 1), received $setIndex."
+            throw "Noncontiguous set_index at CSV row ${record}: expected $($previousSetIndex + 1), received $setIndex."
         }
         if ($exerciseNotes -cne $current.notes) { throw "Conflicting exercise notes at CSV row $record." }
         $weight = Read-NullableNumber $row.weight_lbs "weight_lbs at CSV row $record"

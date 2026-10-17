@@ -91,6 +91,34 @@ class WorkoutSessionEditingTest {
         order.verify(workouts).delete(100L);
         verify(workouts, never()).save(any());
     }
+
+    @Test
+    void deletingFinishedWorkoutRemovesChildrenInOrderWithoutSavingTheWorkout() {
+        ownedWorkout().setEndedAtEpochMillis(1000L);
+        WorkoutExercise row = row(10L, 0);
+        SetEntry set = new SetEntry(); set.setId(50L);
+        when(sets.findByLoggedWorkoutId(100L)).thenReturn(List.of(set));
+        when(rows.findByLoggedWorkoutId(100L)).thenReturn(List.of(row));
+        service.deleteFinishedWorkout(1L, 100L);
+        org.mockito.InOrder order = inOrder(sets, rows, workouts);
+        order.verify(sets).delete(50L);
+        order.verify(rows).delete(10L);
+        order.verify(workouts).delete(100L);
+        verify(workouts, never()).save(any());
+    }
+
+    @Test
+    void finishedDeletionRejectsActiveForeignMissingAndInvalidWorkoutsBeforeReadingChildren() {
+        LoggedWorkout workout = ownedWorkout();
+        assertThrows(RuntimeException.class, () -> service.deleteFinishedWorkout(1L, 100L));
+        workout.setEndedAtEpochMillis(1000L);
+        assertThrows(RuntimeException.class, () -> service.deleteFinishedWorkout(2L, 100L));
+        assertThrows(RuntimeException.class, () -> service.deleteFinishedWorkout(1L, 999L));
+        assertThrows(RuntimeException.class, () -> service.deleteFinishedWorkout(0L, 100L));
+        assertThrows(RuntimeException.class, () -> service.deleteFinishedWorkout(1L, -1L));
+        verifyNoInteractions(rows, sets);
+        verify(workouts, never()).delete(anyLong());
+    }
     @Mock private LoggedWorkoutRepository workouts;
     @Mock private WorkoutExerciseRepository rows;
     @Mock private SetEntryRepository sets;

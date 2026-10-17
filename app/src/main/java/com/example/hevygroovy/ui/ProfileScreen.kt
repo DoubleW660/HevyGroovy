@@ -80,7 +80,7 @@ fun ProfileScreen(model: ProfileViewModel, onHistory: () -> Unit, onExercises: (
                                 )
                             }
                         }
-                        Text("Used for new sets. Existing sets keep their recorded unit.",
+                        Text("Used for new sets, volume totals, and estimated 1RM. Existing sets keep their recorded unit.",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     }
                 }

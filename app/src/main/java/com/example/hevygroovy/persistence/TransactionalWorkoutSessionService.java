@@ -48,6 +48,11 @@ public final class TransactionalWorkoutSessionService implements WorkoutSessionS
     }
 
     @Override
+    public void deleteFinishedWorkout(long userId, long workoutId) {
+        transactions.run(() -> { delegate.deleteFinishedWorkout(userId, workoutId); return null; });
+    }
+
+    @Override
     public LoggedWorkout startEmptyWorkout(long userId) {
         return transactions.run(() -> delegate.startEmptyWorkout(userId));
     }

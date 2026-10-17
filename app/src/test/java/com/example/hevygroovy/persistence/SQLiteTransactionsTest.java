@@ -119,6 +119,7 @@ class SQLiteTransactionsTest {
                 service -> service.updateExerciseDetails(1L, 10L, "Brace", 90),
                 service -> service.updateWorkoutNotes(1L, 100L, null),
                 service -> service.discardWorkout(1L, 100L),
+                service -> service.deleteFinishedWorkout(1L, 100L),
                 service -> service.startEmptyWorkout(1L),
                 service -> service.startWorkoutFromTemplate(1L, 7L),
                 service -> service.finishWorkout(1L, 100L),

@@ -9,7 +9,11 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
@@ -114,6 +118,7 @@ fun HistoryScreen(model: HistoryViewModel, onStartWorkout: () -> Unit) {
 
 @Composable
 private fun HistoryWorkoutCard(workout: WorkoutHistory, onClick: () -> Unit) {
+    val unit = LocalWeightUnit.current
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().testTag("history-card-${workout.workoutId}"),
@@ -131,7 +136,7 @@ private fun HistoryWorkoutCard(workout: WorkoutHistory, onClick: () -> Unit) {
                 style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 HistoryMetric("Duration", historyDuration(workout.durationSeconds), Modifier.weight(1f))
-                HistoryMetric("Volume (kg)", historyNumber(workout.totalVolume), Modifier.weight(1f))
+                HistoryMetric("Volume (${unit.symbol})", historyNumber(workout.totalVolume.inWeightUnit(unit)), Modifier.weight(1f))
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
             Text("${historyCount(workout.totalExercises, "exercise")}  ·  ${historyCount(workout.totalSets, "completed set")}",
@@ -144,17 +149,28 @@ private fun HistoryWorkoutCard(workout: WorkoutHistory, onClick: () -> Unit) {
 private fun HistoryDetailScreen(model: HistoryViewModel) {
     val state = model.state
     val detail = state.detail
+    var confirmDelete by rememberSaveable(state.selectedWorkoutId) { mutableStateOf(false) }
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("history-detail"),
         contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 28.dp),
         verticalArrangement = Arrangement.spacedBy(18.dp),
     ) {
         item(key = "back") {
-            TextButton(onClick = model::closeDetail, contentPadding = PaddingValues(start = 0.dp, end = 16.dp),
-                modifier = Modifier.testTag("history-back")) {
-                Text("‹", fontSize = 26.sp)
-                Spacer(Modifier.width(8.dp))
-                Text("History")
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = model::closeDetail, enabled = !state.deleting,
+                    contentPadding = PaddingValues(start = 0.dp, end = 16.dp),
+                    modifier = Modifier.testTag("history-back")) {
+                    Text("‹", fontSize = 26.sp)
+                    Spacer(Modifier.width(8.dp))
+                    Text("History")
+                }
+                Spacer(Modifier.weight(1f))
+                if (detail != null) TextButton(onClick = { confirmDelete = true },
+                    enabled = !state.deleting && !state.detailLoading,
+                    modifier = Modifier.testTag("history-delete-button"),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                    Text("Delete workout")
+                }
             }
         }
         if (state.detailLoading) {
@@ -210,16 +226,34 @@ private fun HistoryDetailScreen(model: HistoryViewModel) {
             }
         }
     }
+    if (confirmDelete && detail != null) {
+        AlertDialog(onDismissRequest = { if (!state.deleting) confirmDelete = false },
+            modifier = Modifier.testTag("history-delete-dialog"), title = { Text("Delete this workout?") },
+            text = { Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text("This permanently deletes the workout and its sets. Records and totals will update.")
+                if (state.deleting) LinearProgressIndicator(Modifier.fillMaxWidth())
+                state.deleteError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            } },
+            confirmButton = { TextButton(onClick = model::deleteWorkout, enabled = !state.deleting,
+                modifier = Modifier.testTag("history-confirm-delete"),
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                Text(if (state.deleting) "Deleting…" else "Delete")
+            } },
+            dismissButton = { TextButton(onClick = { confirmDelete = false }, enabled = !state.deleting,
+                modifier = Modifier.testTag("history-keep-workout")) { Text("Keep workout") } },
+        )
+    }
 }
 
 @Composable
 private fun HistoryDetailTotals(detail: WorkoutHistoryDetail) {
+    val unit = LocalWeightUnit.current
     Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 HistoryMetric("Duration", historyDuration(detail.durationSeconds), Modifier.weight(1f))
-                HistoryMetric("Volume (kg)", historyNumber(detail.totalVolume),
+                HistoryMetric("Volume (${unit.symbol})", historyNumber(detail.totalVolume.inWeightUnit(unit)),
                     Modifier.weight(1f).testTag("history-total-volume"))
             }
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
@@ -227,7 +261,7 @@ private fun HistoryDetailTotals(detail: WorkoutHistoryDetail) {
                 HistoryMetric("Total reps", detail.totalReps.toString(), Modifier.weight(1f))
             }
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
-            Text("Totals use completed sets. Volume is converted to kg × reps; sets keep their original units.",
+            Text("Totals use completed sets. Volume uses ${unit.symbol} × reps; sets keep their recorded units.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -243,6 +277,7 @@ private fun HistoryMetric(label: String, value: String, modifier: Modifier = Mod
 
 @Composable
 private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<PersonalRecord>) {
+    val unit = LocalWeightUnit.current
     Card(Modifier.fillMaxWidth().testTag("history-exercise-${exercise.workoutExerciseId}"),
         shape = RoundedCornerShape(20.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
@@ -251,10 +286,10 @@ private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<
             Text(exercise.exerciseName, style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
             PersonalRecordBadge(records)
-            Text("${historyCount(exercise.totalSets, "completed set")} · ${historyNumber(exercise.totalVolume)} kg volume",
+            Text("${historyCount(exercise.totalSets, "completed set")} · ${historyNumber(exercise.totalVolume.inWeightUnit(unit))} ${unit.symbol} volume",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (exercise.estimatedOneRepMax > 0) {
-                Text("Estimated 1RM: ${historyNumber(exercise.estimatedOneRepMax)} kg · Epley",
+                Text("Estimated 1RM: ${historyNumber(exercise.estimatedOneRepMax.inWeightUnit(unit))} ${unit.symbol} · Epley",
                     modifier = Modifier.testTag("history-estimated-1rm-${exercise.workoutExerciseId}"),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary)
             }

@@ -26,4 +26,12 @@ final class ServiceHistoryGateway implements HistoryGateway {
         worker.submit(() -> worker.services().getHistory().getWorkoutHistoryDetail(worker.userId(), workoutId),
                 callback::onSuccess, callback::onFailure);
     }
+
+    @Override
+    public void deleteWorkout(long workoutId, DeleteCallback callback) {
+        worker.submit(() -> {
+            worker.services().getWorkoutSessions().deleteFinishedWorkout(worker.userId(), workoutId);
+            return null;
+        }, ignored -> callback.onSuccess(), callback::onFailure);
+    }
 }

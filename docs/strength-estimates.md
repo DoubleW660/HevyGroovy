@@ -15,6 +15,8 @@ the equation. Warmups, incomplete sets, zero loads, and sets outside 1–10 reps
 The best qualifying estimate is shown for an exercise in the current workout and history;
 the exercise record view can query the best estimate across finished workouts. Calculations use
 kilograms internally, with pounds converted using `1 lb = 0.45359237 kg`.
+Displayed estimates follow the profile's LB/KG preference; existing sets and
+previous-set references retain their original recorded units.
 
 This is a strength estimate from logged load, separate from the four personal-record categories.
 It does not adjust for effort/RPE, fatigue, bodyweight, assistance, or machine mechanics.

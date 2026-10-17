@@ -24,6 +24,9 @@ data class HistoryState(
     val detail: WorkoutHistoryDetail? = null,
     val detailLoading: Boolean = false,
     val detailError: String? = null,
+    val deleting: Boolean = false,
+    val deleteError: String? = null,
+    val deletedWorkouts: Long = 0,
 )
 
 class HistoryViewModel(
@@ -40,7 +43,7 @@ class HistoryViewModel(
 
     /** Refresh replaces all pages; older in-flight pagination results are ignored. */
     fun refresh() {
-        if (cleared || state.loading) return
+        if (cleared || state.loading || state.deleting) return
         val generation = ++pageGeneration
         state = state.copy(loading = true, loadingMore = false, error = null, moreError = null)
         loadPage(0, generation, append = false)
@@ -48,7 +51,7 @@ class HistoryViewModel(
     }
 
     fun loadMore() {
-        if (cleared || state.loading || state.loadingMore || !state.hasMore) return
+        if (cleared || state.loading || state.loadingMore || state.deleting || !state.hasMore) return
         state = state.copy(loadingMore = true, moreError = null)
         loadPage(nextOffset, pageGeneration, append = true)
     }
@@ -75,21 +78,22 @@ class HistoryViewModel(
     }
 
     fun openWorkout(id: Long) {
-        if (cleared || id <= 0) return
+        if (cleared || state.deleting || id <= 0) return
         if (state.selectedWorkoutId == id && (state.detailLoading || state.detail != null)) return
         savedState[SELECTED_WORKOUT_ID] = id
-        state = state.copy(selectedWorkoutId = id, detail = null, detailError = null)
+        state = state.copy(selectedWorkoutId = id, detail = null, detailError = null, deleteError = null)
         loadDetail(id)
     }
 
     fun closeDetail() {
+        if (state.deleting) return
         ++detailGeneration
         savedState[SELECTED_WORKOUT_ID] = null
-        state = state.copy(selectedWorkoutId = null, detail = null, detailLoading = false, detailError = null)
+        state = state.copy(selectedWorkoutId = null, detail = null, detailLoading = false, detailError = null, deleteError = null)
     }
 
     fun retryDetail() {
-        if (cleared || state.detailLoading) return
+        if (cleared || state.detailLoading || state.deleting) return
         state.selectedWorkoutId?.let { loadDetail(it) }
     }
 
@@ -106,6 +110,33 @@ class HistoryViewModel(
                 if (cleared || generation != detailGeneration || state.selectedWorkoutId != id) return
                 state = state.copy(detailLoading = false,
                     detailError = "Couldn't load this workout. Please try again.")
+            }
+        })
+    }
+
+    fun deleteWorkout() {
+        val id = state.detail?.workoutId ?: return
+        if (cleared || state.deleting || state.detailLoading || state.selectedWorkoutId != id) return
+        // Invalidate reads started before deletion so they cannot restore a deleted row.
+        ++pageGeneration
+        ++detailGeneration
+        state = state.copy(deleting = true, deleteError = null, loading = false, loadingMore = false)
+        gateway.deleteWorkout(id, object : HistoryGateway.DeleteCallback {
+            override fun onSuccess() {
+                if (cleared) return
+                savedState[SELECTED_WORKOUT_ID] = null
+                state = state.copy(deleting = false, selectedWorkoutId = null, detail = null,
+                    detailLoading = false, detailError = null, deleteError = null,
+                    items = state.items.filterNot { it.workoutId == id },
+                    deletedWorkouts = state.deletedWorkouts + 1)
+                // The write is complete. A subsequent page failure can only retry the read.
+                refresh()
+            }
+
+            override fun onFailure(error: Exception) {
+                if (cleared) return
+                state = state.copy(deleting = false,
+                    deleteError = "Couldn't delete this workout. Please try again.")
             }
         })
     }

@@ -22,6 +22,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.hevygroovy.dto.PersonalRecord
 import com.example.hevygroovy.entity.enums.RecordType
+import com.example.hevygroovy.entity.enums.Unit as WeightUnit
 import java.text.NumberFormat
 import java.time.Instant
 import java.time.ZoneId
@@ -39,6 +40,7 @@ fun PersonalRecordSection(
     showAchievedDate: Boolean = false,
 ) {
     if (records.isEmpty()) return
+    val displayUnit = LocalWeightUnit.current
     Card(
         modifier = modifier.fillMaxWidth().testTag("personal-record-section"),
         shape = RoundedCornerShape(20.dp),
@@ -64,7 +66,7 @@ fun PersonalRecordSection(
                 Text("Finish workout to save these records.", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.primary)
             }
-            Text("Completed working sets count. Warm-ups are excluded. Volume is weight × reps, converted to kg.",
+            Text("Completed working sets count. Warm-ups are excluded. Volume uses ${displayUnit.symbol} × reps.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
@@ -76,7 +78,7 @@ private fun PersonalRecordRow(record: PersonalRecord, showAchievedDate: Boolean)
         verticalArrangement = Arrangement.spacedBy(3.dp)) {
         Text(record.type.recordLabel(), style = MaterialTheme.typography.labelMedium,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text(record.recordValue(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        Text(record.recordValue(LocalWeightUnit.current), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         record.recordContext()?.let { context ->
             Text(context, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -106,6 +108,7 @@ internal fun PersonalRecordBadge(records: List<PersonalRecord>, modifier: Modifi
 @Composable
 internal fun ExerciseRecordsDialog(model: ExerciseRecordsViewModel, exerciseName: String) {
     val state = model.state
+    val displayUnit = LocalWeightUnit.current
     AlertDialog(onDismissRequest = model::close, modifier = Modifier.testTag("exercise-records-dialog"),
         title = { Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(exerciseName)
@@ -130,7 +133,7 @@ internal fun ExerciseRecordsDialog(model: ExerciseRecordsViewModel, exerciseName
                             Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
                                 Text("Best estimated 1RM", style = MaterialTheme.typography.labelMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                Text("${recordNumber(state.estimatedOneRepMaxKg)} kg",
+                                Text("${recordNumber(state.estimatedOneRepMaxKg.inWeightUnit(displayUnit))} ${displayUnit.symbol}",
                                     style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                                 Text("Epley estimate from completed working sets of 1–10 reps.",
                                     style = MaterialTheme.typography.bodySmall,
@@ -178,10 +181,10 @@ internal fun RecordType.recordLabel(): String = when (this) {
     RecordType.WORKOUT_VOLUME -> "Most volume in a workout"
 }
 
-internal fun PersonalRecord.recordValue(): String = when (type) {
+internal fun PersonalRecord.recordValue(displayUnit: WeightUnit = WeightUnit.KG): String = when (type) {
     RecordType.HEAVIEST_WEIGHT -> "${recordNumber(weight)} ${unit.name.lowercase()}"
     RecordType.MOST_REPS -> "$reps reps"
-    RecordType.BEST_SET_VOLUME, RecordType.WORKOUT_VOLUME -> "${recordNumber(value)} kg × reps"
+    RecordType.BEST_SET_VOLUME, RecordType.WORKOUT_VOLUME -> "${recordNumber(value.inWeightUnit(displayUnit))} ${displayUnit.symbol} × reps"
 }
 
 internal fun PersonalRecord.recordContext(): String? = when (type) {

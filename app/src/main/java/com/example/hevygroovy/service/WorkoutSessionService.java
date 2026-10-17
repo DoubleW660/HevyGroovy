@@ -27,6 +27,9 @@ public interface WorkoutSessionService {
     /** Permanently removes an owned active workout and its child rows. */
     void discardWorkout(long userId, long workoutId);
 
+    /** Permanently removes an owned finished workout and its children. */
+    void deleteFinishedWorkout(long userId, long workoutId);
+
     WorkoutExercise addExerciseToWorkout(long userId, long workoutId, long exerciseId);
 
     void removeExerciseFromWorkout(long userId, long workoutExerciseId);

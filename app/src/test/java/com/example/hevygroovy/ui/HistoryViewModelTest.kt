@@ -158,13 +158,54 @@ class HistoryViewModelTest {
         assertSame(before, model.state)
     }
 
+    @Test fun successfulDeletionInvalidatesPendingPagesClosesDetailAndResetsPagination() {
+        val gateway = FakeGateway()
+        val saved = SavedStateHandle()
+        val model = HistoryViewModel(gateway, saved)
+        model.refresh(); gateway.page(0, listOf(9, 8), true, 20)
+        model.loadMore()
+        model.openWorkout(9); gateway.details[0].callback.onSuccess(detail(9))
+        model.deleteWorkout(); model.deleteWorkout(); model.refresh(); model.closeDetail()
+        assertTrue(model.state.deleting)
+        assertEquals(1, gateway.deletes.size)
+        gateway.page(1, listOf(9, 7), false, 40)
+        gateway.deletes[0].onSuccess()
+        assertNull(model.state.selectedWorkoutId)
+        assertNull(saved.get<Long>("historySelectedWorkoutId"))
+        assertEquals(1L, model.state.deletedWorkouts)
+        assertEquals(listOf(8L), model.state.items.map { it.workoutId })
+        assertEquals(0, gateway.pages.last().offset)
+        gateway.page(2, listOf(8, 7), false, 2)
+        assertEquals(listOf(8L, 7L), model.state.items.map { it.workoutId })
+    }
+
+    @Test fun failedDeletionKeepsDetailAndCanBeRetriedButFailedRefreshOnlyRetriesRead() {
+        val gateway = FakeGateway()
+        val model = HistoryViewModel(gateway)
+        model.openWorkout(9); gateway.details[0].callback.onSuccess(detail(9))
+        model.deleteWorkout()
+        gateway.deletes[0].onFailure(IllegalStateException("Write failed"))
+        assertFalse(model.state.deleting)
+        assertEquals(9L, model.state.detail?.workoutId)
+        assertNotNull(model.state.deleteError)
+        model.deleteWorkout(); gateway.deletes[1].onSuccess()
+        gateway.pages[0].callback.onFailure(IllegalStateException("Read failed"))
+        assertNull(model.state.selectedWorkoutId)
+        assertNotNull(model.state.error)
+        model.refresh(); gateway.page(1, emptyList(), false, 0)
+        assertEquals(2, gateway.deletes.size)
+        assertTrue(model.state.items.isEmpty())
+    }
+
     private class FakeGateway : HistoryGateway {
         data class PageRequest(val offset: Int, val callback: HistoryGateway.PageCallback)
         data class DetailRequest(val id: Long, val callback: HistoryGateway.DetailCallback)
         val pages = mutableListOf<PageRequest>()
         val details = mutableListOf<DetailRequest>()
+        val deletes = mutableListOf<HistoryGateway.DeleteCallback>()
         override fun loadPage(offset: Int, callback: HistoryGateway.PageCallback) { pages += PageRequest(offset, callback) }
         override fun loadDetail(workoutId: Long, callback: HistoryGateway.DetailCallback) { details += DetailRequest(workoutId, callback) }
+        override fun deleteWorkout(workoutId: Long, callback: HistoryGateway.DeleteCallback) { deletes += callback }
         fun page(index: Int, ids: List<Int>, hasMore: Boolean, nextOffset: Int) {
             pages[index].callback.onSuccess(HistoryGateway.HistoryPage(ids.map { workout(it.toLong()) }, hasMore, nextOffset))
         }

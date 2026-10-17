@@ -14,7 +14,8 @@ Warm-ups and unfinished sets are excluded. Zero-load bodyweight sets can establi
 rep records; zero weight/volume does not produce a weight/volume record.
 
 Weight comparisons use kilograms internally (`lb × 0.45359237`). The UI preserves
-original set units and labels normalized volume as kg × reps. Improvements must
+original set units. Volume records display in the profile's LB/KG preference,
+converted from normalized kg × reps without changing saved performances. Improvements must
 exceed the previous value by more than 0.000001; ties do not earn new awards.
 The first eligible performance establishes initial records.
 
@@ -36,6 +37,10 @@ and set rows persist the underlying performances; record queries derive the best
 from that durable history. This avoids a second stored counter drifting from the
 workout data. Equal winners resolve deterministically to the earliest performance.
 SQL aggregates only requested exercises and batches large ID lists.
+
+Deleting a finished workout recalculates saved bests and estimated 1RM from the
+remaining history. The next qualifying best takes its place. Historical awards
+and previous-performance reads likewise use the remaining finished workouts.
 
 These are records of the logged load. The app does not currently distinguish
 external load from assistance or total body weight. Estimated one-rep max is a

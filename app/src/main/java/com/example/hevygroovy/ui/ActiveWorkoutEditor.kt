@@ -183,6 +183,7 @@ fun WorkoutExerciseCard(
     canPersist: () -> Boolean = { true },
     onDraftChanged: (Long, InlineSetDraft) -> Unit = { _, _ -> },
 ) {
+    val displayUnit = LocalWeightUnit.current
     val busy = model.state.busy
     val name = row.exerciseNameSnapshot ?: "Exercise"
     var editDetails by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
@@ -217,7 +218,8 @@ fun WorkoutExerciseCard(
                         TextButton(onClick = { editDetails = true }, enabled = !busy) { Text("Notes & rest") }
                     }
                     if (row.estimatedOneRepMax > 0) {
-                        Text("Estimated 1RM: " + workoutNumber(row.estimatedOneRepMax) + " kg · completed sets, 1–10 reps",
+                        Text("Estimated 1RM: " + workoutNumber(row.estimatedOneRepMax.inWeightUnit(displayUnit)) +
+                            " ${displayUnit.symbol} · completed sets, 1–10 reps",
                             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.testTag("active-estimated-1rm-" + row.workoutExerciseId))
                     }

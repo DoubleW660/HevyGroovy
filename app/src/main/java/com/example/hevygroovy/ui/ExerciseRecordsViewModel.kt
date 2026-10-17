@@ -46,6 +46,10 @@ class ExerciseRecordsViewModel(private val gateway: RecordGateway,
     }
 
     fun retry() { state.selectedExerciseId?.let(::refresh) }
+    fun invalidate() {
+        ++generation
+        state = ExerciseRecordsState(selectedExerciseId = state.selectedExerciseId)
+    }
     fun close() {
         ++generation
         savedState[SELECTED_ID] = null

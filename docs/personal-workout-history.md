@@ -30,6 +30,13 @@ deleted imported workout leaves a receipt with a null workout ID, preventing its
 unexpected restoration. The full payload is validated before writing, and all
 pending workouts, children, and receipts are committed in one transaction.
 
+Finished workouts can be removed through **History → workout details → Delete
+workout**. Confirmation is required. Deletion removes the workout, exercise rows,
+and sets atomically; it does not delete exercises, routines, or an active session.
+Records, previous performance, and visible history are refreshed after success.
+Volume totals and estimated 1RM follow the profile unit; database calculations
+remain normalized to kilograms.
+
 Named test databases import history only with an explicit opt-in. Existing catalog
 opt-in constructors keep their original behavior.
 
@@ -54,3 +61,10 @@ Direct verification of its migrated v7 database confirmed 29 imported workouts,
 384 sets, and 3,423 reps, with both pre-existing workouts unchanged. Reopening
 retained the same import totals. Local database backups and verification snapshots
 are under the ignored `app/build/history-import-checks` directory.
+
+The finished-workout deletion and profile-unit update also passed all 228 JVM
+tests, 89 phone tests, and lint on October 17, 2026. Tests verify atomic rollback,
+record and previous-performance fallback, imported deletion receipts, confirmation,
+refreshing history/home, and live LB/KG totals and estimates. The update was installed
+on the regular phone app; all 30 workouts present immediately before that update
+were verified unchanged afterward. No personal workout was deleted for testing.

@@ -341,6 +341,19 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     public void discardWorkout(long userId, long workoutId) {
         LoggedWorkout workout = requireOwnedWorkout(userId, workoutId);
         requireActiveWorkout(workout);
+        deleteWorkoutAndChildren(workoutId);
+    }
+
+    @Override
+    public void deleteFinishedWorkout(long userId, long workoutId) {
+        LoggedWorkout workout = requireOwnedWorkout(userId, workoutId);
+        if (workout.getEndedAtEpochMillis() == null) {
+            throw new IllegalArgumentException("Workout must be finished before deletion");
+        }
+        deleteWorkoutAndChildren(workoutId);
+    }
+
+    private void deleteWorkoutAndChildren(long workoutId) {
         // The SQLite service wrapper makes all child and parent deletes atomic.
         for (SetEntry set : setEntryRepository.findByLoggedWorkoutId(workoutId)) {
             setEntryRepository.delete(set.getId());

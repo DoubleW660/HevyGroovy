@@ -75,6 +75,21 @@ class ServiceHistoryGatewayTest {
         verifyNoInteractions(history);
     }
 
+    @Test void deletionIsUserScopedAndReadFailureCannotTurnItIntoARetry() {
+        com.example.hevygroovy.service.WorkoutSessionService sessions =
+                mock(com.example.hevygroovy.service.WorkoutSessionService.class);
+        when(services.getWorkoutSessions()).thenReturn(sessions);
+        HistoryGateway.DeleteCallback callback = mock(HistoryGateway.DeleteCallback.class);
+        gateway.deleteWorkout(90L, callback);
+        verify(sessions).deleteFinishedWorkout(41L, 90L);
+        verify(callback).onSuccess();
+        verifyNoInteractions(history);
+        IllegalArgumentException denied = new IllegalArgumentException("Not owned");
+        doThrow(denied).when(sessions).deleteFinishedWorkout(41L, 91L);
+        gateway.deleteWorkout(91L, callback);
+        verify(callback).onFailure(denied);
+    }
+
     @Test void storageAndReadStayOnWorkerAndCallbackIsPostedToMain() {
         ArrayDeque<Runnable> background = new ArrayDeque<>();
         ArrayDeque<Runnable> main = new ArrayDeque<>();

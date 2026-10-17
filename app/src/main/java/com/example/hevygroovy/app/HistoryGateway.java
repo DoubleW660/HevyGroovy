@@ -16,6 +16,11 @@ public interface HistoryGateway {
         void onFailure(Exception error);
     }
 
+    interface DeleteCallback {
+        void onSuccess();
+        void onFailure(Exception error);
+    }
+
     final class HistoryPage {
         private final List<WorkoutHistory> items;
         private final boolean hasMore;
@@ -34,4 +39,5 @@ public interface HistoryGateway {
 
     void loadPage(int offset, PageCallback callback);
     void loadDetail(long workoutId, DetailCallback callback);
+    void deleteWorkout(long workoutId, DeleteCallback callback);
 }

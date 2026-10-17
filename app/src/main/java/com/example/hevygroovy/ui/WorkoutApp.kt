@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.hevygroovy.dto.PersonalRecord
+import kotlinx.coroutines.flow.first
 
 private enum class AppTab(val title: String, val icon: NavigationIcon, val tag: String) {
     Home("Home", NavigationIcon.Home, "home-tab"),
@@ -76,11 +77,19 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
         selectTab(AppTab.History)
     }
     LaunchedEffect(Unit) {
+        profile.refresh()
         when (tab) {
             AppTab.Home -> Unit // The workout ViewModel loads once on creation.
             AppTab.Workout, AppTab.Exercises -> library.refresh()
             AppTab.History -> history.refresh()
             AppTab.Profile -> profile.refresh()
+        }
+    }
+    LaunchedEffect(history.state.deletedWorkouts) {
+        if (history.state.deletedWorkouts > 0) {
+            records?.invalidate()
+            snapshotFlow { workouts.state.loading }.first { !it }
+            workouts.refresh()
         }
     }
     LaunchedEffect(active?.workoutId, workouts.state.savedChanges) {
@@ -99,6 +108,7 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
             else -> selectTab(AppTab.Home)
         }
     }
+    CompositionLocalProvider(LocalWeightUnit provides profile.state.unit) {
     Scaffold(
         modifier = Modifier.semantics { testTagsAsResourceId = true }
             .testTag(if (workouts.performanceTiming.idle && library.performanceTiming.idle) "benchmark-idle" else "benchmark-busy"),
@@ -202,5 +212,6 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
             confirmButton = {
                 TextButton(onClick = { recordDetails = emptyList() }, modifier = Modifier.testTag("record-notice-close")) { Text("Close") }
             })
+    }
     }
 }

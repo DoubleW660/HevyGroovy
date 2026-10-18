@@ -25,8 +25,10 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -41,12 +43,11 @@ import java.time.format.DateTimeFormatter
 
 @Composable
 fun ActiveWorkoutHeader(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail, onDiscard: () -> Unit,
-    hasUnsavedSets: Boolean = false) {
+    hasUnsavedSets: Boolean = false, showFinish: Boolean = true) {
     val busy = model.state.busy
     var editDetails by rememberSaveable(active.workoutId) { mutableStateOf(false) }
     var savingWorkoutDetails by rememberSaveable(active.workoutId) { mutableStateOf(false) }
     var pickExercise by rememberSaveable(active.workoutId) { mutableStateOf(false) }
-    var finish by rememberSaveable(active.workoutId) { mutableStateOf(false) }
     val canFinish = active.exercises.any { exercise -> exercise.sets.any { it.isCompleted } }
     Card(Modifier.fillMaxWidth()) {
         Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -56,8 +57,7 @@ fun ActiveWorkoutHeader(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail
             TextButton(onClick = { savingWorkoutDetails = false; editDetails = true }, enabled = !busy) { Text("Edit workout details") }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Button(onClick = { pickExercise = true }, enabled = !busy) { Text("Add exercise") }
-                Button(onClick = { finish = true },
-                    enabled = !busy && canFinish && !hasUnsavedSets && model.state.error == null) { Text("Finish workout") }
+                if (showFinish) FinishWorkoutButton(model, active, hasUnsavedSets)
             }
             if (!canFinish) Text("Complete at least one set to finish.")
             if (hasUnsavedSets) Text("Save or correct your set entries before finishing.",
@@ -95,6 +95,18 @@ fun ActiveWorkoutHeader(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail
         )
     }
     if (pickExercise) ExercisePicker(model, onDismiss = { pickExercise = false })
+}
+
+@Composable
+internal fun FinishWorkoutButton(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail,
+    hasUnsavedSets: Boolean) {
+    var finish by rememberSaveable(active.workoutId) { mutableStateOf(false) }
+    val busy = model.state.busy
+    val canFinish = active.exercises.any { exercise -> exercise.sets.any { it.isCompleted } }
+    Button(onClick = { finish = true }, modifier = Modifier.testTag("finish-workout"),
+        enabled = !busy && canFinish && !hasUnsavedSets && model.state.error == null) {
+        Text("Finish workout")
+    }
     if (finish) {
         AlertDialog(
             onDismissRequest = { finish = false }, title = { Text("Finish this workout?") },
@@ -185,8 +197,12 @@ fun WorkoutExerciseCard(
 ) {
     val displayUnit = LocalWeightUnit.current
     val busy = model.state.busy
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     val name = row.exerciseNameSnapshot ?: "Exercise"
     var editDetails by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
+    var editRest by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
+    var savingRest by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
     var remove by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
     var editingSetId by rememberSaveable(row.workoutExerciseId) { mutableStateOf<Long?>(null) }
     var savingSetOptions by rememberSaveable(row.workoutExerciseId) { mutableStateOf(false) }
@@ -214,9 +230,12 @@ fun WorkoutExerciseCard(
                     }
                     if (!row.notes.isNullOrBlank()) Text(row.notes)
                     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Text("Rest: " + row.restTimeSeconds + " seconds", Modifier.weight(1f),
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        TextButton(onClick = { editDetails = true }, enabled = !busy) { Text("Notes & rest") }
+                        TextButton(onClick = { focus.clearFocus(); keyboard?.hide(); editRest = true }, enabled = !busy,
+                            modifier = Modifier.weight(1f).testTag("exercise-rest-" + row.workoutExerciseId)
+                                .semantics { contentDescription = "Rest for $name" }) {
+                            Text("Rest: " + restDurationLabel(row.restTimeSeconds))
+                        }
+                        TextButton(onClick = { editDetails = true }, enabled = !busy) { Text("Edit notes") }
                     }
                     if (row.estimatedOneRepMax > 0) {
                         Text("Estimated 1RM: " + workoutNumber(row.estimatedOneRepMax.inWeightUnit(displayUnit)) +
@@ -270,21 +289,26 @@ fun WorkoutExerciseCard(
             if (savingDetails) { editDetails = false; savingDetails = false }
         }
         var notes by rememberSaveable { mutableStateOf(row.notes.orEmpty()) }
-        var rest by rememberSaveable { mutableStateOf(row.restTimeSeconds.toString()) }
-        val restValue = rest.toIntOrNull()
-        AlertDialog(onDismissRequest = { editDetails = false }, title = { Text("Notes & rest") },
+        AlertDialog(onDismissRequest = { editDetails = false }, title = { Text("Exercise notes") },
             text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 OutlinedTextField(notes, { notes = it }, label = { Text("Exercise notes") })
-                OutlinedTextField(rest, { rest = it }, label = { Text("Rest seconds") }, singleLine = true,
-                    isError = restValue == null || restValue < 0,
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
             } },
             confirmButton = { TextButton(onClick = {
-                savingDetails = true; model.updateExercise(row.workoutExerciseId, notes, restValue!!)
+                savingDetails = true; model.updateExercise(row.workoutExerciseId, notes, row.restTimeSeconds)
             },
-                enabled = !busy && restValue != null && restValue >= 0) { Text("Save details") } },
+                enabled = !busy) { Text("Save notes") } },
             dismissButton = { TextButton(onClick = { editDetails = false }) { Text("Cancel") } })
+    }
+    if (editRest) {
+        LaunchedEffect(model.state.savedChanges) {
+            if (savingRest) { editRest = false; savingRest = false }
+        }
+        RestDurationPicker(row.restTimeSeconds, onDismiss = { editRest = false; savingRest = false },
+            onSave = { seconds ->
+                savingRest = true
+                model.updateExercise(row.workoutExerciseId, row.notes.orEmpty(), seconds!!)
+            }, enabled = !busy, error = model.state.error)
     }
     row.sets.find { it.id == editingSetId }?.let { set ->
         LaunchedEffect(model.state.savedChanges) {
@@ -469,18 +493,31 @@ private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set:
 }
 
 @Composable
-private fun InlineNumberField(value: String, onChange: (String) -> Unit, invalid: Boolean,
+internal fun InlineNumberField(value: String, onChange: (String) -> Unit, invalid: Boolean,
     keyboardType: KeyboardType, description: String, modifier: Modifier, onDone: () -> Unit,
     suffix: (@Composable () -> Unit)? = null) {
     val shape = RoundedCornerShape(8.dp)
-    BasicTextField(value, onValueChange = onChange, singleLine = true,
+    var fieldValue by remember { mutableStateOf(TextFieldValue(value)) }
+    var isFocused by remember { mutableStateOf(false) }
+    LaunchedEffect(isFocused) {
+        if (isFocused) {
+            // Apply after the focus tap's cursor placement, once per focus entry.
+            withFrameNanos { }
+            fieldValue = fieldValue.copy(text = value, selection = TextRange(0, value.length))
+        }
+    }
+    BasicTextField(fieldValue.copy(text = value), onValueChange = {
+        fieldValue = it
+        if (it.text != value) onChange(it.text)
+    }, singleLine = true,
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center, fontWeight = FontWeight.Medium),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { onDone() }),
         modifier = modifier.heightIn(min = 48.dp).background(MaterialTheme.colorScheme.surfaceVariant, shape)
             .border(1.dp, if (invalid) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant, shape)
-            .padding(horizontal = 5.dp, vertical = 12.dp).semantics { contentDescription = description },
+            .padding(horizontal = 5.dp, vertical = 12.dp).onFocusChanged { isFocused = it.isFocused }
+            .semantics { contentDescription = description },
         decorationBox = { inner ->
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp),
                 verticalAlignment = Alignment.CenterVertically) {
@@ -494,12 +531,11 @@ private fun InlineNumberField(value: String, onChange: (String) -> Unit, invalid
 private fun SetOptionsDialog(set: ActiveSetEntry, busy: Boolean, error: String?, onDismiss: () -> Unit,
     onSave: (UpdateSetEntryRequest) -> Unit, onDelete: () -> Unit) {
     var rpe by rememberSaveable(set.id) { mutableStateOf(set.rpe?.toString().orEmpty()) }
-    var rest by rememberSaveable(set.id) { mutableStateOf(set.restSeconds?.toString().orEmpty()) }
+    var rest by rememberSaveable(set.id) { mutableStateOf<Int?>(set.restSeconds) }
+    var editRest by rememberSaveable(set.id) { mutableStateOf(false) }
     var delete by rememberSaveable(set.id) { mutableStateOf(false) }
     val rpeValue = rpe.replace(',', '.').toFloatOrNull()
-    val restValue = rest.toIntOrNull()
     val validRpe = rpe.isBlank() || (rpeValue != null && rpeValue.isFinite() && rpeValue in 0f..10f)
-    val validRest = rest.isBlank() || (restValue != null && restValue >= 0)
     if (delete) {
         AlertDialog(onDismissRequest = { delete = false }, title = { Text("Delete set " + set.setNumber + "?") },
             text = { Text("This permanently removes this set from the workout.") },
@@ -513,20 +549,23 @@ private fun SetOptionsDialog(set: ActiveSetEntry, busy: Boolean, error: String?,
             OutlinedTextField(rpe, { rpe = it }, label = { Text("RPE (optional, 0–10)") }, singleLine = true,
                 isError = !validRpe, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
                 modifier = Modifier.testTag("set-rpe-" + set.id))
-            OutlinedTextField(rest, { rest = it }, label = { Text("Rest seconds (optional)") }, singleLine = true,
-                isError = !validRest, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                modifier = Modifier.testTag("set-rest-" + set.id))
+            OutlinedButton(onClick = { editRest = true }, enabled = !busy,
+                modifier = Modifier.testTag("set-rest-" + set.id)) {
+                Text("Rest: " + (rest?.let(::restDurationLabel) ?: "Use exercise rest"))
+            }
             TextButton(onClick = { delete = true }, enabled = !busy) { Text("Delete set") }
         } },
         confirmButton = {
-            TextButton(modifier = Modifier.testTag("save-set"), enabled = !busy && validRpe && validRest, onClick = {
+            TextButton(modifier = Modifier.testTag("save-set"), enabled = !busy && validRpe, onClick = {
                 onSave(UpdateSetEntryRequest().apply {
                     setRpe(if (rpe.isBlank()) null else rpeValue)
-                    setRestSeconds(if (rest.isBlank()) null else restValue)
+                    setRestSeconds(rest)
                 })
             }) { Text("Save set") }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
+    if (editRest) RestDurationPicker(rest, onDismiss = { editRest = false },
+        onSave = { rest = it; editRest = false }, allowInherit = true, enabled = !busy)
 }
 
 private fun workoutInputNumber(value: Double): String = if (value % 1.0 == 0.0) value.toLong().toString() else value.toString()

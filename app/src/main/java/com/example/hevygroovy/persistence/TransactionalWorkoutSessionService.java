@@ -5,6 +5,7 @@ import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.entity.WorkoutExercise;
 import com.example.hevygroovy.service.WorkoutSessionService;
 import com.example.hevygroovy.dto.ActiveWorkoutDetail;
+import com.example.hevygroovy.entity.enums.Unit;
 import java.util.Optional;
 
 /** All delegate repositories must use this same SQLiteDatabase. Call off the UI thread. */
@@ -60,6 +61,11 @@ public final class TransactionalWorkoutSessionService implements WorkoutSessionS
     @Override
     public LoggedWorkout startWorkoutFromTemplate(long userId, long templateId) {
         return transactions.run(() -> delegate.startWorkoutFromTemplate(userId, templateId));
+    }
+
+    @Override
+    public LoggedWorkout startWorkoutFromTemplate(long userId, long templateId, Unit defaultUnit) {
+        return transactions.run(() -> delegate.startWorkoutFromTemplate(userId, templateId, defaultUnit));
     }
 
     @Override

@@ -19,6 +19,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.hevygroovy.dto.PersonalRecord
+import com.example.hevygroovy.resttimer.RestTimerController
 import kotlinx.coroutines.flow.first
 
 private enum class AppTab(val title: String, val icon: NavigationIcon, val tag: String) {
@@ -32,7 +33,9 @@ private enum class AppTab(val title: String, val icon: NavigationIcon, val tag: 
 @Composable
 @OptIn(ExperimentalComposeUiApi::class)
 fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, history: HistoryViewModel,
-    profile: ProfileViewModel, records: ExerciseRecordsViewModel? = null) {
+    profile: ProfileViewModel, records: ExerciseRecordsViewModel? = null,
+    restTimer: RestTimerController? = null, openWorkoutId: Long? = null,
+    onWorkoutOpened: () -> Unit = {}) {
     ReportOperationDrawn(workouts.performanceTiming)
     ReportOperationDrawn(library.performanceTiming)
     var tab by rememberSaveable(key = "main-destination-v2") { mutableStateOf(AppTab.Home) }
@@ -41,6 +44,12 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
     val savedScreens = rememberSaveableStateHolder()
     val active = workouts.state.activeWorkout
     val showSession = sessionOpen && (active != null || workouts.state.loading)
+    LaunchedEffect(openWorkoutId, active?.workoutId, workouts.state.loaded) {
+        if (openWorkoutId != null && workouts.state.loaded) {
+            if (openWorkoutId == active?.workoutId) sessionOpen = true
+            onWorkoutOpened()
+        }
+    }
     val snackbar = remember { SnackbarHostState() }
     var recordDetails by remember { mutableStateOf<List<PersonalRecord>>(emptyList()) }
     LaunchedEffect(workouts.state.recordNoticeVersion) {
@@ -118,6 +127,9 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
             .testTag(if (workouts.performanceTiming.idle && library.performanceTiming.idle) "benchmark-idle" else "benchmark-busy"),
         snackbarHost = { SnackbarHost(snackbar, modifier = Modifier.testTag("new-record-snackbar")) },
         bottomBar = {
+            Column(Modifier.imePadding()) {
+            if (restTimer != null) RestTimerControls(restTimer,
+                modifier = if (showSession) Modifier.navigationBarsPadding() else Modifier)
             if (!showSession) Column {
                 if (active != null) Surface(
                     onClick = { sessionOpen = true },
@@ -159,6 +171,7 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                     }
                 }
             }
+            }
         },
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
@@ -175,15 +188,7 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                 val route = if (showSession) "session-${active?.workoutId ?: "starting"}" else tab.name
                 savedScreens.SaveableStateProvider(route) {
                     if (showSession) {
-                        Column {
-                            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                TextButton(onClick = { sessionOpen = false }, modifier = Modifier.testTag("minimize-workout")) { Text("⌄  Minimize") }
-                                Spacer(Modifier.weight(1f))
-                                Text("ACTIVE SESSION", style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(end = 12.dp))
-                            }
-                            Box(Modifier.weight(1f)) { WorkoutHomeScreen(workouts, showHistory = false) }
-                        }
+                        WorkoutHomeScreen(workouts, showHistory = false, onMinimize = { sessionOpen = false })
                     } else when (tab) {
                         AppTab.Home -> DashboardScreen(workouts,
                             onWorkout = { selectTab(AppTab.Workout) }, onResume = { sessionOpen = true },

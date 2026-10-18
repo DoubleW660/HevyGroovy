@@ -34,6 +34,20 @@ class WorkoutDefaultUnitTest {
         verify(services.getSetEntries()).addSet(1L, 10L, Unit.LB);
     }
 
+    @Test void startingRoutineReadsLatestPreferenceForItsBlankSetFallback() {
+        AppServices services = services();
+        AppWorker worker = new AppWorker(Runnable::run, Runnable::run, () -> services, () -> 1L);
+        AtomicReference<Unit> preference = new AtomicReference<>(Unit.KG);
+        WorkoutGateway gateway = new ServiceWorkoutGateway(worker, preference::get);
+        WorkoutGateway.Callback callback = mock(WorkoutGateway.Callback.class);
+        gateway.startFromTemplate(7L, callback);
+        preference.set(Unit.LB);
+        gateway.startFromTemplate(7L, callback);
+        verify(services.getWorkoutSessions()).startWorkoutFromTemplate(1L, 7L, Unit.KG);
+        verify(services.getWorkoutSessions()).startWorkoutFromTemplate(1L, 7L, Unit.LB);
+        verify(callback, times(2)).onSuccess(any());
+    }
+
     private AppServices services() {
         AppServices services = mock(AppServices.class);
         when(services.getSetEntries()).thenReturn(mock(SetEntryService.class));

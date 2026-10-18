@@ -1,12 +1,80 @@
 package com.example.hevygroovy.ui
 
 import com.example.hevygroovy.app.WorkoutGateway
+import com.example.hevygroovy.app.WorkoutRestTimer
 import com.example.hevygroovy.dto.ActiveWorkoutDetail
 import com.example.hevygroovy.entity.LoggedWorkout
 import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Test
 
 class WorkoutHomeViewModelTest {
+    @Test
+    fun restStartsOnlyAfterASuccessfulNewCompletionAndUsesThatExercisesRest() {
+        val gateway = FakeGateway()
+        val timer = RecordingRestTimer()
+        val model = WorkoutHomeViewModel(gateway, restTimer = timer)
+        gateway.succeed(activeWithSet(false, restSeconds = 75))
+        model.updateSet(50, com.example.hevygroovy.dto.UpdateSetEntryRequest().apply { reps = 8 })
+        gateway.succeed(activeWithSet(false, restSeconds = 75))
+        assertTrue(timer.starts.isEmpty())
+        val completion = com.example.hevygroovy.dto.UpdateSetEntryRequest().apply { completed = true }
+        model.updateSet(50, completion)
+        assertTrue(timer.starts.isEmpty())
+        gateway.fail()
+        assertTrue(timer.starts.isEmpty())
+        model.updateSet(50, completion)
+        gateway.succeed(activeWithSet(true, restSeconds = 75))
+        assertEquals(listOf("100:10:50:Bench:75"), timer.starts)
+        model.updateSet(50, completion)
+        gateway.succeed(activeWithSet(true, restSeconds = 75))
+        model.refresh()
+        gateway.succeed(activeWithSet(true, restSeconds = 75))
+        assertEquals(1, timer.starts.size)
+    }
+
+    @Test
+    fun restStartsOnceWhenCompletionCommittedButItsRefreshFailed() {
+        val gateway = FakeGateway()
+        val timer = RecordingRestTimer()
+        val model = WorkoutHomeViewModel(gateway, restTimer = timer)
+        gateway.succeed(activeWithSet(false, restSeconds = 90))
+        model.updateSet(50, com.example.hevygroovy.dto.UpdateSetEntryRequest().apply { completed = true })
+        gateway.fail(com.example.hevygroovy.app.CommittedRefreshException(IllegalStateException("Read failed"), null))
+        assertEquals(listOf("100:10:50:Bench:90"), timer.starts)
+        model.refresh()
+        gateway.succeed(activeWithSet(true, restSeconds = 90))
+        assertEquals(1, timer.starts.size)
+    }
+
+    @Test
+    fun finishAndDiscardCancelRestOnlyWhenTheirWritesCommit() {
+        val gateway = FakeGateway()
+        val timer = RecordingRestTimer()
+        val model = WorkoutHomeViewModel(gateway, restTimer = timer)
+        gateway.succeed(activeWithSet(true))
+        model.finishWorkout()
+        gateway.fail()
+        assertTrue(timer.cancellations.isEmpty())
+        model.finishWorkout()
+        gateway.fail(com.example.hevygroovy.app.CommittedRefreshException(IllegalStateException("Read failed"), null))
+        assertEquals(listOf(100L), timer.cancellations)
+        model.refresh()
+        gateway.succeed(activeWithSet(true))
+        model.discardWorkout()
+        gateway.succeed()
+        assertEquals(listOf(100L, 100L), timer.cancellations)
+    }
+
+    private class RecordingRestTimer : WorkoutRestTimer {
+        val starts = mutableListOf<String>()
+        val cancellations = mutableListOf<Long>()
+        override fun start(workoutId: Long, exerciseRowId: Long, setId: Long, exerciseName: String, seconds: Int) {
+            starts += "$workoutId:$exerciseRowId:$setId:$exerciseName:$seconds"
+        }
+        override fun cancelForWorkout(workoutId: Long) { cancellations += workoutId }
+        override fun reconcileWorkout(activeWorkoutId: Long?) = Unit
+    }
+
     @Test
     fun changingMovementTypeResetsVolumeNoticeBaselineWithoutAnnouncingTheSettingChange() {
         val gateway = FakeGateway()
@@ -145,9 +213,11 @@ class WorkoutHomeViewModelTest {
         assertEquals("addSet:10", gateway.calls.last())
     }
 
-    private fun activeWithSet(completed: Boolean, unilateral: Boolean = false): ActiveWorkoutDetail {
+    private fun activeWithSet(completed: Boolean, unilateral: Boolean = false, restSeconds: Int = 0): ActiveWorkoutDetail {
         val set = com.example.hevygroovy.entity.SetEntry().apply { id = 50L; setCompleted(completed) }
-        val row = com.example.hevygroovy.entity.WorkoutExercise().apply { id = 10L; setUnilateral(unilateral) }
+        val row = com.example.hevygroovy.entity.WorkoutExercise().apply {
+            id = 10L; setUnilateral(unilateral); exerciseNameSnapshot = "Bench"; restTimeSeconds = restSeconds
+        }
         val workout = LoggedWorkout().apply { id = 100L; userId = 1L }
         return ActiveWorkoutDetail(workout, listOf(com.example.hevygroovy.dto.ActiveWorkoutExercise(
             row, listOf(com.example.hevygroovy.dto.ActiveSetEntry(set)))))

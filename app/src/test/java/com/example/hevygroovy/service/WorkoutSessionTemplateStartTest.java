@@ -5,6 +5,10 @@ import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.entity.TemplateExercise;
 import com.example.hevygroovy.entity.TemplateWorkout;
 import com.example.hevygroovy.entity.WorkoutExercise;
+import com.example.hevygroovy.entity.SetEntry;
+import com.example.hevygroovy.entity.enums.SetType;
+import com.example.hevygroovy.entity.enums.Unit;
+import com.example.hevygroovy.dto.ActiveSetEntry;
 import com.example.hevygroovy.repo.*;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -75,7 +79,71 @@ class WorkoutSessionTemplateStartTest {
         bench.setTitle("Renamed bench");
         assertEquals("Bench press", saved.get(0).getExerciseNameSnapshot());
         verify(workoutExercises).findLastNotesForUserExercises(1L, List.of(10L, 20L));
-        verifyNoInteractions(sets);
+        ArgumentCaptor<SetEntry> seeded = ArgumentCaptor.forClass(SetEntry.class);
+        verify(sets, times(2)).save(seeded.capture());
+        assertTrue(seeded.getAllValues().stream().allMatch(set -> !set.isCompleted()
+                && set.getSetNumber() == 1 && set.getUnit() == Unit.LB
+                && set.getSetType() == SetType.NORMAL && set.getWeight() == 0 && set.getReps() == 0));
+    }
+
+    @Test
+    void restoresCompletedPerformanceByOccurrenceAndUsesPreferredUnitOnlyForBlankFallback() {
+        stubTemplate();
+        when(templateExercises.findByTemplateWorkoutId(7L)).thenReturn(List.of(
+                templateExercise(10L, 0, 60), templateExercise(20L, 1, 90),
+                templateExercise(10L, 2, 60)));
+        stubExercise(10L, "Bench");
+        stubExercise(20L, "New exercise");
+        stubSave();
+        SetEntry warmup = previousSet(1, SetType.WARMUP, 30, 10, Unit.KG);
+        warmup.setRpe(6F); warmup.setRestSeconds(60);
+        SetEntry failure = previousSet(3, SetType.FAILURE, 135, 0, Unit.LB);
+        SetEntry drop = previousSet(2, SetType.DROP, 40, 8, Unit.KG);
+        when(workoutExercises.findLastCompletedSetsForTemplateExercises(1L, 7L, List.of(10L, 20L, 10L)))
+                .thenReturn(Map.of(10L, List.of(List.of(new ActiveSetEntry(warmup), new ActiveSetEntry(failure)),
+                        List.of(new ActiveSetEntry(drop)))));
+
+        long before = System.currentTimeMillis();
+        service.startWorkoutFromTemplate(1L, 7L, Unit.KG);
+
+        ArgumentCaptor<SetEntry> seeded = ArgumentCaptor.forClass(SetEntry.class);
+        verify(sets, times(4)).save(seeded.capture());
+        List<SetEntry> result = seeded.getAllValues();
+        assertSeed(result.get(0), 1, SetType.WARMUP, 30, 10, Unit.KG);
+        assertSeed(result.get(1), 2, SetType.FAILURE, 135, 0, Unit.LB);
+        assertSeed(result.get(2), 1, SetType.NORMAL, 0, 0, Unit.KG);
+        assertSeed(result.get(3), 1, SetType.DROP, 40, 8, Unit.KG);
+        assertEquals(result.get(0).getWorkoutExerciseId(), result.get(1).getWorkoutExerciseId());
+        assertNotEquals(result.get(0).getWorkoutExerciseId(), result.get(3).getWorkoutExerciseId());
+        for (SetEntry set : result) {
+            assertFalse(set.isCompleted()); assertEquals(0, set.getId());
+            assertTrue(set.getCreatedAtEpochMillis() >= before);
+            assertNull(set.getRpe()); assertNull(set.getRestSeconds());
+        }
+        verify(workoutExercises, never()).findPreviousPerformancesForUserExercises(anyLong(), anyList());
+        assertTrue(warmup.isCompleted());
+    }
+
+    @Test
+    void missingDuplicateOccurrenceGetsOneBlankSetWithoutReusingEarlierOccurrence() {
+        stubTemplate();
+        when(templateExercises.findByTemplateWorkoutId(7L)).thenReturn(List.of(
+                templateExercise(10L, 0, 60), templateExercise(10L, 1, 60)));
+        stubExercise(10L, "Bench"); stubSave();
+        when(workoutExercises.findLastCompletedSetsForTemplateExercises(1L, 7L, List.of(10L, 10L)))
+                .thenReturn(Map.of(10L, List.of(List.of(), List.of(new ActiveSetEntry(
+                        previousSet(1, SetType.NORMAL, 50, 5, Unit.KG))))));
+        service.startWorkoutFromTemplate(1L, 7L, Unit.LB);
+        ArgumentCaptor<SetEntry> seeded = ArgumentCaptor.forClass(SetEntry.class);
+        verify(sets, times(2)).save(seeded.capture());
+        assertSeed(seeded.getAllValues().get(0), 1, SetType.NORMAL, 0, 0, Unit.LB);
+        assertSeed(seeded.getAllValues().get(1), 1, SetType.NORMAL, 50, 5, Unit.KG);
+    }
+
+    @Test
+    void missingDefaultUnitIsRejectedBeforeAccessingRepositories() {
+        assertThrows(IllegalArgumentException.class, () -> service.startWorkoutFromTemplate(1L, 7L, null));
+        verifyNoInteractions(workouts, templates, templateExercises, workoutExercises, sets, exercises);
     }
 
     @Test
@@ -197,6 +265,25 @@ class WorkoutSessionTemplateStartTest {
             workout.setId(100L);
             return workout;
         });
+        java.util.concurrent.atomic.AtomicLong nextId = new java.util.concurrent.atomic.AtomicLong(200);
+        lenient().when(workoutExercises.save(any())).thenAnswer(invocation -> {
+            WorkoutExercise row = invocation.getArgument(0);
+            row.setId(nextId.getAndIncrement());
+            return row;
+        });
+    }
+
+    private SetEntry previousSet(int number, SetType type, double weight, int reps, Unit unit) {
+        SetEntry set = new SetEntry(); set.setId(999); set.setWorkoutExerciseId(888);
+        set.setSetNumber(number); set.setSetType(type); set.setWeight(weight); set.setReps(reps);
+        set.setUnit(unit); set.setCompleted(true); set.setCreatedAtEpochMillis(1);
+        return set;
+    }
+
+    private void assertSeed(SetEntry set, int number, SetType type, double weight, int reps, Unit unit) {
+        assertEquals(number, set.getSetNumber()); assertEquals(type, set.getSetType());
+        assertEquals(weight, set.getWeight()); assertEquals(reps, set.getReps()); assertEquals(unit, set.getUnit());
+        assertTrue(set.getWorkoutExerciseId() > 0);
     }
 
     private TemplateExercise templateExercise(long exerciseId, int order, int rest) {

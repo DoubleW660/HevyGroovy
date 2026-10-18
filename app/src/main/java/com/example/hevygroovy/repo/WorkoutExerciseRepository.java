@@ -2,6 +2,7 @@ package com.example.hevygroovy.repo;
 
 import com.example.hevygroovy.entity.WorkoutExercise;
 import com.example.hevygroovy.dto.PreviousExercisePerformance;
+import com.example.hevygroovy.dto.ActiveSetEntry;
 
 import java.util.List;
 import java.util.Map;
@@ -41,6 +42,15 @@ public interface WorkoutExerciseRepository {
      */
     Map<Long, PreviousExercisePerformance> findPreviousPerformancesForUserExercises(
             long userId, List<Long> exerciseIds);
+
+    /**
+     * Completed sets from the latest finished performance in this user's same template, by
+     * exercise and ordered occurrence. Empty/skipped occurrences fall back to their own older
+     * completed performance; never shift a later occurrence into an earlier slot. Preserve
+     * set order, type, weight, reps and unit. Omit exercises with no qualifying history.
+     */
+    Map<Long, List<List<ActiveSetEntry>>> findLastCompletedSetsForTemplateExercises(
+            long userId, long templateId, List<Long> exerciseIds);
 
 
 }

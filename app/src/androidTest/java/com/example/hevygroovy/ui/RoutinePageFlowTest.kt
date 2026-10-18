@@ -154,9 +154,10 @@ class RoutinePageFlowTest {
             val rows = storage.templates.getTemplateDetail(user, routine).exercises.map { it.templateExerciseId }
             fun completed(template: Long, start: Long, duration: Long, weight: Double, reps: Int) {
                 val workout = storage.workoutSessions.startWorkoutFromTemplate(user, template).id
-                val row = storage.workoutSessions.getActiveWorkout(user).get().exercises.firstOrNull()?.workoutExerciseId
+                val current = storage.workoutSessions.getActiveWorkout(user).get().exercises.firstOrNull()
+                val row = current?.workoutExerciseId
                     ?: storage.workoutSessions.addExerciseToWorkout(user, workout, exercise).id
-                val set = storage.setEntries.addSet(user, row).id
+                val set = current?.sets?.firstOrNull()?.id ?: storage.setEntries.addSet(user, row).id
                 storage.setEntries.updateSet(user, set, UpdateSetEntryRequest().apply {
                     this.weight = weight; this.reps = reps; unit = WeightUnit.LB; completed = true
                 })

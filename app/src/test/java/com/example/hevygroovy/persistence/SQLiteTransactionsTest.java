@@ -122,6 +122,7 @@ class SQLiteTransactionsTest {
                 service -> service.deleteFinishedWorkout(1L, 100L),
                 service -> service.startEmptyWorkout(1L),
                 service -> service.startWorkoutFromTemplate(1L, 7L),
+                service -> service.startWorkoutFromTemplate(1L, 7L, com.example.hevygroovy.entity.enums.Unit.KG),
                 service -> service.finishWorkout(1L, 100L),
                 service -> service.addExerciseToWorkout(1L, 100L, 9L),
                 service -> service.removeExerciseFromWorkout(1L, 10L),

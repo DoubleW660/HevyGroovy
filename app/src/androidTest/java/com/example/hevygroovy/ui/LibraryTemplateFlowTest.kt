@@ -81,8 +81,9 @@ class LibraryTemplateFlowTest {
             awaitLibrary(library)
             compose.onNodeWithTag("library-list").performScrollToNode(hasTestTag("template-rest-$secondId"))
             compose.onNodeWithTag("template-rest-$secondId").performScrollTo().performClick()
-            compose.onNodeWithTag("template-rest-input").performTextReplacement("90")
-            compose.onNodeWithText("Save rest").performClick()
+            compose.onNodeWithTag("rest-duration-wheel").performScrollToIndex(restDurationOptions.indexOf(90))
+            compose.onNodeWithTag("rest-duration-90").performClick()
+            compose.onNodeWithTag("save-rest-duration").performClick()
             awaitLibrary(library)
             assertEquals(90, library.state.selectedTemplate!!.exercises.single().restSeconds)
 

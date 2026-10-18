@@ -6,6 +6,8 @@ import com.example.hevygroovy.entity.TemplateExercise;
 import com.example.hevygroovy.entity.TemplateWorkout;
 import com.example.hevygroovy.entity.WorkoutExercise;
 import com.example.hevygroovy.entity.SetEntry;
+import com.example.hevygroovy.entity.enums.SetType;
+import com.example.hevygroovy.entity.enums.Unit;
 import com.example.hevygroovy.model.ExerciseModel;
 import com.example.hevygroovy.repo.LoggedWorkoutRepository;
 import com.example.hevygroovy.repo.SetEntryRepository;
@@ -100,12 +102,21 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
 
     @Override
     public LoggedWorkout startWorkoutFromTemplate(long userId, long templateId) {
+        return startWorkoutFromTemplate(userId, templateId, Unit.LB);
+    }
+
+    @Override
+    public LoggedWorkout startWorkoutFromTemplate(long userId, long templateId, Unit defaultUnit) {
         if (userId <= 0) {
             throw new RuntimeException("Invalid User Id");
         }
 
         if (templateId <= 0) {
             throw new RuntimeException("Invalid Template Id");
+        }
+
+        if (defaultUnit == null) {
+            throw new IllegalArgumentException("Set unit is required");
         }
 
         requireNoActiveWorkout(userId);
@@ -128,7 +139,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
                 new ArrayList<>(templateExerciseRepository.findByTemplateWorkoutId(templateId));
 
         templateExerciseList.sort(
-                Comparator.comparingInt(TemplateExercise::getOrderIndex));
+                Comparator.comparingInt(TemplateExercise::getOrderIndex).thenComparingLong(TemplateExercise::getId));
 
         List<Long> exerciseIds = new ArrayList<>();
 
@@ -140,6 +151,9 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
                 workoutExerciseRepository.findLastNotesForUserExercises(
                         userId,
                         exerciseIds);
+        Map<Long, List<List<ActiveSetEntry>>> previousSets =
+                workoutExerciseRepository.findLastCompletedSetsForTemplateExercises(userId, templateId, exerciseIds);
+        Map<Long, Integer> occurrences = new HashMap<>();
 
         LoggedWorkout loggedWorkout = createActiveWorkout(
                 userId,
@@ -168,9 +182,31 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
             }
 
             workoutExerciseRepository.save(workoutExercise);
+            int occurrence = occurrences.merge(exerciseId, 1, Integer::sum) - 1;
+            List<List<ActiveSetEntry>> priorOccurrences = previousSets.getOrDefault(exerciseId, List.of());
+            List<ActiveSetEntry> priorSets = occurrence < priorOccurrences.size()
+                    ? priorOccurrences.get(occurrence) : List.of();
+            seedSets(workoutExercise.getId(), priorSets, defaultUnit);
         }
 
         return loggedWorkout;
+    }
+
+    private void seedSets(long workoutExerciseId, List<ActiveSetEntry> previousSets, Unit defaultUnit) {
+        int count = Math.max(1, previousSets.size());
+        for (int index = 0; index < count; index++) {
+            ActiveSetEntry previous = index < previousSets.size() ? previousSets.get(index) : null;
+            SetEntry set = new SetEntry();
+            set.setWorkoutExerciseId(workoutExerciseId);
+            set.setSetNumber(index + 1);
+            set.setSetType(previous == null ? SetType.NORMAL : previous.getSetType());
+            set.setUnit(previous == null ? defaultUnit : previous.getUnit());
+            set.setWeight(previous == null ? 0 : previous.getWeight());
+            set.setReps(previous == null ? 0 : previous.getReps());
+            set.setCompleted(false);
+            set.setCreatedAtEpochMillis(System.currentTimeMillis());
+            setEntryRepository.save(set);
+        }
     }
 
     @Override
@@ -261,6 +297,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
             throw new RuntimeException("Rest seconds cannot be negative");
         }
         row.setRestTimeSeconds(restTimeSeconds);
+        persistTemplateRestTime(userId, row, restTimeSeconds);
         return workoutExerciseRepository.save(row);
     }
 
@@ -313,9 +350,26 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
         if (restSeconds < 0) {
             throw new RuntimeException("Rest seconds cannot be negative");
         }
+        boolean restChanged = exercise.getRestTimeSeconds() != restSeconds;
         exercise.setNotes(notes);
         exercise.setRestTimeSeconds(restSeconds);
+        if (restChanged) persistTemplateRestTime(userId, exercise, restSeconds);
         return workoutExerciseRepository.save(exercise);
+    }
+
+    private void persistTemplateRestTime(long userId, WorkoutExercise exercise, int restSeconds) {
+        LoggedWorkout workout = requireOwnedWorkout(userId, exercise.getLoggedWorkoutId());
+        if (workout.getTemplateId() == null) return;
+        Optional<TemplateWorkout> template = templateWorkoutRepository.findById(workout.getTemplateId());
+        if (!template.isPresent() || template.get().getUserId() != userId || template.get().isArchived()) return;
+        // Rest is a preference for the routine and exercise, shared by its repeated rows.
+        // Active exercises can be moved or removed without changing which preference is saved.
+        for (TemplateExercise matching : templateExerciseRepository.findByTemplateWorkoutId(workout.getTemplateId())) {
+            if (matching.getExerciseId() == exercise.getExerciseId()) {
+                matching.setRestTimeSeconds(restSeconds);
+                templateExerciseRepository.save(matching);
+            }
+        }
     }
 
     @Override

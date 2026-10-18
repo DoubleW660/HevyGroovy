@@ -252,6 +252,83 @@ class WorkoutSessionEditingTest {
     }
 
     @Test
+    void restEditsSharePreferenceAcrossSameRoutineExerciseRows() {
+        LoggedWorkout workout = ownedWorkout(); workout.setTemplateId(7L);
+        WorkoutExercise edited = ownedRow(); edited.setExerciseId(9L); edited.setOrderIndex(2);
+        TemplateWorkout template = new TemplateWorkout(); template.setId(7L); template.setUserId(1L);
+        when(templates.findById(7L)).thenReturn(Optional.of(template));
+        TemplateExercise firstTemplate = templateRow(20L, 9L, 0, 30);
+        TemplateExercise unrelated = templateRow(21L, 8L, 1, 45);
+        TemplateExercise secondTemplate = templateRow(22L, 9L, 2, 60);
+        when(templateRows.findByTemplateWorkoutId(7L)).thenReturn(List.of(secondTemplate, unrelated, firstTemplate));
+        when(rows.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.updateExerciseRestTime(1L, 10L, 90);
+
+        assertEquals(90, edited.getRestTimeSeconds());
+        assertEquals(Integer.valueOf(90), secondTemplate.getRestTimeSeconds());
+        assertEquals(Integer.valueOf(90), firstTemplate.getRestTimeSeconds());
+        assertEquals(Integer.valueOf(45), unrelated.getRestTimeSeconds());
+        verify(templateRows).save(secondTemplate);
+        verify(templateRows).save(firstTemplate);
+        service.updateExerciseDetails(1L, 10L, "New note", 120);
+        assertEquals(Integer.valueOf(120), secondTemplate.getRestTimeSeconds());
+        assertEquals(Integer.valueOf(120), firstTemplate.getRestTimeSeconds());
+        verify(templateRows, times(2)).save(secondTemplate);
+        verify(templateRows, times(2)).save(firstTemplate);
+        service.updateExerciseDetails(1L, 10L, "Notes only", 120);
+        verify(templateRows, times(2)).save(secondTemplate);
+        verify(templateRows, times(2)).save(firstTemplate);
+        verify(templateRows, never()).save(unrelated);
+        verify(templates, times(2)).findById(7L);
+    }
+
+    @Test
+    void restEditsSkipArchivedForeignAndMissingTemplatesButSaveCurrentExercise() {
+        ownedWorkout().setTemplateId(7L);
+        WorkoutExercise edited = ownedRow(); edited.setExerciseId(9L);
+        TemplateWorkout archived = new TemplateWorkout(); archived.setUserId(1L); archived.setArchived(true);
+        TemplateWorkout foreign = new TemplateWorkout(); foreign.setUserId(2L);
+        when(templates.findById(7L)).thenReturn(Optional.of(archived), Optional.of(foreign), Optional.empty());
+        when(rows.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        service.updateExerciseRestTime(1L, 10L, 60);
+        service.updateExerciseRestTime(1L, 10L, 90);
+        service.updateExerciseRestTime(1L, 10L, 120);
+        assertEquals(120, edited.getRestTimeSeconds());
+        verify(rows, times(3)).save(edited);
+        verifyNoInteractions(templateRows);
+    }
+
+    @Test
+    void newlyAddedOccurrenceRemembersSameExercisePreferenceWithoutRelyingOnActiveOrder() {
+        ownedWorkout().setTemplateId(7L);
+        WorkoutExercise edited = ownedRow(); edited.setExerciseId(9L);
+        TemplateWorkout template = new TemplateWorkout(); template.setUserId(1L);
+        when(templates.findById(7L)).thenReturn(Optional.of(template));
+        TemplateExercise only = templateRow(20L, 9L, 0, 30);
+        when(templateRows.findByTemplateWorkoutId(7L)).thenReturn(List.of(only));
+        when(rows.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        service.updateExerciseRestTime(1L, 10L, 120);
+        assertEquals(Integer.valueOf(120), only.getRestTimeSeconds());
+        verify(templateRows).save(only);
+        verify(rows, never()).findByLoggedWorkoutId(anyLong());
+    }
+
+    @Test
+    void exerciseAbsentFromRoutineCannotChangeAnotherExercisePreference() {
+        ownedWorkout().setTemplateId(7L);
+        WorkoutExercise edited = ownedRow(); edited.setExerciseId(9L);
+        TemplateWorkout template = new TemplateWorkout(); template.setUserId(1L);
+        when(templates.findById(7L)).thenReturn(Optional.of(template));
+        TemplateExercise unrelated = templateRow(20L, 8L, 0, 30);
+        when(templateRows.findByTemplateWorkoutId(7L)).thenReturn(List.of(unrelated));
+        when(rows.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        service.updateExerciseRestTime(1L, 10L, 120);
+        assertEquals(Integer.valueOf(30), unrelated.getRestTimeSeconds());
+        verify(templateRows, never()).save(any());
+    }
+
+    @Test
     void allEditsRejectAnotherUsersWorkoutWithoutWrites() {
         LoggedWorkout workout = ownedWorkout();
         workout.setUserId(2L);
@@ -318,6 +395,12 @@ class WorkoutSessionEditingTest {
         row.setId(id);
         row.setLoggedWorkoutId(100L);
         row.setOrderIndex(index);
+        return row;
+    }
+
+    private TemplateExercise templateRow(long id, long exerciseId, int order, int rest) {
+        TemplateExercise row = new TemplateExercise(); row.setId(id); row.setTemplateWorkoutId(7L);
+        row.setExerciseId(exerciseId); row.setOrderIndex(order); row.setRestTimeSeconds(rest);
         return row;
     }
 }

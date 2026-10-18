@@ -56,7 +56,7 @@ final class ServiceWorkoutGateway implements WorkoutGateway {
 
     @Override
     public void startFromTemplate(long templateId, Callback callback) {
-        submit(() -> worker.services().getWorkoutSessions().startWorkoutFromTemplate(worker.userId(), templateId), callback);
+        submit(() -> worker.services().getWorkoutSessions().startWorkoutFromTemplate(worker.userId(), templateId, defaultUnit.get()), callback);
     }
 
     @Override

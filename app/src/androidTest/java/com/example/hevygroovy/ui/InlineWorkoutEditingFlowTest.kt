@@ -458,8 +458,7 @@ class InlineWorkoutEditingFlowTest {
             if (previousInAnotherRoutine) {
                 val previousRoutine = routine(storage, user, exercise, "Upper A")
                 previousWorkoutId = storage.workoutSessions.startWorkoutFromTemplate(user, previousRoutine).id
-                val row = storage.workoutSessions.getActiveWorkout(user).get().exercises.single().workoutExerciseId
-                val set = storage.setEntries.addSet(user, row).id
+                val set = storage.workoutSessions.getActiveWorkout(user).get().exercises.single().sets.single().id
                 storage.setEntries.updateSet(user, set, UpdateSetEntryRequest().apply {
                     weight = 60.0; reps = 8; unit = WeightUnit.KG; completed = true
                 })
@@ -467,8 +466,7 @@ class InlineWorkoutEditingFlowTest {
             }
             val currentRoutine = routine(storage, user, exercise, "Upper B")
             storage.workoutSessions.startWorkoutFromTemplate(user, currentRoutine)
-            val row = storage.workoutSessions.getActiveWorkout(user).get().exercises.single().workoutExerciseId
-            val set = storage.setEntries.addSet(user, row).id
+            val set = storage.workoutSessions.getActiveWorkout(user).get().exercises.single().sets.single().id
             storage.setEntries.updateSet(user, set, UpdateSetEntryRequest().apply {
                 weight = 80.0; reps = 8; unit = WeightUnit.LB; completed = false
             })

@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import com.example.hevygroovy.app.WorkoutGateway
+import com.example.hevygroovy.app.WorkoutRestTimer
 import com.example.hevygroovy.app.CommittedRefreshException
 import com.example.hevygroovy.dto.ActiveWorkoutDetail
 import com.example.hevygroovy.dto.WorkoutHistory
@@ -32,7 +33,8 @@ data class WorkoutHomeState(
 }
 
 class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
-    val performanceTiming: UiPerformanceTiming = UiPerformanceTiming()) : ViewModel() {
+    val performanceTiming: UiPerformanceTiming = UiPerformanceTiming(),
+    private val restTimer: WorkoutRestTimer = WorkoutRestTimer.None) : ViewModel() {
     var state by mutableStateOf(WorkoutHomeState())
         private set
     private var cleared = false
@@ -60,7 +62,7 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
     fun discardWorkout() {
         if (state.loading) return
         val id = state.activeWorkout?.workoutId ?: return
-        execute { gateway.discard(id, it) }
+        execute(onCommitted = { restTimer.cancelForWorkout(id) }) { gateway.discard(id, it) }
     }
 
     fun finishWorkout() {
@@ -70,7 +72,7 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
             state = state.copy(error = "Complete at least one set before finishing.")
             return
         }
-        execute { gateway.finish(active.workoutId, it) }
+        execute(onCommitted = { restTimer.cancelForWorkout(active.workoutId) }) { gateway.finish(active.workoutId, it) }
     }
 
     fun updateWorkout(name: String, notes: String) {
@@ -105,8 +107,14 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
     fun addSet(rowId: Long) = withExercise(rowId) { gateway.addSet(rowId, it) }
 
     fun updateSet(setId: Long, request: UpdateSetEntryRequest) {
-        if (state.activeWorkout?.exercises?.none { row -> row.sets.any { it.id == setId } } != false) return
-        execute(traceName = "set_save", announceRecords = true) { gateway.updateSet(setId, request, it) }
+        val active = state.activeWorkout ?: return
+        val exercise = active.exercises.find { row -> row.sets.any { it.id == setId } } ?: return
+        val set = exercise.sets.first { it.id == setId }
+        val startsRest = request.completed == true && !set.isCompleted
+        execute(traceName = "set_save", announceRecords = true, onCommitted = {
+            if (startsRest) restTimer.start(active.workoutId, exercise.workoutExerciseId, setId,
+                exercise.exerciseNameSnapshot ?: "Exercise", exercise.restTimeSeconds)
+        }) { gateway.updateSet(setId, request, it) }
     }
 
     fun dismissRecordNotice() { state = state.copy(recordNotice = emptyList()) }
@@ -123,6 +131,7 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
 
     private fun execute(mutation: Boolean = true, traceName: String = if (mutation) "workout_update" else "workout_load",
         announceRecords: Boolean = false,
+        onCommitted: () -> Unit = {},
         operation: (WorkoutGateway.Callback) -> Unit) {
         if (requestInFlight || cleared || (mutation && state.refreshRequired)) return
         performanceTiming.begin(traceName)
@@ -131,6 +140,8 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
         operation(object : WorkoutGateway.Callback {
             override fun onSuccess(snapshot: WorkoutGateway.Snapshot) {
                 requestInFlight = false
+                if (mutation) onCommitted()
+                restTimer.reconcileWorkout(snapshot.activeWorkout?.workoutId)
                 if (cleared) return
                 val sameWorkout = state.activeWorkout?.workoutId == snapshot.activeWorkout?.workoutId
                 val previousModes = state.activeWorkout?.exercises?.associate { it.exerciseId to it.isUnilateral }
@@ -162,8 +173,9 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
             override fun onFailure(error: Exception) {
                 requestInFlight = false
                 performanceTiming.cancel()
-                if (cleared) return
                 val committed = mutation && error is CommittedRefreshException
+                if (committed) onCommitted()
+                if (cleared) return
                 state = state.copy(loading = false, refreshRequired = state.refreshRequired || committed,
                     savedChanges = state.savedChanges + if (committed) 1 else 0,
                     error = if (state.refreshRequired || committed) "Saved. Reload workouts before making more changes."
@@ -176,11 +188,12 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
     override fun onCleared() { cleared = true; performanceTiming.cancel() }
 
     class Factory(private val gateway: WorkoutGateway,
-        private val timing: UiPerformanceTiming = UiPerformanceTiming()) : ViewModelProvider.Factory {
+        private val timing: UiPerformanceTiming = UiPerformanceTiming(),
+        private val restTimer: WorkoutRestTimer = WorkoutRestTimer.None) : ViewModelProvider.Factory {
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             require(modelClass == WorkoutHomeViewModel::class.java)
             @Suppress("UNCHECKED_CAST")
-            return WorkoutHomeViewModel(gateway, timing) as T
+            return WorkoutHomeViewModel(gateway, timing, restTimer) as T
         }
     }
 }

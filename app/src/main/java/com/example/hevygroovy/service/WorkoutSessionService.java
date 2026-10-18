@@ -3,6 +3,7 @@ package com.example.hevygroovy.service;
 import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.entity.WorkoutExercise;
 import com.example.hevygroovy.dto.ActiveWorkoutDetail;
+import com.example.hevygroovy.entity.enums.Unit;
 import java.util.Optional;
 
 public interface WorkoutSessionService {
@@ -11,6 +12,9 @@ public interface WorkoutSessionService {
     LoggedWorkout startEmptyWorkout(long userID);
 
     LoggedWorkout startWorkoutFromTemplate(long userId, long templateId);
+
+    /** Restore completed sets from this routine; use defaultUnit for a single blank fallback set. */
+    LoggedWorkout startWorkoutFromTemplate(long userId, long templateId, Unit defaultUnit);
 
     LoggedWorkout finishWorkout(long userId, long workoutId);
 
@@ -39,5 +43,6 @@ public interface WorkoutSessionService {
     /** Null or blank notes clear the current note. */
     WorkoutExercise updateExerciseNotes(long userId, long workoutExerciseId, String notes);
 
+    /** Also remember rest for this exercise, including repeated rows, in its owned, unarchived routine. */
     WorkoutExercise updateExerciseRestTime(long userId, long workoutExerciseId, int restTimeSeconds);
 }

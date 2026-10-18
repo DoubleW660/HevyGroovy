@@ -11,6 +11,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
@@ -25,7 +26,8 @@ import java.text.DateFormat
 import java.util.Date
 
 @Composable
-fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = true) {
+fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = true,
+    onMinimize: (() -> Unit)? = null) {
     val state = viewModel.state
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -54,7 +56,15 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
             suppressAccessibilityBlurSave = false
         }
     }
-    Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) "workouts-ready" else "workouts-loading")) { padding ->
+    Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) "workouts-ready" else "workouts-loading"),
+        topBar = {
+            if (onMinimize != null) Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                TextButton(onClick = onMinimize, modifier = Modifier.testTag("minimize-workout")) { Text("⌄  Minimize") }
+                Spacer(Modifier.weight(1f))
+                if (active != null) FinishWorkoutButton(viewModel, active, hasUnsavedSets)
+            }
+        }) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
         LazyColumn(
             modifier = Modifier.fillMaxSize().testTag("workout-list")
@@ -95,7 +105,7 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                         }
                     } else {
                         ActiveWorkoutHeader(viewModel, active, onDiscard = { confirmDiscard = true },
-                            hasUnsavedSets = hasUnsavedSets)
+                            hasUnsavedSets = hasUnsavedSets, showFinish = onMinimize == null)
                     }
                 }
                 if (active != null) {

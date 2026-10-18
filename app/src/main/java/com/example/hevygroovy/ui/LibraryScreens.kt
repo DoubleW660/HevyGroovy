@@ -3,7 +3,6 @@ package com.example.hevygroovy.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -17,7 +16,6 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hevygroovy.dto.*
@@ -353,17 +351,9 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
             { removing = null }) { model.removeExercise(row.id); removing = null }
     }
     model.templateDraft?.takeIf { it.kind == "rest" }?.let { draft ->
-        val seconds = draft.rest
-        val value = seconds.toIntOrNull()
-        AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text("Rest target") },
-            text = { Column {
-                model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                OutlinedTextField(seconds, { model.updateTemplateDraft(rest = it) }, label = { Text("Rest seconds") }, singleLine = true,
-                modifier = Modifier.testTag("template-rest-input"), isError = value == null || value < 0,
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number)) } },
-            confirmButton = { TextButton(onClick = { model.updateRest(draft.rowId!!, value!!) },
-                enabled = !busy && value != null && value >= 0) { Text("Save rest") } },
-            dismissButton = { TextButton(onClick = model::closeTemplateDraft) { Text("Cancel") } })
+        RestDurationPicker(draft.rest.toIntOrNull() ?: 0, onDismiss = model::closeTemplateDraft,
+            onSave = { model.updateRest(draft.rowId!!, it!!) }, enabled = !busy,
+            error = model.state.error, testTag = "template-rest-input")
     }
 }
 
@@ -389,26 +379,30 @@ private fun TemplateDetailsDialog(model: LibraryViewModel) {
 private fun TemplateExercisePicker(model: LibraryViewModel) {
     val draft = model.templateDraft ?: return
     val search = draft.search
-    val rest = draft.rest
-    val restValue = rest.toIntOrNull()
+    val restValue = draft.rest.toIntOrNull() ?: 0
+    var editRest by rememberSaveable(draft.templateId) { mutableStateOf(false) }
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     val options = model.state.exercises.filter { !it.isArchived && it.title.contains(search, true) }
     AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text("Choose routine exercise") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 OutlinedTextField(search, { model.updateTemplateDraft(search = it) }, label = { Text("Search exercises") }, singleLine = true)
-                OutlinedTextField(rest, { model.updateTemplateDraft(rest = it) }, label = { Text("Rest seconds") }, singleLine = true,
-                    isError = restValue == null || restValue < 0, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number))
+                OutlinedButton(onClick = { focus.clearFocus(); keyboard?.hide(); editRest = true }, enabled = !model.state.busy,
+                    modifier = Modifier.testTag("template-new-exercise-rest")) { Text("Rest: " + restDurationLabel(restValue)) }
                 if (options.isEmpty()) Text("No matching exercises. Add exercises in the Exercises tab.")
                 LazyColumn(Modifier.heightIn(max = 240.dp)) {
                     items(options, key = { it.id }) { exercise ->
-                        TextButton(onClick = { model.addExercise(exercise.id, restValue!!) },
-                            enabled = !model.state.busy && restValue != null && restValue >= 0,
+                        TextButton(onClick = { model.addExercise(exercise.id, restValue) },
+                            enabled = !model.state.busy && restValue >= 0,
                             modifier = Modifier.fillMaxWidth().testTag("template-picker-${exercise.id}")) { Text(exercise.title) }
                     }
                 }
             }
         }, confirmButton = { TextButton(onClick = model::closeTemplateDraft) { Text("Cancel") } })
+    if (editRest) RestDurationPicker(restValue, onDismiss = { editRest = false },
+        onSave = { model.updateTemplateDraft(rest = it.toString()); editRest = false }, enabled = !model.state.busy)
 }
 
 @Composable

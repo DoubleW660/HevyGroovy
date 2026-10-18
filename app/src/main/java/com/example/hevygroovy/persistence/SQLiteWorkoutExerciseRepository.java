@@ -144,6 +144,47 @@ public final class SQLiteWorkoutExerciseRepository implements WorkoutExerciseRep
         return Map.copyOf(result);
     }
 
+    @Override
+    public Map<Long, List<List<ActiveSetEntry>>> findLastCompletedSetsForTemplateExercises(
+            long userId, long templateId, List<Long> exerciseIds) {
+        Map<Long, List<List<ActiveSetEntry>>> result = new HashMap<>();
+        List<Long> distinct = new ArrayList<>(new LinkedHashSet<>(exerciseIds));
+        for (int start = 0; start < distinct.size(); start += 500) {
+            List<Long> batch = distinct.subList(start, Math.min(start + 500, distinct.size()));
+            String placeholders = String.join(",", Collections.nCopies(batch.size(), "?"));
+            String[] args = new String[batch.size() + 2];
+            args[0] = Long.toString(userId);
+            args[1] = Long.toString(templateId);
+            for (int i = 0; i < batch.size(); i++) args[i + 2] = Long.toString(batch.get(i));
+            // Number every exercise occurrence before removing rows without completed sets.
+            String sql = "WITH occurrences AS (SELECT we.id AS row_id, we.exercise_id, w.id AS workout_id, "
+                    + "w.ended_at, ROW_NUMBER() OVER (PARTITION BY we.logged_workout_id, we.exercise_id "
+                    + "ORDER BY we.order_index, we.id) - 1 AS occurrence FROM workout_exercise we "
+                    + "JOIN logged_workout w ON w.id = we.logged_workout_id WHERE w.user_id = ? "
+                    + "AND w.template_id = ? AND w.ended_at IS NOT NULL AND we.exercise_id IN ("
+                    + placeholders + ")), ranked AS (SELECT occurrences.*, ROW_NUMBER() OVER "
+                    + "(PARTITION BY exercise_id, occurrence ORDER BY ended_at DESC, workout_id DESC, row_id DESC) AS rn "
+                    + "FROM occurrences WHERE EXISTS (SELECT 1 FROM set_entry s "
+                    + "WHERE s.workout_exercise_id = row_id AND s.completed = 1)) "
+                    + "SELECT p.exercise_id, p.occurrence, s.* FROM ranked p JOIN set_entry s "
+                    + "ON s.workout_exercise_id = p.row_id AND s.completed = 1 WHERE p.rn = 1 "
+                    + "ORDER BY p.exercise_id, p.occurrence, s.set_number, s.id";
+            try (Cursor cursor = db.rawQuery(sql, args)) {
+                while (cursor.moveToNext()) {
+                    List<List<ActiveSetEntry>> occurrences = result.computeIfAbsent(
+                            cursor.getLong(0), ignored -> new ArrayList<>());
+                    int occurrence = cursor.getInt(1);
+                    while (occurrences.size() <= occurrence) occurrences.add(new ArrayList<>());
+                    occurrences.get(occurrence).add(new ActiveSetEntry(previousSet(cursor)));
+                }
+            }
+        }
+        Map<Long, List<List<ActiveSetEntry>>> immutable = new HashMap<>();
+        result.forEach((exerciseId, occurrences) -> immutable.put(exerciseId,
+                occurrences.stream().map(List::copyOf).collect(java.util.stream.Collectors.toUnmodifiableList())));
+        return Map.copyOf(immutable);
+    }
+
     private SetEntry previousSet(Cursor cursor) {
         SetEntry set = new SetEntry();
         set.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));

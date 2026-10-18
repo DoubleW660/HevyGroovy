@@ -60,6 +60,24 @@ class SessionControlsTest {
         assertEquals(1, skips)
     }
 
+    @Test
+    fun completedTimerShowsGetItWithoutCountdownControlsOrPermissionPrompt() {
+        compose.setContent { HevyGroovyTheme {
+            RestTimerBar(RestTimerState("complete", 100, 1, 11, "Bench", 1_000, 0, isComplete = true),
+                onAdjust = { error("A completed timer cannot be adjusted") },
+                onSkip = { error("A completed timer has no Skip button") },
+                permissionAction = { error("Completion cannot prompt for permissions") },
+                permissionLabel = "Enable rest notifications")
+        } }
+        compose.onNodeWithText("Bench").assertIsDisplayed()
+        compose.onNodeWithText("Get It!").assertIsDisplayed()
+        compose.onNodeWithTag("rest-timer-remaining").assertDoesNotExist()
+        compose.onNodeWithTag("rest-minus-15").assertDoesNotExist()
+        compose.onNodeWithTag("rest-plus-15").assertDoesNotExist()
+        compose.onNodeWithTag("rest-skip").assertDoesNotExist()
+        compose.onNodeWithTag("rest-alert-permission").assertDoesNotExist()
+    }
+
     private fun model(): WorkoutHomeViewModel {
         val workout = LoggedWorkout().apply { id = 100; userId = 1; nameSnapshot = "Upper" }
         val exercises = (1L..8L).map { id ->

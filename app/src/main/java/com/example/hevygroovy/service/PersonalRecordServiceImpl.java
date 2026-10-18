@@ -1,6 +1,7 @@
 package com.example.hevygroovy.service;
 
 import com.example.hevygroovy.dto.PersonalRecord;
+import com.example.hevygroovy.dto.ExercisePerformance;
 import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.entity.SetEntry;
 import com.example.hevygroovy.entity.WorkoutExercise;
@@ -48,6 +49,13 @@ public final class PersonalRecordServiceImpl implements PersonalRecordService {
         requirePositive(userId, "user");
         requirePositive(exerciseId, "exercise");
         return records.findBestEstimatedOneRepMax(userId, exerciseId);
+    }
+
+    @Override
+    public List<ExercisePerformance> getExerciseHistory(long userId, long exerciseId) {
+        requirePositive(userId, "user");
+        requirePositive(exerciseId, "exercise");
+        return List.copyOf(records.findExerciseHistory(userId, exerciseId));
     }
 
     @Override

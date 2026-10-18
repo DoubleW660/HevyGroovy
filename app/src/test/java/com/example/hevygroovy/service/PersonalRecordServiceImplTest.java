@@ -1,6 +1,7 @@
 package com.example.hevygroovy.service;
 
 import com.example.hevygroovy.dto.PersonalRecord;
+import com.example.hevygroovy.dto.ExercisePerformance;
 import com.example.hevygroovy.entity.LoggedWorkout;
 import com.example.hevygroovy.entity.SetEntry;
 import com.example.hevygroovy.entity.WorkoutExercise;
@@ -58,6 +59,23 @@ class PersonalRecordServiceImplTest {
         source.clear();
         assertEquals(50, result.get(0).getValue());
         assertThrows(UnsupportedOperationException.class, result::clear);
+        verifyNoInteractions(workouts, exercises, sets);
+    }
+
+    @Test
+    void exerciseHistoryUsesOneScopedRepositoryReadAndCopiesTheResult() {
+        ExercisePerformance performance = new ExercisePerformance(100, 7, "Bench", "Routine", 1000,
+                2000, List.of(set(101, 10, 1, 50, 10, Unit.KG)), "Saved notes", false);
+        List<ExercisePerformance> source = new ArrayList<>(List.of(performance));
+        when(records.findExerciseHistory(1, 7)).thenReturn(source);
+        List<ExercisePerformance> result = service.getExerciseHistory(1, 7);
+        source.clear();
+        assertEquals(100, result.get(0).getWorkoutId());
+        assertThrows(UnsupportedOperationException.class, result::clear);
+        assertThrows(IllegalArgumentException.class, () -> service.getExerciseHistory(0, 7));
+        assertThrows(IllegalArgumentException.class, () -> service.getExerciseHistory(1, 0));
+        verify(records).findExerciseHistory(1, 7);
+        verifyNoMoreInteractions(records);
         verifyNoInteractions(workouts, exercises, sets);
     }
 

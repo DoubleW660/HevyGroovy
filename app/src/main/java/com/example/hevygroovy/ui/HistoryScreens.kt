@@ -2,6 +2,7 @@ package com.example.hevygroovy.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -36,14 +37,15 @@ import java.time.format.DateTimeFormatter
 import java.util.Locale
 
 @Composable
-fun HistoryScreen(model: HistoryViewModel, onStartWorkout: () -> Unit) {
+fun HistoryScreen(model: HistoryViewModel, onOpenExercise: ((Long, String) -> Unit)? = null,
+    onStartWorkout: () -> Unit) {
     val state = model.state
     // Keep the list position while a detail is open, including when returning from an older page.
     val listState = rememberLazyListState()
     BackHandler(enabled = state.selectedWorkoutId != null, onBack = model::closeDetail)
 
     if (state.selectedWorkoutId != null) {
-        key(state.selectedWorkoutId) { HistoryDetailScreen(model) }
+        key(state.selectedWorkoutId) { HistoryDetailScreen(model, onOpenExercise) }
         return
     }
 
@@ -146,7 +148,7 @@ private fun HistoryWorkoutCard(workout: WorkoutHistory, onClick: () -> Unit) {
 }
 
 @Composable
-private fun HistoryDetailScreen(model: HistoryViewModel) {
+private fun HistoryDetailScreen(model: HistoryViewModel, onOpenExercise: ((Long, String) -> Unit)? = null) {
     val state = model.state
     val detail = state.detail
     var confirmDelete by rememberSaveable(state.selectedWorkoutId) { mutableStateOf(false) }
@@ -222,7 +224,7 @@ private fun HistoryDetailScreen(model: HistoryViewModel) {
                 }
             }
             items(detail.exercises, key = { "exercise-${it.workoutExerciseId}" }) { exercise ->
-                HistoryExerciseCard(exercise, detail.personalRecords.filter { it.workoutExerciseId == exercise.workoutExerciseId })
+                HistoryExerciseCard(exercise, detail.personalRecords.filter { it.workoutExerciseId == exercise.workoutExerciseId }, onOpenExercise)
             }
         }
     }
@@ -276,7 +278,8 @@ private fun HistoryMetric(label: String, value: String, modifier: Modifier = Mod
 }
 
 @Composable
-private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<PersonalRecord>) {
+private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<PersonalRecord>,
+    onOpenExercise: ((Long, String) -> Unit)? = null) {
     val unit = LocalWeightUnit.current
     Card(Modifier.fillMaxWidth().testTag("history-exercise-${exercise.workoutExerciseId}"),
         shape = RoundedCornerShape(20.dp),
@@ -284,7 +287,11 @@ private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
         Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
             Text(exercise.exerciseName, style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
+                fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.testTag("open-history-exercise-" + exercise.workoutExerciseId)
+                    .clickable(enabled = onOpenExercise != null) {
+                        onOpenExercise?.invoke(exercise.exerciseId, exercise.exerciseName)
+                    })
             PersonalRecordBadge(records)
             if (exercise.isUnilateral) Text("Unilateral · reps per side · volume × 2",
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)

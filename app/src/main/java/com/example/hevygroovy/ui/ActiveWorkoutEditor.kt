@@ -194,6 +194,7 @@ fun WorkoutExerciseCard(
     reorderModifier: Modifier = Modifier,
     canPersist: () -> Boolean = { true },
     onDraftChanged: (Long, InlineSetDraft) -> Unit = { _, _ -> },
+    onOpenExercise: ((Long, String) -> Unit)? = null,
 ) {
     val displayUnit = LocalWeightUnit.current
     val busy = model.state.busy
@@ -215,7 +216,12 @@ fun WorkoutExerciseCard(
             Row(reorderModifier.fillMaxWidth().heightIn(min = 44.dp),
                 verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 ExerciseDragHandle()
-                Text(name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                Text(name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f)
+                    .testTag("open-active-exercise-" + row.workoutExerciseId)
+                    .clickable(enabled = onOpenExercise != null) {
+                        focus.clearFocus(); keyboard?.hide()
+                        onOpenExercise?.invoke(row.exerciseId, name)
+                    })
                 if (collapsed) Text((position + 1).toString(), color = MaterialTheme.colorScheme.primary)
             }
             if (!collapsed) savedRows.SaveableStateProvider(row.workoutExerciseId) {

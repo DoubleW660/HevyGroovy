@@ -50,8 +50,8 @@ internal fun RestTimerControls(controller: RestTimerController, modifier: Modifi
         lifecycle.addObserver(observer)
         onDispose { lifecycle.removeObserver(observer) }
     }
-    LaunchedEffect(timer?.token) {
-        if (timer != null && !preferences.getBoolean("notifications-requested", false)) {
+    LaunchedEffect(timer?.token, timer?.isComplete) {
+        if (timer?.isComplete == false && !preferences.getBoolean("notifications-requested", false)) {
             preferences.edit().putBoolean("notifications-requested", true).apply()
             if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
                 notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
@@ -87,18 +87,23 @@ internal fun RestTimerBar(timer: RestTimerState, onAdjust: (Int) -> Unit, onSkip
                     Text(timer.exerciseName, style = MaterialTheme.typography.titleSmall,
                         maxLines = 1, overflow = TextOverflow.Ellipsis)
                 }
-                val seconds = timer.remainingSeconds.coerceAtLeast(0)
-                Text(String.format(Locale.getDefault(), "%d:%02d", seconds / 60, seconds % 60),
-                    style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("rest-timer-remaining"))
+                if (timer.isComplete) {
+                    Text("Get It!", style = MaterialTheme.typography.headlineMedium,
+                        color = MaterialTheme.colorScheme.primary, modifier = Modifier.testTag("rest-timer-complete"))
+                } else {
+                    val seconds = timer.remainingSeconds.coerceAtLeast(0)
+                    Text(String.format(Locale.getDefault(), "%d:%02d", seconds / 60, seconds % 60),
+                        style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("rest-timer-remaining"))
+                }
             }
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+            if (!timer.isComplete) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 OutlinedButton(onClick = { onAdjust(-15) }, modifier = Modifier.testTag("rest-minus-15")) { Text("−15s") }
                 OutlinedButton(onClick = { onAdjust(15) }, modifier = Modifier.testTag("rest-plus-15")) { Text("+15s") }
                 Spacer(Modifier.weight(1f))
                 TextButton(onClick = onSkip, modifier = Modifier.testTag("rest-skip")) { Text("Skip") }
             }
-            if (permissionAction != null) TextButton(onClick = permissionAction,
+            if (!timer.isComplete && permissionAction != null) TextButton(onClick = permissionAction,
                 contentPadding = PaddingValues(horizontal = 0.dp), modifier = Modifier.testTag("rest-alert-permission")) {
                 Text(permissionLabel, style = MaterialTheme.typography.labelMedium)
             }

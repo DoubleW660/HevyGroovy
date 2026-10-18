@@ -3,20 +3,101 @@ package com.example.hevygroovy.persistence;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import com.example.hevygroovy.dto.PersonalRecord;
+import com.example.hevygroovy.dto.ExercisePerformance;
+import com.example.hevygroovy.entity.SetEntry;
 import com.example.hevygroovy.entity.enums.RecordType;
+import com.example.hevygroovy.entity.enums.SetType;
 import com.example.hevygroovy.entity.enums.Unit;
 import com.example.hevygroovy.repo.PersonalRecordRepository;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 /** Computes record winners without loading historical sets into application memory. */
 public final class SQLitePersonalRecordRepository implements PersonalRecordRepository {
     private final SQLiteDatabase db;
 
     public SQLitePersonalRecordRepository(SQLiteDatabase db) { this.db = db; }
+
+    @Override
+    public List<ExercisePerformance> findExerciseHistory(long userId, long exerciseId) {
+        // exercise_history and set_exercise_number indexes restrict this read to the selected
+        // exercise. Read once, rather than loading every workout and fetching its children.
+        String sql = "SELECT w.id AS history_workout_id, w.name_snapshot AS history_workout_name, "
+                + "w.started_at AS history_started_at, w.ended_at AS history_ended_at, "
+                + "we.exercise_name_snapshot AS history_exercise_name, we.id AS history_row_id, "
+                + "we.notes AS history_notes, COALESCE(e.unilateral, 0) AS history_unilateral, s.* "
+                + "FROM workout_exercise we JOIN logged_workout w ON w.id=we.logged_workout_id "
+                + "JOIN set_entry s ON s.workout_exercise_id=we.id "
+                + "LEFT JOIN exercise e ON e.id=we.exercise_id "
+                + "WHERE we.exercise_id=? AND w.user_id=? AND w.ended_at IS NOT NULL AND s.completed=1 "
+                + "ORDER BY w.ended_at DESC, w.id DESC, we.order_index, we.id, s.set_number, s.id";
+        Map<Long, HistoryBuilder> performances = new LinkedHashMap<>();
+        try (Cursor cursor = db.rawQuery(sql, new String[]{Long.toString(exerciseId), Long.toString(userId)})) {
+            while (cursor.moveToNext()) {
+                long workoutId = cursor.getLong(cursor.getColumnIndexOrThrow("history_workout_id"));
+                HistoryBuilder performance = performances.get(workoutId);
+                if (performance == null) {
+                    performance = new HistoryBuilder(workoutId, exerciseId,
+                            cursor.getString(cursor.getColumnIndexOrThrow("history_exercise_name")),
+                            cursor.getString(cursor.getColumnIndexOrThrow("history_workout_name")),
+                            cursor.getLong(cursor.getColumnIndexOrThrow("history_started_at")),
+                            cursor.getLong(cursor.getColumnIndexOrThrow("history_ended_at")),
+                            cursor.getInt(cursor.getColumnIndexOrThrow("history_unilateral")) != 0);
+                    performances.put(workoutId, performance);
+                }
+                long rowId = cursor.getLong(cursor.getColumnIndexOrThrow("history_row_id"));
+                if (performance.lastRowId != rowId) {
+                    String notes = cursor.getString(cursor.getColumnIndexOrThrow("history_notes"));
+                    if (notes != null && !notes.isBlank()) performance.notes.add(notes);
+                    performance.lastRowId = rowId;
+                }
+                SetEntry set = new SetEntry();
+                set.setId(cursor.getLong(cursor.getColumnIndexOrThrow("id")));
+                set.setWorkoutExerciseId(rowId);
+                set.setSetNumber(cursor.getInt(cursor.getColumnIndexOrThrow("set_number")));
+                set.setReps(cursor.getInt(cursor.getColumnIndexOrThrow("reps")));
+                set.setWeight(cursor.getDouble(cursor.getColumnIndexOrThrow("weight")));
+                set.setUnit(Unit.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("unit"))));
+                set.setSetType(SetType.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("set_type"))));
+                set.setCreatedAtEpochMillis(cursor.getLong(cursor.getColumnIndexOrThrow("created_at")));
+                set.setCompleted(true);
+                int rest = cursor.getColumnIndexOrThrow("rest_seconds");
+                set.setRestSeconds(cursor.isNull(rest) ? null : cursor.getInt(rest));
+                int rpe = cursor.getColumnIndexOrThrow("rpe");
+                set.setRpe(cursor.isNull(rpe) ? null : cursor.getFloat(rpe));
+                performance.sets.add(set);
+            }
+        }
+        List<ExercisePerformance> result = new ArrayList<>();
+        for (HistoryBuilder performance : performances.values()) result.add(performance.build());
+        return List.copyOf(result);
+    }
+
+    private static final class HistoryBuilder {
+        final long workoutId, exerciseId, startedAt, endedAt;
+        final String exerciseName, workoutName;
+        final boolean unilateral;
+        final List<SetEntry> sets = new ArrayList<>();
+        final List<String> notes = new ArrayList<>();
+        long lastRowId = -1;
+
+        HistoryBuilder(long workoutId, long exerciseId, String exerciseName, String workoutName,
+                       long startedAt, long endedAt, boolean unilateral) {
+            this.workoutId = workoutId; this.exerciseId = exerciseId;
+            this.exerciseName = exerciseName; this.workoutName = workoutName;
+            this.startedAt = startedAt; this.endedAt = endedAt; this.unilateral = unilateral;
+        }
+
+        ExercisePerformance build() {
+            return new ExercisePerformance(workoutId, exerciseId, exerciseName, workoutName,
+                    startedAt, endedAt, sets, notes.isEmpty() ? null : String.join("\n\n", notes), unilateral);
+        }
+    }
 
     @Override
     public double findBestEstimatedOneRepMax(long userId, long exerciseId) {

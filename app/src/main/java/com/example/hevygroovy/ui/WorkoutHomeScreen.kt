@@ -27,7 +27,7 @@ import java.util.Date
 
 @Composable
 fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = true,
-    onMinimize: (() -> Unit)? = null) {
+    onMinimize: (() -> Unit)? = null, onOpenExercise: ((Long, String) -> Unit)? = null) {
     val state = viewModel.state
     var confirmDiscard by rememberSaveable { mutableStateOf(false) }
     val listState = rememberLazyListState()
@@ -113,6 +113,7 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                         val name = exercise.exerciseNameSnapshot ?: "Exercise"
                         ExerciseReorderItem(reorder, exercise.workoutExerciseId, index, active.exercises.size) {
                         WorkoutExerciseCard(viewModel, exercise, index, active.exercises.size,
+                            onOpenExercise = onOpenExercise,
                             canPersist = { reorder.draggedId == null && !suppressAccessibilityBlurSave },
                             onDraftChanged = { id, draft -> inlineDrafts[id] = draft },
                             reorderModifier = Modifier.testTag("reorder-exercise-${exercise.workoutExerciseId}")

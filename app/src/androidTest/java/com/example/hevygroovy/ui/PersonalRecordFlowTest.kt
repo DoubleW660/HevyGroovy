@@ -68,8 +68,7 @@ class PersonalRecordFlowTest {
                 compose.onNodeWithTag("active-records-${fixture.rowId}")
                     .performScrollTo().assertIsDisplayed()
 
-                compose.onNodeWithTag("workout-list").performScrollToNode(hasText("Finish workout"))
-                compose.onNodeWithText("Finish workout").performClick()
+                compose.onNodeWithTag("finish-workout").performClick()
                 compose.onNodeWithText("Finish", useUnmergedTree = true).performClick()
                 awaitWorkouts(workouts)
                 compose.waitUntil(10_000) {
@@ -96,12 +95,12 @@ class PersonalRecordFlowTest {
                     assertEquals(100.0 * 0.45359237 * (1 + 6 / 30.0),
                         records.state.estimatedOneRepMaxKg, 0.000001)
                 }
-                compose.onNodeWithTag("exercise-records-dialog").assertIsDisplayed()
-                compose.onNodeWithText("All-time records").assertIsDisplayed()
-                compose.onNodeWithTag("exercise-estimated-1rm").assertIsDisplayed()
-                compose.onNodeWithText("100 lb").performScrollTo().assertIsDisplayed()
-                compose.onNodeWithTag("close-exercise-records").performClick()
-                compose.onNodeWithTag("exercise-records-dialog").assertDoesNotExist()
+                compose.onNodeWithTag("exercise-detail").assertIsDisplayed()
+                compose.onNodeWithTag("exercise-tab-overview").assertIsSelected()
+                compose.onNodeWithTag("exercise-overview-list").performScrollToNode(hasText("Personal records"))
+                compose.onNodeWithText("Personal records").assertIsDisplayed()
+                compose.onNodeWithTag("exercise-detail-back").performClick()
+                compose.onNodeWithTag("exercise-detail").assertDoesNotExist()
             }
             // A new connection graph recovers the same bests after the app's worker is closed.
             SQLiteAppStorage(context, database).use { reopened ->

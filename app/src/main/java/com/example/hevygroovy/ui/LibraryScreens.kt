@@ -1,6 +1,7 @@
 package com.example.hevygroovy.ui
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -54,14 +55,18 @@ private fun LibraryPage(title: String, model: LibraryViewModel, readyTag: String
 }
 
 @Composable
-fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewModel? = null) {
+fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewModel? = null,
+    onOpenExercise: ((Long, String, Int) -> Unit)? = null) {
     val state = model.state
     var search by rememberSaveable { mutableStateOf("") }
     var includeArchived by rememberSaveable { mutableStateOf(false) }
     var creating by rememberSaveable { mutableStateOf(false) }
     var editingId by rememberSaveable { mutableStateOf<Long?>(null) }
     var archiveId by rememberSaveable { mutableStateOf<Long?>(null) }
-    var guideId by rememberSaveable { mutableStateOf<Long?>(null) }
+    var initialDetailTab by rememberSaveable { mutableStateOf(0) }
+    val listState = rememberLazyListState()
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     // Restore a selected records sheet after recreation without issuing reads while scrolling.
     val recordExerciseId = records?.state?.selectedExerciseId
     LaunchedEffect(recordExerciseId, records?.state?.loaded) {
@@ -70,7 +75,19 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
         }
     }
     val filtered = state.exercises.filter { (includeArchived || !it.isArchived) && it.title.contains(search, true) }
-    LibraryPage("Exercise library", model) {
+    fun openExercise(exercise: CatalogExercise, initialTab: Int = 0) {
+        focus.clearFocus(); keyboard?.hide()
+        initialDetailTab = initialTab
+        if (onOpenExercise != null) onOpenExercise(exercise.id, exercise.title, initialTab)
+        else records?.refresh(exercise.id)
+    }
+    if (recordExerciseId != null && onOpenExercise == null) {
+        ExerciseDetailScreen(records, state.exercises.find { it.id == recordExerciseId }?.title ?: "Exercise",
+            onBack = records::close, initialTab = initialDetailTab)
+        return
+    }
+    val canOpenExercise = onOpenExercise != null || records != null
+    LibraryPage("Exercise library", model, listState = listState) {
         item(key = "controls") {
             OutlinedTextField(search, { search = it }, label = { Text("Search exercises") },
                 singleLine = true, modifier = Modifier.fillMaxWidth())
@@ -83,7 +100,9 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
         }
         if (state.loaded && filtered.isEmpty()) item(key = "empty") { Text("No matching exercises.") }
         items(filtered, key = { it.id }) { exercise ->
-            Card(Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
+            Card(Modifier.fillMaxWidth().testTag("open-library-exercise-" + exercise.id)
+                .clickable(enabled = canOpenExercise) { openExercise(exercise) },
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
                 Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(exercise.title, style = MaterialTheme.typography.titleLarge)
                     Text(exercise.primaryMuscle?.displayName() ?: "Other", style = MaterialTheme.typography.labelLarge,
@@ -93,15 +112,15 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
                     if (!exercise.description.isNullOrBlank()) Text(exercise.description,
                         maxLines = 3, overflow = TextOverflow.Ellipsis)
                     if (exercise.isArchived) Text("Archived")
-                    if (records != null) {
-                        TextButton(onClick = { records.refresh(exercise.id) },
+                    if (canOpenExercise) {
+                        TextButton(onClick = { openExercise(exercise) },
                             modifier = Modifier.testTag("records-exercise-${exercise.id}").semantics {
                                 contentDescription = "View records for ${exercise.title}"
                             }) { Text("Records") }
                     }
                     Row {
-                        if (!exercise.description.isNullOrBlank()) {
-                            TextButton(onClick = { guideId = exercise.id },
+                        if (canOpenExercise && !exercise.description.isNullOrBlank()) {
+                            TextButton(onClick = { openExercise(exercise, 2) },
                                 modifier = Modifier.testTag("guide-exercise-${exercise.id}").semantics {
                                     contentDescription = "Read guide for ${exercise.title}"
                                 }) { Text("Guide") }
@@ -118,14 +137,6 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
             }
         }
     }
-    state.exercises.find { it.id == guideId && !it.description.isNullOrBlank() }?.let { exercise ->
-        ExerciseGuideDialog(exercise, onDismiss = { guideId = null })
-    }
-    if (recordExerciseId != null) {
-        val title = state.exercises.find { it.id == recordExerciseId }?.title
-            ?: records.state.records.firstOrNull()?.exerciseName ?: "Exercise"
-        ExerciseRecordsDialog(records, title)
-    }
     val editing = state.exercises.find { it.id == editingId }
     if (creating || editing != null) {
         SaveResultEffect(state.savedChanges) { creating = false; editingId = null }
@@ -139,22 +150,6 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
             model.archiveExercise(exercise.id, true); archiveId = null
         }
     }
-}
-
-@Composable
-private fun ExerciseGuideDialog(exercise: CatalogExercise, onDismiss: () -> Unit) {
-    val paragraphs = remember(exercise.description) {
-        exercise.description.orEmpty().split(Regex("\\n\\s*\\n"))
-    }
-    AlertDialog(onDismissRequest = onDismiss, modifier = Modifier.testTag("exercise-guide-dialog"),
-        title = { Text(exercise.title) },
-        text = {
-            LazyColumn(Modifier.heightIn(max = 400.dp).testTag("exercise-guide-instructions"),
-                verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                itemsIndexed(paragraphs) { _, paragraph -> Text(paragraph) }
-            }
-        },
-        confirmButton = { TextButton(onClick = onDismiss, modifier = Modifier.testTag("close-exercise-guide")) { Text("Close") } })
 }
 
 @Composable
@@ -211,10 +206,11 @@ private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, err
 
 @Composable
 fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean,
-    header: (@Composable () -> Unit)? = null, onStart: (Long) -> Unit) {
+    header: (@Composable () -> Unit)? = null, onOpenExercise: ((Long, String) -> Unit)? = null,
+    onStart: (Long) -> Unit) {
     val state = model.state
     if (state.selectedTemplate != null) {
-        TemplateEditorScreen(model, state.selectedTemplate, workoutBlocked, onStart)
+        TemplateEditorScreen(model, state.selectedTemplate, workoutBlocked, onStart, onOpenExercise)
         return
     }
     if (state.selectedTemplateId != null) {
@@ -274,7 +270,7 @@ fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean,
 
 @Composable
 private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEditorDetail,
-    workoutBlocked: Boolean, onStart: (Long) -> Unit) {
+    workoutBlocked: Boolean, onStart: (Long) -> Unit, onOpenExercise: ((Long, String) -> Unit)? = null) {
     val busy = model.state.busy
     var archiving by rememberSaveable(template.id) { mutableStateOf(false) }
     var removing by rememberSaveable(template.id) { mutableStateOf<Long?>(null) }
@@ -326,7 +322,12 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
                             }
                         }, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         if (!template.isArchived) ExerciseDragHandle()
-                        Text(row.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
+                        Text(row.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f)
+                            .testTag("open-template-exercise-" + row.id)
+                            .clickable(enabled = onOpenExercise != null) {
+                                focus.clearFocus(); keyboard?.hide()
+                                onOpenExercise?.invoke(row.exerciseId, row.title)
+                            })
                     }
                     Text("Rest: ${row.restSeconds} seconds")
                     if (!template.isArchived) {

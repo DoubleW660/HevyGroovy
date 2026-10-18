@@ -1,6 +1,7 @@
 package com.example.hevygroovy.repo;
 
 import com.example.hevygroovy.dto.PersonalRecord;
+import com.example.hevygroovy.dto.ExercisePerformance;
 import java.util.List;
 
 /** Aggregated record reads from immutable finished-workout performances. */
@@ -19,4 +20,8 @@ public interface PersonalRecordRepository {
 
     /** Best Epley estimate in KG from finished, completed working sets of 1..10 reps; zero if none. */
     double findBestEstimatedOneRepMax(long userId, long exerciseId);
+
+    /** All finished performances of this exercise across routines, newest first and user scoped.
+     * Combines repeated exercise rows per workout and includes only completed sets. */
+    List<ExercisePerformance> findExerciseHistory(long userId, long exerciseId);
 }

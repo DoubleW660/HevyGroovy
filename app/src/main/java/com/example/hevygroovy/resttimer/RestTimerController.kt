@@ -45,6 +45,7 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
     private val mutableState = MutableStateFlow<RestTimerState?>(null)
     val state: StateFlow<RestTimerState?> = mutableState.asStateFlow()
     private var ticker: Job? = null
+    private var completionDismissal: Job? = null
 
     init {
         createChannel()
@@ -69,6 +70,7 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
     @Synchronized
     fun adjustSeconds(delta: Int) {
         val current = mutableState.value ?: return
+        if (current.isComplete) return
         val now = SystemClock.elapsedRealtime()
         val deadline = RestTimerTiming.adjustedDeadline(current.deadlineElapsedMillis, now, delta)
         val updated = current.copy(deadlineElapsedMillis = deadline,
@@ -102,6 +104,7 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
     @Synchronized
     fun rescheduleAlarm() {
         val current = mutableState.value ?: return
+        if (current.isComplete) return
         if (current.deadlineElapsedMillis <= SystemClock.elapsedRealtime()) expire(current.token)
         else schedule(current)
     }
@@ -109,7 +112,7 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
     @Synchronized
     internal fun onAlarm(token: String) {
         val current = mutableState.value ?: return
-        if (current.token != token) return
+        if (current.token != token || current.isComplete) return
         // An adjustment can race with an already queued alarm. A callback may never finish a
         // replacement timer or one whose deadline was extended after the alarm was dispatched.
         if (current.deadlineElapsedMillis > SystemClock.elapsedRealtime()) schedule(current)
@@ -122,6 +125,7 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
             while (isActive) {
                 synchronized(this@RestTimerController) {
                     val current = mutableState.value ?: return@launch
+                    if (current.isComplete) return@launch
                     val now = SystemClock.elapsedRealtime()
                     if (current.deadlineElapsedMillis <= now) {
                         expire(current.token)
@@ -137,16 +141,33 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
 
     private fun expire(token: String) {
         val current = mutableState.value ?: return
-        if (current.token != token || current.deadlineElapsedMillis > SystemClock.elapsedRealtime()) return
+        val now = SystemClock.elapsedRealtime()
+        if (current.token != token || current.isComplete || current.deadlineElapsedMillis > now) return
         // Claim completion durably before notifying. The UI ticker and OS receiver share this
         // operation, so only one can alert, including when the process is restored by the alarm.
         cancelCurrent()
+        val displayMillis = RestTimerTiming.completionDisplayMillis(current.deadlineElapsedMillis, now)
+        if (displayMillis > 0L) {
+            mutableState.value = current.copy(remainingSeconds = 0, isComplete = true)
+            completionDismissal = scope.launch {
+                delay(displayMillis)
+                synchronized(this@RestTimerController) {
+                    // A completed set can start another timer during the brief message.
+                    if (mutableState.value?.let { it.token == token && it.isComplete } == true) {
+                        mutableState.value = null
+                        completionDismissal = null
+                    }
+                }
+            }
+        }
         alert(current)
     }
 
     private fun cancelCurrent() {
         ticker?.cancel()
         ticker = null
+        completionDismissal?.cancel()
+        completionDismissal = null
         mutableState.value?.let { cancelAlarm(it.token) }
         mutableState.value = null
         preferences.edit().clear().commit()

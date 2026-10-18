@@ -18,6 +18,18 @@ class RestTimerTimingTest {
         assertEquals(10_555L, RestTimerTiming.adjustedDeadline(20_000L, 10_555L, -15))
     }
 
+    @Test fun `completion stays visible briefly after its deadline`() {
+        assertEquals(750L, RestTimerTiming.completionDisplayMillis(20_000L, 20_000L))
+        assertEquals(750L, RestTimerTiming.completionDisplayMillis(20_000L, 20_200L))
+        assertEquals(750L, RestTimerTiming.completionDisplayMillis(20_000L, 20_600L))
+        assertEquals(750L, RestTimerTiming.completionDisplayMillis(20_000L, 21_000L))
+    }
+
+    @Test fun `late timer restoration never revives a completion message`() {
+        assertEquals(0L, RestTimerTiming.completionDisplayMillis(20_000L, 21_001L))
+        assertEquals(0L, RestTimerTiming.completionDisplayMillis(20_000L, 80_000L))
+    }
+
     @Test fun `same boot restoration uses elapsed clock despite wall clock changes`() {
         assertEquals(80_000L, restore(savedBoot = 7, currentBoot = 7, nowWall = 8_000_000L))
     }

@@ -40,18 +40,28 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
     ReportOperationDrawn(library.performanceTiming)
     var tab by rememberSaveable(key = "main-destination-v2") { mutableStateOf(AppTab.Home) }
     var sessionOpen by rememberSaveable(key = "session-editor-open") { mutableStateOf(false) }
+    var exerciseName by rememberSaveable { mutableStateOf("Exercise") }
+    var exerciseInitialTab by rememberSaveable { mutableStateOf(0) }
     var previousWorkoutId by remember { mutableStateOf(workouts.state.activeWorkout?.workoutId) }
     val savedScreens = rememberSaveableStateHolder()
     val active = workouts.state.activeWorkout
+    val exerciseId = records?.state?.selectedExerciseId
     val showSession = sessionOpen && (active != null || workouts.state.loading)
     LaunchedEffect(openWorkoutId, active?.workoutId, workouts.state.loaded) {
         if (openWorkoutId != null && workouts.state.loaded) {
-            if (openWorkoutId == active?.workoutId) sessionOpen = true
+            if (openWorkoutId == active?.workoutId) {
+                records?.close()
+                sessionOpen = true
+            }
             onWorkoutOpened()
         }
     }
     val snackbar = remember { SnackbarHostState() }
     var recordDetails by remember { mutableStateOf<List<PersonalRecord>>(emptyList()) }
+    LaunchedEffect(exerciseId, records?.state?.loaded, records?.state?.loading, records?.state?.error) {
+        if (exerciseId != null && !records.state.loaded &&
+            !records.state.loading && records.state.error == null) records.refresh(exerciseId)
+    }
     LaunchedEffect(workouts.state.recordNoticeVersion) {
         val notices = workouts.state.recordNotice
         if (notices.isNotEmpty()) {
@@ -67,6 +77,7 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
     }
 
     fun selectTab(destination: AppTab) {
+        if (records?.state?.selectedExerciseId != null) records.close()
         if (tab == destination) return
         when (destination) {
             AppTab.Home -> workouts.refresh()
@@ -75,6 +86,14 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
             AppTab.Profile -> profile.refresh()
         }
         tab = destination
+    }
+    fun openExercise(id: Long, name: String, initialTab: Int = 0) {
+        if (records == null || id <= 0) return
+        exerciseName = name
+        exerciseInitialTab = initialTab
+        // A fresh visit honors its shortcut; rotation still restores the current page.
+        savedScreens.removeState("exercise-$id-$initialTab")
+        records.refresh(id)
     }
     fun openHistory(id: Long) {
         history.refresh()
@@ -113,8 +132,9 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
             if (workouts.state.history.any { it.workoutId == completedId }) openHistory(completedId)
         }
     }
-    BackHandler(enabled = showSession || tab != AppTab.Home) {
+    BackHandler(enabled = exerciseId != null || showSession || tab != AppTab.Home) {
         when {
+            exerciseId != null -> records?.close()
             showSession -> sessionOpen = false
             tab == AppTab.History && history.state.selectedWorkoutId != null -> history.closeDetail()
             tab == AppTab.Workout && library.state.selectedTemplateId != null -> library.showTemplateList()
@@ -132,7 +152,7 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                 modifier = if (showSession) Modifier.navigationBarsPadding() else Modifier)
             if (!showSession) Column {
                 if (active != null) Surface(
-                    onClick = { sessionOpen = true },
+                    onClick = { records?.close(); sessionOpen = true },
                     color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.fillMaxWidth().testTag("resume-workout"),
                 ) {
@@ -185,24 +205,34 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                 }
             }
             Box(Modifier.weight(1f)) {
-                val route = if (showSession) "session-${active?.workoutId ?: "starting"}" else tab.name
+                val route = when {
+                    exerciseId != null -> "exercise-$exerciseId-$exerciseInitialTab"
+                    showSession -> "session-${active?.workoutId ?: "starting"}"
+                    else -> tab.name
+                }
                 savedScreens.SaveableStateProvider(route) {
-                    if (showSession) {
-                        WorkoutHomeScreen(workouts, showHistory = false, onMinimize = { sessionOpen = false })
+                    if (exerciseId != null) {
+                        ExerciseDetailScreen(records, exerciseName, onBack = records::close, initialTab = exerciseInitialTab)
+                    } else if (showSession) {
+                        WorkoutHomeScreen(workouts, showHistory = false, onMinimize = { sessionOpen = false },
+                            onOpenExercise = { id, name -> openExercise(id, name) })
                     } else when (tab) {
                         AppTab.Home -> DashboardScreen(workouts,
                             onWorkout = { selectTab(AppTab.Workout) }, onResume = { sessionOpen = true },
                             onHistory = ::showHistoryList, onOpenWorkout = ::openHistory)
-                        AppTab.Exercises -> ExerciseLibraryScreen(library, records)
+                        AppTab.Exercises -> ExerciseLibraryScreen(library, records,
+                            onOpenExercise = { id, name, initialTab -> openExercise(id, name, initialTab) })
                         AppTab.Workout -> TemplateLibraryScreen(library,
                             workoutBlocked = active != null || workouts.state.busy,
+                            onOpenExercise = { id, name -> openExercise(id, name) },
                             onStart = { id -> workouts.startFromTemplate(id); sessionOpen = true },
                             header = {
                                 WorkoutStartPanel(workouts,
                                     onStart = { workouts.startWorkout(); sessionOpen = true },
                                     onResume = { sessionOpen = true })
                             })
-                        AppTab.History -> HistoryScreen(history) { selectTab(AppTab.Workout) }
+                        AppTab.History -> HistoryScreen(history,
+                            onOpenExercise = { id, name -> openExercise(id, name) }) { selectTab(AppTab.Workout) }
                         AppTab.Profile -> ProfileScreen(profile,
                             onHistory = ::showHistoryList, onExercises = { selectTab(AppTab.Exercises) })
                     }

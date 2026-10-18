@@ -9,15 +9,22 @@ data class RestTimerState(
     val exerciseName: String,
     val deadlineElapsedMillis: Long,
     val remainingSeconds: Int,
+    val isComplete: Boolean = false,
 )
 
 internal object RestTimerTiming {
+    private const val COMPLETION_DISPLAY_MILLIS = 750L
+
     fun remainingSeconds(deadline: Long, now: Long): Int =
         ((deadline - now).coerceAtLeast(0L).let { (it + 999L) / 1_000L })
             .coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
 
     fun adjustedDeadline(deadline: Long, now: Long, deltaSeconds: Int): Long =
         now + ((deadline - now).coerceAtLeast(0L) + deltaSeconds.toLong() * 1_000L).coerceAtLeast(0L)
+
+    /** Give fresh completion a full pause; returning much later cannot revive the message. */
+    fun completionDisplayMillis(deadline: Long, now: Long): Long =
+        if (now - deadline in 0L..1_000L) COMPLETION_DISPLAY_MILLIS else 0L
 
     fun restoredDeadline(savedElapsed: Long, savedWall: Long, savedBootCount: Int,
         savedBootEpoch: Long, currentBootCount: Int, nowElapsed: Long, nowWall: Long): Long? {

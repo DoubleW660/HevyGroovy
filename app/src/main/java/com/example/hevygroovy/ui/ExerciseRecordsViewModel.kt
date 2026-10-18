@@ -10,6 +10,9 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewmodel.CreationExtras
 import com.example.hevygroovy.app.RecordGateway
 import com.example.hevygroovy.dto.PersonalRecord
+import com.example.hevygroovy.dto.CatalogExercise
+import com.example.hevygroovy.dto.ExercisePerformance
+import com.example.hevygroovy.dto.ExerciseRepRecord
 
 data class ExerciseRecordsState(
     val selectedExerciseId: Long? = null,
@@ -17,6 +20,9 @@ data class ExerciseRecordsState(
     val loaded: Boolean = false,
     val records: List<PersonalRecord> = emptyList(),
     val estimatedOneRepMaxKg: Double = 0.0,
+    val exercise: CatalogExercise? = null,
+    val history: List<ExercisePerformance> = emptyList(),
+    val repRecords: List<ExerciseRepRecord> = emptyList(),
     val error: String? = null,
 )
 
@@ -36,11 +42,12 @@ class ExerciseRecordsViewModel(private val gateway: RecordGateway,
             override fun onSuccess(snapshot: RecordGateway.Snapshot) {
                 if (cleared || request != generation) return
                 state = state.copy(loading = false, loaded = true, records = snapshot.records.toList(),
-                    estimatedOneRepMaxKg = snapshot.estimatedOneRepMaxKg)
+                    estimatedOneRepMaxKg = snapshot.estimatedOneRepMaxKg, exercise = snapshot.exercise,
+                    history = snapshot.history.toList(), repRecords = snapshot.repRecords.toList())
             }
             override fun onFailure(error: Exception) {
                 if (cleared || request != generation) return
-                state = state.copy(loading = false, error = "Couldn't load your records. Please try again.")
+                state = state.copy(loading = false, error = "Couldn't load this exercise. Please try again.")
             }
         })
     }

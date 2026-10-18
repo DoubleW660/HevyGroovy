@@ -21,6 +21,7 @@ class ExerciseGuideTest {
         val databaseName = "exercise-guide-${UUID.randomUUID()}.db"
         val container = AppContainer(context, databaseName)
         lateinit var model: LibraryViewModel
+        lateinit var records: ExerciseRecordsViewModel
         val lastInstruction = "Final instruction: return the equipment to its starting position."
         val description = ((1..24).map { step ->
             "$step. Demonstration instruction for this exercise. Read the complete paragraph before continuing to the next step."
@@ -28,6 +29,7 @@ class ExerciseGuideTest {
         try {
             compose.runOnUiThread {
                 model = LibraryViewModel(container.library)
+                records = ExerciseRecordsViewModel(container.records)
                 model.saveExercise(null, "Long exercise guide", description, MuscleGroup.OTHER, emptyList())
             }
             awaitLibrary(model)
@@ -37,20 +39,21 @@ class ExerciseGuideTest {
             awaitLibrary(model)
             val guidedId = model.state.exercises.single { it.title == "Long exercise guide" }.id
             val blankId = model.state.exercises.single { it.title == "Without a guide" }.id
-            compose.setContent { HevyGroovyTheme { ExerciseLibraryScreen(model) } }
+            compose.setContent { HevyGroovyTheme { ExerciseLibraryScreen(model, records) } }
 
             compose.onNodeWithTag("guide-exercise-$blankId").assertDoesNotExist()
             compose.onNodeWithTag("guide-exercise-$guidedId").performScrollTo().performClick()
-            compose.onNodeWithTag("exercise-guide-dialog").assertIsDisplayed()
-            compose.onNode(hasText("Long exercise guide") and hasAnyAncestor(hasTestTag("exercise-guide-dialog")))
+            compose.waitUntil(10_000) { records.state.loaded && !records.state.loading }
+            compose.onNodeWithTag("exercise-detail").assertIsDisplayed()
+            compose.onNode(hasText("Long exercise guide") and hasAnyAncestor(hasTestTag("exercise-detail")))
                 .assertIsDisplayed()
-            compose.onNodeWithTag("close-exercise-guide").assertIsDisplayed()
+            compose.onNodeWithTag("exercise-detail-back").assertIsDisplayed()
             compose.onNodeWithText(lastInstruction).assertDoesNotExist()
-            compose.onNodeWithTag("exercise-guide-instructions").performScrollToNode(hasText(lastInstruction))
+            compose.onNodeWithTag("exercise-info-list").performScrollToNode(hasText(lastInstruction))
             compose.onNodeWithText(lastInstruction).assertIsDisplayed()
-            compose.onNodeWithTag("close-exercise-guide").assertIsDisplayed().performClick()
+            compose.onNodeWithTag("exercise-detail-back").assertIsDisplayed().performClick()
 
-            compose.onNodeWithTag("exercise-guide-dialog").assertDoesNotExist()
+            compose.onNodeWithTag("exercise-detail").assertDoesNotExist()
             compose.onNodeWithTag("guide-exercise-$guidedId").assertIsDisplayed()
             compose.onNodeWithTag("edit-exercise-$guidedId").assertIsDisplayed()
             compose.runOnIdle { assertEquals(description, model.state.exercises.single { it.id == guidedId }.description) }

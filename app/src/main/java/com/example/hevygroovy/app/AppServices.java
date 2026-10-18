@@ -10,5 +10,6 @@ public interface AppServices extends AutoCloseable {
     SetEntryService getSetEntries();
     WorkoutHistoryQueryService getHistory();
     PersonalRecordService getPersonalRecords();
+    default WorkoutImportService getWorkoutImporter() { throw new UnsupportedOperationException("History import is unavailable"); }
     @Override void close();
 }

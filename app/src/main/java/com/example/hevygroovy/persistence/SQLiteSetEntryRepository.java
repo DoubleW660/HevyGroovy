@@ -30,6 +30,9 @@ public final class SQLiteSetEntryRepository implements SetEntryRepository {
         values.put("weight", set.getWeight());
         values.put("unit", set.getUnit() == null ? null : set.getUnit().name());
         values.put("rest_seconds", set.getRestSeconds());
+        validateMeasurements(set);
+        values.put("duration_seconds", set.getDurationSeconds());
+        values.put("distance_meters", set.getDistanceMeters());
         values.put("rpe", set.getRpe());
         values.put("set_type", set.getSetType() == null ? null : set.getSetType().name());
         values.put("created_at", set.getCreatedAtEpochMillis());
@@ -75,6 +78,20 @@ public final class SQLiteSetEntryRepository implements SetEntryRepository {
         }
     }
 
+    static void validateMeasurements(SetEntry set) {
+        if ((set.getDurationSeconds() != null && set.getDurationSeconds() < 0) ||
+                (set.getDistanceMeters() != null && (!Double.isFinite(set.getDistanceMeters()) || set.getDistanceMeters() < 0))) {
+            throw new IllegalArgumentException("Time and distance must be finite and nonnegative");
+        }
+    }
+
+    static void readMeasurements(Cursor cursor, SetEntry set) {
+        int duration = cursor.getColumnIndexOrThrow("duration_seconds");
+        int distance = cursor.getColumnIndexOrThrow("distance_meters");
+        set.setDurationSeconds(cursor.isNull(duration) ? null : cursor.getInt(duration));
+        set.setDistanceMeters(cursor.isNull(distance) ? null : cursor.getDouble(distance));
+    }
+
     private List<SetEntry> query(String sql, long id) {
         List<SetEntry> result = new ArrayList<>();
         try (Cursor cursor = db.rawQuery(sql, new String[]{Long.toString(id)})) {
@@ -93,6 +110,7 @@ public final class SQLiteSetEntryRepository implements SetEntryRepository {
                 set.setRestSeconds(cursor.isNull(rest) ? null : cursor.getInt(rest));
                 int rpe = cursor.getColumnIndexOrThrow("rpe");
                 set.setRpe(cursor.isNull(rpe) ? null : cursor.getFloat(rpe));
+                readMeasurements(cursor, set);
                 result.add(set);
             }
         }

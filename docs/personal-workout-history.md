@@ -1,5 +1,42 @@
 # Personal workout history import
 
+## Importing a new Hevy export in the app
+
+Open **Profile → Import from Hevy → Choose Hevy CSV**. Select the original UTF-8
+export and use the timezone where its workouts were logged. This importer has no
+date cutoff. It adds finished workouts missing from your history, including timed,
+distance, bodyweight, warm-up, failure, and drop sets. It preserves workout and
+exercise notes, ordering, dates, RPE, and superset identifiers (in exercise notes).
+Weights retain the export's LB or KG unit; miles/kilometers are converted to meters.
+
+The result reports added/skipped workouts, imported sets, and new exercises.
+Existing workouts are matched by their import receipt or their start minute and
+name; identical start/end timestamps also identify a previously renamed workout.
+Receipts use the same keys as the bundled import below. Reimporting preserves
+in-app edits and deliberately deleted workouts. All pending writes, including
+new exercises and receipts, commit together; a failed batch rolls back completely.
+Active workouts are preserved. Ambiguous exercise names require renaming before
+import, rather than assigning their history to an arbitrary exercise.
+
+Existing exercises/routines are reused by name and stable catalog alias. Unknown
+exercises are created under Other with tracking inferred from their sets. Missing
+routines are not created; the workout's original title remains in its history.
+Configure existing exercises through **exercise → Info → Edit categories & tracking**:
+choose unilateral/bilateral, set measurements, a major (primary) muscle, and minor
+(secondary) muscles. Tracking options are weight/reps, reps, time, distance,
+distance/time, and weight/time. Time is entered in seconds and distance in meters.
+Changing the fields shown does not rewrite previously saved set measurements.
+Time and distance appear in workout and exercise history and return with sets
+restored for the same routine. Weight/repetition graphs and records keep their
+existing definitions.
+
+Schema v9 adds exercise tracking and nullable set duration/distance columns while
+preserving existing sets and exercise settings. Bottom navigation opens each tab's
+main page on every tap, clearing detail pages, search drafts, and scroll positions.
+The active workout remains available through Resume.
+
+## Original bundled history
+
 The CSV import includes 29 workouts from August 2 through October 14, 2026,
 using the previously selected August 1 cutoff. It preserves 192 exercise occurrences,
 384 sets, 3,423 reps, workout and exercise notes, exercise ordering, and workout dates.

@@ -160,7 +160,7 @@ public class PersonalWorkoutHistoryImportTest {
         }
         try (WorkoutDatabase helper = new WorkoutDatabase(context, name)) {
             SQLiteDatabase db = helper.getWritableDatabase();
-            assertEquals(8, db.getVersion());
+            assertEquals(9, db.getVersion());
             assertEquals("Keep me", text(db, "SELECT notes FROM logged_workout"));
             assertEquals(1, count(db, "SELECT COUNT(*) FROM logged_workout WHERE ended_at IS NULL"));
             assertEquals(0, count(db, "SELECT COUNT(*) FROM workout_import_entry"));

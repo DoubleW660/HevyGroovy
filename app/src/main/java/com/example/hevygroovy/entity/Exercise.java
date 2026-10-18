@@ -6,6 +6,9 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Exercise {
+    private com.example.hevygroovy.entity.enums.TrackingType trackingType = com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_REPS;
+    public com.example.hevygroovy.entity.enums.TrackingType getTrackingType() { return trackingType; }
+    public void setTrackingType(com.example.hevygroovy.entity.enums.TrackingType value) { trackingType = java.util.Objects.requireNonNull(value); }
 
     private long id;
 

@@ -13,6 +13,7 @@ public final class SQLiteAppStorage implements AppServices {
     private final SQLiteWorkoutServices workouts;
     private final WorkoutHistoryQueryService history;
     private final PersonalRecordService personalRecords;
+    private final WorkoutImportService workoutImporter;
 
     public SQLiteAppStorage(Context context) {
         this(context, "hevy_groovy.db", true, 1L, true);
@@ -38,6 +39,7 @@ public final class SQLiteAppStorage implements AppServices {
         helper = new WorkoutDatabase(context, databaseName);
         try {
             SQLiteDatabase db = helper.getWritableDatabase();
+            workoutImporter = new HevyHistoryImporter(db);
             if (seedCatalog || seedHistory) {
                 db.beginTransaction();
                 try {
@@ -73,6 +75,7 @@ public final class SQLiteAppStorage implements AppServices {
     public SetEntryService getSetEntries() { return workouts.getSetEntries(); }
     public WorkoutHistoryQueryService getHistory() { return history; }
     public PersonalRecordService getPersonalRecords() { return personalRecords; }
+    public WorkoutImportService getWorkoutImporter() { return workoutImporter; }
 
     @Override
     public void close() { helper.close(); }

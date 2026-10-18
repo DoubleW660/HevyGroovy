@@ -70,6 +70,7 @@ public final class SQLitePersonalRecordRepository implements PersonalRecordRepos
                 set.setRestSeconds(cursor.isNull(rest) ? null : cursor.getInt(rest));
                 int rpe = cursor.getColumnIndexOrThrow("rpe");
                 set.setRpe(cursor.isNull(rpe) ? null : cursor.getFloat(rpe));
+                SQLiteSetEntryRepository.readMeasurements(cursor, set);
                 performance.sets.add(set);
             }
         }

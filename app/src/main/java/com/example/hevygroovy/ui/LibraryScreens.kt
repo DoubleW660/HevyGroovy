@@ -83,14 +83,14 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
     }
     if (recordExerciseId != null && onOpenExercise == null) {
         ExerciseDetailScreen(records, state.exercises.find { it.id == recordExerciseId }?.title ?: "Exercise",
-            onBack = records::close, initialTab = initialDetailTab)
+            onBack = records::close, initialTab = initialDetailTab, library = model)
         return
     }
     val canOpenExercise = onOpenExercise != null || records != null
     LibraryPage("Exercise library", model, listState = listState) {
         item(key = "controls") {
             OutlinedTextField(search, { search = it }, label = { Text("Search exercises") },
-                singleLine = true, modifier = Modifier.fillMaxWidth())
+                singleLine = true, modifier = Modifier.fillMaxWidth().testTag("exercise-search"))
             Row {
                 Checkbox(includeArchived, onCheckedChange = { includeArchived = it },
                     modifier = Modifier.semantics { contentDescription = "Show archived exercises" })
@@ -107,7 +107,7 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
                     Text(exercise.title, style = MaterialTheme.typography.titleLarge)
                     Text(exercise.primaryMuscle?.displayName() ?: "Other", style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary)
-                    Text(if (exercise.isUnilateral) "Unilateral · volume × 2" else "Bilateral · volume × 1",
+                    Text((if (exercise.isUnilateral) "Unilateral" else "Bilateral") + " · " + exercise.trackingType.label(),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (!exercise.description.isNullOrBlank()) Text(exercise.description,
                         maxLines = 3, overflow = TextOverflow.Ellipsis)
@@ -140,8 +140,8 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
     val editing = state.exercises.find { it.id == editingId }
     if (creating || editing != null) {
         SaveResultEffect(state.savedChanges) { creating = false; editingId = null }
-        ExerciseCatalogDialog(editing, state.busy, state.error, onDismiss = { creating = false; editingId = null }) { title, description, primary, secondary, unilateral ->
-            model.saveExercise(editing?.id, title, description, primary, secondary, unilateral)
+        ExerciseCatalogDialog(editing, state.busy, state.error, onDismiss = { creating = false; editingId = null }) { title, description, primary, secondary, unilateral, tracking ->
+            model.saveExercise(editing?.id, title, description, primary, secondary, unilateral, tracking)
         }
     }
     state.exercises.find { it.id == archiveId }?.let { exercise ->
@@ -153,13 +153,15 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
 }
 
 @Composable
-private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, error: String?, onDismiss: () -> Unit,
-    onSave: (String, String, MuscleGroup, List<MuscleGroup>, Boolean) -> Unit) {
-    var title by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.title.orEmpty()) }
+internal fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, error: String?, onDismiss: () -> Unit,
+    initialTitle: String = "",
+    onSave: (String, String, MuscleGroup, List<MuscleGroup>, Boolean, com.example.hevygroovy.entity.enums.TrackingType) -> Unit) {
+    var title by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.title ?: initialTitle) }
     var description by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.description.orEmpty()) }
     var primary by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.primaryMuscle ?: MuscleGroup.OTHER) }
     var secondary by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.secondaryMuscles?.toList() ?: emptyList()) }
     var unilateral by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.isUnilateral ?: false) }
+    var tracking by rememberSaveable(exercise?.id) { mutableStateOf(exercise?.trackingType ?: com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_REPS) }
     var primaryMenu by remember { mutableStateOf(false) }
     var secondaryMenu by remember { mutableStateOf(false) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(if (exercise == null) "New exercise" else "Edit exercise") },
@@ -172,34 +174,39 @@ private fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, err
                     modifier = Modifier.testTag("catalog-exercise-description"))
                 Text("Movement type", style = MaterialTheme.typography.titleSmall)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(!unilateral, onClick = { unilateral = false }, label = { Text("Bilateral") },
+                    FilterChip(!unilateral, onClick = { unilateral = false }, enabled = !busy, label = { Text("Bilateral") },
                         modifier = Modifier.testTag("catalog-bilateral"))
-                    FilterChip(unilateral, onClick = { unilateral = true }, label = { Text("Unilateral") },
+                    FilterChip(unilateral, onClick = { unilateral = true }, enabled = !busy, label = { Text("Unilateral") },
                         modifier = Modifier.testTag("catalog-unilateral"))
                 }
                 Text(if (unilateral) "Enter weight and reps per side. Volume = weight × reps × 2."
                     else "Volume = weight × reps.", style = MaterialTheme.typography.bodySmall)
                 Text("Applies to existing history and records.", style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
+                TrackingTypeSelector(tracking, !busy) { tracking = it }
                 Box {
-                    OutlinedButton(onClick = { primaryMenu = true }) { Text("Primary: ${primary.displayName()}") }
+                    OutlinedButton(onClick = { primaryMenu = true }, enabled = !busy,
+                        modifier = Modifier.testTag("exercise-major-muscle")) { Text("Major (primary): ${primary.displayName()}") }
                     DropdownMenu(primaryMenu, { primaryMenu = false }) {
                         MuscleGroup.values().forEach { group -> DropdownMenuItem(text = { Text(group.displayName()) },
-                            onClick = { primary = group; primaryMenu = false }) }
+                            modifier = Modifier.testTag("major-muscle-${group.name}"),
+                            onClick = { primary = group; secondary = secondary - group; primaryMenu = false }) }
                     }
                 }
                 Box {
-                    OutlinedButton(onClick = { secondaryMenu = true }) { Text("Secondary muscles (${secondary.size})") }
+                    OutlinedButton(onClick = { secondaryMenu = true }, enabled = !busy,
+                        modifier = Modifier.testTag("exercise-minor-muscles")) { Text("Minor (secondary) muscles (${secondary.size})") }
                     DropdownMenu(secondaryMenu, { secondaryMenu = false }) {
                         DropdownMenuItem(text = { Text("Done") }, onClick = { secondaryMenu = false })
-                        MuscleGroup.values().forEach { group -> DropdownMenuItem(text = { Text(group.displayName()) },
+                        MuscleGroup.values().filter { it != primary }.forEach { group -> DropdownMenuItem(text = { Text(group.displayName()) },
+                            modifier = Modifier.testTag("minor-muscle-${group.name}"),
                             trailingIcon = { Checkbox(group in secondary, onCheckedChange = null) },
                             onClick = { secondary = if (group in secondary) secondary - group else secondary + group }) }
                     }
                 }
             }
         },
-        confirmButton = { TextButton(onClick = { onSave(title, description, primary, secondary, unilateral) },
+        confirmButton = { TextButton(onClick = { onSave(title, description, primary, secondary.filter { it != primary }, unilateral, tracking) },
             enabled = !busy && title.isNotBlank()) { Text("Save exercise") } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }

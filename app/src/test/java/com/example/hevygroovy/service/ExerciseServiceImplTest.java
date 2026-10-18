@@ -20,6 +20,19 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class ExerciseServiceImplTest {
+    @Test void trackingDefaultsAndPartialUpdatesPreserveConfiguredTracking() {
+        when(exerciseRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        CreateExerciseRequest create = new CreateExerciseRequest(); create.setTitle("Carry");
+        create.setPrimaryMuscleGroup(MuscleGroup.OTHER);
+        assertEquals(com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_REPS, exerciseService.createExercise(create).getTrackingType());
+        create.setTrackingType(com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_TIME);
+        assertEquals(com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_TIME, exerciseService.createExercise(create).getTrackingType());
+        Exercise existing = new Exercise(); existing.setTrackingType(com.example.hevygroovy.entity.enums.TrackingType.DISTANCE_TIME);
+        when(exerciseRepository.findById(1L)).thenReturn(Optional.of(existing));
+        assertEquals(com.example.hevygroovy.entity.enums.TrackingType.DISTANCE_TIME, exerciseService.updateExercise(1, new UpdateExerciseRequest()).getTrackingType());
+        UpdateExerciseRequest update = new UpdateExerciseRequest(); update.setTrackingType(com.example.hevygroovy.entity.enums.TrackingType.TIME);
+        assertEquals(com.example.hevygroovy.entity.enums.TrackingType.TIME, exerciseService.updateExercise(1, update).getTrackingType());
+    }
     @Test
     void lateralityDefaultsToBilateralAndPartialUpdatesPreserveTheChoice() {
         when(exerciseRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

@@ -39,12 +39,14 @@ class MainActivity : ComponentActivity() {
         val history = ViewModelProvider(this, HistoryViewModel.Factory(container.history)).get(HistoryViewModel::class.java)
         val profile = ViewModelProvider(this, ProfileViewModel.Factory(container.profile)).get(ProfileViewModel::class.java)
         val records = ViewModelProvider(this, ExerciseRecordsViewModel.Factory(container.records)).get(ExerciseRecordsViewModel::class.java)
+        val imports = ViewModelProvider(this, com.example.hevygroovy.ui.HistoryImportViewModel.Factory(container.historyImport))
+            .get(com.example.hevygroovy.ui.HistoryImportViewModel::class.java)
         setContent {
             HevyGroovyTheme {
                 ReportDrawnWhen { viewModel.state.loaded && !viewModel.state.busy && viewModel.state.error == null }
                 WorkoutApp(viewModel, library, history, profile, records, restTimer,
                     openWorkoutId = restNotificationWorkoutId,
-                    onWorkoutOpened = { restNotificationWorkoutId = null })
+                    onWorkoutOpened = { restNotificationWorkoutId = null }, imports = imports)
             }
         }
     }

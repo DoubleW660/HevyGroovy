@@ -1,6 +1,9 @@
 package com.example.hevygroovy.entity;
 
 public class WorkoutExercise {
+    private com.example.hevygroovy.entity.enums.TrackingType trackingType = com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_REPS;
+    public com.example.hevygroovy.entity.enums.TrackingType getTrackingType() { return trackingType; }
+    public void setTrackingType(com.example.hevygroovy.entity.enums.TrackingType value) { trackingType = value; }
 
     private long id;
     private long loggedWorkoutId;

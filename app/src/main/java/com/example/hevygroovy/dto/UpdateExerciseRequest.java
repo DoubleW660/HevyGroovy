@@ -7,6 +7,9 @@ import java.util.List;
 
 /** Omit the description setter to preserve it; pass null or blank to clear it. */
 public class UpdateExerciseRequest {
+    private com.example.hevygroovy.entity.enums.TrackingType trackingType;
+    public com.example.hevygroovy.entity.enums.TrackingType getTrackingType() { return trackingType; }
+    public void setTrackingType(com.example.hevygroovy.entity.enums.TrackingType value) { trackingType = value; }
 
     private String title;
     private Boolean unilateral;

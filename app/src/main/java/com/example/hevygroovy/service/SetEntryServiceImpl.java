@@ -117,6 +117,8 @@ public class SetEntryServiceImpl implements SetEntryService{
 
             setEntry.setRestSeconds(request.getRestSeconds());
         }
+        if (request.hasDurationSeconds()) setEntry.setDurationSeconds(request.getDurationSeconds());
+        if (request.hasDistanceMeters()) setEntry.setDistanceMeters(request.getDistanceMeters());
 
         return setEntryRepository.save(setEntry);
     }
@@ -149,6 +151,8 @@ public class SetEntryServiceImpl implements SetEntryService{
 
 
     private void validateUpdate(UpdateSetEntryRequest request) {
+        if (request.getDurationSeconds() != null && request.getDurationSeconds() < 0) throw new IllegalArgumentException("Time cannot be negative");
+        if (request.getDistanceMeters() != null && (!Double.isFinite(request.getDistanceMeters()) || request.getDistanceMeters() < 0)) throw new IllegalArgumentException("Distance must be finite and nonnegative");
         if (request.getReps() != null && request.getReps() < 0) {
             throw new RuntimeException("Reps cannot be negative");
         }

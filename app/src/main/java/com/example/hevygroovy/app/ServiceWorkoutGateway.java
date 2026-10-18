@@ -76,12 +76,15 @@ final class ServiceWorkoutGateway implements WorkoutGateway {
 
     @Override
     public void createExercise(String title, MuscleGroup primaryMuscle, Callback callback) {
-        submit(() -> {
-            CreateExerciseRequest request = new CreateExerciseRequest();
-            request.setTitle(title);
-            request.setPrimaryMuscleGroup(primaryMuscle);
-            worker.services().getExercises().createExercise(request);
-        }, callback, false, true);
+        CreateExerciseRequest request = new CreateExerciseRequest();
+        request.setTitle(title);
+        request.setPrimaryMuscleGroup(primaryMuscle);
+        createExercise(request, callback);
+    }
+
+    @Override
+    public void createExercise(CreateExerciseRequest request, Callback callback) {
+        submit(() -> worker.services().getExercises().createExercise(request), callback, false, true);
     }
 
     @Override

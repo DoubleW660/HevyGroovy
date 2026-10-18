@@ -5,6 +5,7 @@ import com.example.hevygroovy.dto.WorkoutHistory;
 import com.example.hevygroovy.dto.ExerciseOption;
 import com.example.hevygroovy.dto.PersonalRecord;
 import com.example.hevygroovy.dto.UpdateSetEntryRequest;
+import com.example.hevygroovy.dto.CreateExerciseRequest;
 import com.example.hevygroovy.entity.enums.MuscleGroup;
 import java.util.List;
 
@@ -51,6 +52,9 @@ public interface WorkoutGateway {
     void finish(long workoutId, Callback callback);
     void updateWorkout(long workoutId, String name, String notes, Callback callback);
     void createExercise(String title, MuscleGroup primaryMuscle, Callback callback);
+    default void createExercise(CreateExerciseRequest request, Callback callback) {
+        callback.onFailure(new UnsupportedOperationException("Exercise configuration is unavailable"));
+    }
     void addExercise(long workoutId, long exerciseId, Callback callback);
     void removeExercise(long workoutExerciseId, Callback callback);
     void moveExercise(long workoutExerciseId, int position, Callback callback);

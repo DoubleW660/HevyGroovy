@@ -33,8 +33,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.hevygroovy.dto.*
-import com.example.hevygroovy.entity.enums.MuscleGroup
 import com.example.hevygroovy.entity.enums.SetType
+import com.example.hevygroovy.entity.enums.TrackingType
 import com.example.hevygroovy.entity.enums.Unit as WeightUnit
 import java.text.NumberFormat
 import java.time.Instant
@@ -129,8 +129,6 @@ private fun ExercisePicker(model: WorkoutHomeViewModel, onDismiss: () -> Unit) {
     var search by rememberSaveable { mutableStateOf("") }
     var creating by rememberSaveable { mutableStateOf(false) }
     var title by rememberSaveable { mutableStateOf("") }
-    var muscle by rememberSaveable { mutableStateOf(MuscleGroup.OTHER) }
-    var expanded by remember { mutableStateOf(false) }
     var submitted by rememberSaveable { mutableStateOf(false) }
     val busy = model.state.busy
     LaunchedEffect(model.state.savedChanges) {
@@ -139,23 +137,23 @@ private fun ExercisePicker(model: WorkoutHomeViewModel, onDismiss: () -> Unit) {
             if (creating && !model.state.refreshRequired) { search = title.trim(); creating = false } else onDismiss()
         }
     }
+    if (creating) {
+        ExerciseCatalogDialog(null, busy, model.state.error, onDismiss = { creating = false }, initialTitle = title) {
+                name, description, primary, secondary, unilateral, tracking ->
+            title = name
+            submitted = true
+            model.createExercise(CreateExerciseRequest().apply {
+                this.title = name; this.description = description; primaryMuscleGroup = primary
+                secondaryMuscleGroups = secondary; isUnilateral = unilateral; trackingType = tracking
+            })
+        }
+        return
+    }
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text(if (creating) "Create exercise" else "Choose exercise") },
+        title = { Text("Choose exercise") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (creating) {
-                    OutlinedTextField(title, { title = it }, label = { Text("Exercise name") },
-                        singleLine = true, modifier = Modifier.testTag("exercise-name"))
-                    Box {
-                        OutlinedButton(onClick = { expanded = true }) { Text("Muscle: ${muscle.label()}") }
-                        DropdownMenu(expanded, onDismissRequest = { expanded = false }) {
-                            MuscleGroup.values().forEach { group ->
-                                DropdownMenuItem(text = { Text(group.label()) }, onClick = { muscle = group; expanded = false })
-                            }
-                        }
-                    }
-                } else {
                     OutlinedTextField(search, { search = it }, label = { Text("Search exercises") }, singleLine = true)
                     val options = model.state.exercises.filter { it.title.contains(search, ignoreCase = true) }
                     if (options.isEmpty()) Text("No matching exercises. Create one to get started.")
@@ -165,20 +163,12 @@ private fun ExercisePicker(model: WorkoutHomeViewModel, onDismiss: () -> Unit) {
                                 modifier = Modifier.fillMaxWidth().testTag("exercise-option-${exercise.id}")) { Text(exercise.title) }
                         }
                     }
-                }
                 if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
                 model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             }
         },
         confirmButton = {
-            if (creating) {
-                TextButton(onClick = {
-                    submitted = true
-                    model.createExercise(title, muscle)
-                }, enabled = !busy && title.isNotBlank()) { Text("Save exercise") }
-            } else {
                 TextButton(onClick = { title = search; creating = true }, enabled = !busy) { Text("Create exercise") }
-            }
         },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
     )
@@ -226,7 +216,8 @@ fun WorkoutExerciseCard(
             }
             if (!collapsed) savedRows.SaveableStateProvider(row.workoutExerciseId) {
                 Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (row.isUnilateral) Text("Unilateral · reps per side · volume × 2",
+                    if (row.isUnilateral) Text(if (row.trackingType.tracksReps()) "Unilateral · reps per side · volume × 2"
+                        else "Unilateral · measurements per side",
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
                     if (records.isNotEmpty()) {
                         TextButton(onClick = { showRecords = true },
@@ -252,7 +243,9 @@ fun WorkoutExerciseCard(
                     Text(if (row.previousEndedAtEpochMillis != null) "Previous · " + previousDate(row.previousEndedAtEpochMillis)
                         else "No previous sets yet", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    InlineSetTableHeading()
+                    if (row.trackingType == TrackingType.WEIGHT_REPS) InlineSetTableHeading()
+                    else Text(row.trackingType.label(), style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                     row.sets.forEachIndexed { index, set ->
                         key(set.id) {
                             val warmup = set.setType == SetType.WARMUP
@@ -260,6 +253,7 @@ fun WorkoutExerciseCard(
                             val previous = row.previousSets.filter { (it.setType == SetType.WARMUP) == warmup }.getOrNull(ordinal)
                             val normalNumber = row.sets.take(index + 1).count { it.setType == SetType.NORMAL }.coerceAtLeast(1)
                             InlineSetRow(model, name, set,
+                                tracking = row.trackingType,
                                 previous = previous, normalSetNumber = normalNumber,
                                 canPersist = canPersist, onDraftChanged = onDraftChanged,
                                 onMore = { savingSetOptions = false; editingSetId = set.id })
@@ -344,12 +338,17 @@ private fun InlineSetTableHeading() {
 
 @Composable
 private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set: ActiveSetEntry,
+    tracking: TrackingType,
     previous: ActiveSetEntry?, normalSetNumber: Int, canPersist: () -> Boolean,
     onDraftChanged: (Long, InlineSetDraft) -> Unit, onMore: () -> Unit) {
     var weight by rememberSaveable(set.id) { mutableStateOf(workoutInputNumber(set.weight)) }
     var reps by rememberSaveable(set.id) { mutableStateOf(set.reps.toString()) }
     var unit by rememberSaveable(set.id) { mutableStateOf(set.unit ?: WeightUnit.LB) }
     var type by rememberSaveable(set.id) { mutableStateOf(set.setType ?: SetType.NORMAL) }
+    var duration by rememberSaveable(set.id) { mutableStateOf((set.durationSeconds ?: 0).toString()) }
+    var distance by rememberSaveable(set.id) { mutableStateOf(workoutInputNumber(set.distanceMeters ?: 0.0)) }
+    var durationDirty by rememberSaveable(set.id) { mutableStateOf(false) }
+    var distanceDirty by rememberSaveable(set.id) { mutableStateOf(false) }
     var weightDirty by rememberSaveable(set.id) { mutableStateOf(false) }
     var repsDirty by rememberSaveable(set.id) { mutableStateOf(false) }
     var unitDirty by rememberSaveable(set.id) { mutableStateOf(false) }
@@ -365,40 +364,55 @@ private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set:
     val busy = model.state.busy
     val weightValue = weight.replace(',', '.').toDoubleOrNull()
     val repsValue = reps.toIntOrNull()
-    val validWeight = weightValue != null && weightValue.isFinite() && weightValue >= 0
-    val validReps = repsValue != null && repsValue >= 0
-    val valid = validWeight && validReps
-    SideEffect { onDraftChanged(set.id, InlineSetDraft(weight, reps, unit, type)) }
+    val validWeight = !tracking.tracksWeight() || (weightValue != null && weightValue.isFinite() && weightValue >= 0)
+    val validReps = !tracking.tracksReps() || (repsValue != null && repsValue >= 0)
+    val durationValue = duration.toIntOrNull()
+    val distanceValue = distance.replace(',', '.').toDoubleOrNull()
+    val validDuration = !tracking.tracksDuration() || (durationValue != null && durationValue >= 0)
+    val validDistance = !tracking.tracksDistance() || (distanceValue != null && distanceValue.isFinite() && distanceValue >= 0)
+    val valid = validWeight && validReps && validDuration && validDistance
+    fun currentDraft() = InlineSetDraft(if (tracking.tracksWeight()) weight else workoutInputNumber(set.weight),
+        if (tracking.tracksReps()) reps else set.reps.toString(), unit, type,
+        if (tracking.tracksDuration()) duration else null, if (tracking.tracksDistance()) distance else null)
+    val draft = currentDraft()
+    SideEffect { onDraftChanged(set.id, draft) }
 
     // Keep drafts when a save fails or another set is saved. Adopt external changes only for clean fields.
-    LaunchedEffect(set.weight, set.reps, set.unit, set.setType) {
+    LaunchedEffect(set.weight, set.reps, set.unit, set.setType, set.durationSeconds, set.distanceMeters) {
         if (!weightDirty || weight.replace(',', '.').toDoubleOrNull() == set.weight) {
             weight = workoutInputNumber(set.weight); weightDirty = false
         }
         if (!repsDirty || reps.toIntOrNull() == set.reps) { reps = set.reps.toString(); repsDirty = false }
         if (!unitDirty || unit == set.unit) { unit = set.unit ?: WeightUnit.LB; unitDirty = false }
         if (!typeDirty || type == set.setType) { type = set.setType ?: SetType.NORMAL; typeDirty = false }
+        if (!durationDirty || duration.toIntOrNull() == set.durationSeconds) {
+            duration = (set.durationSeconds ?: 0).toString(); durationDirty = false
+        }
+        if (!distanceDirty || distance.replace(',', '.').toDoubleOrNull() == set.distanceMeters) {
+            distance = workoutInputNumber(set.distanceMeters ?: 0.0); distanceDirty = false
+        }
     }
 
     fun saveIfChanged() {
         if (!valid || !canPersist() || model.state.refreshRequired) return
         if (model.state.busy) {
             // The draft can equal the old saved value while a different value is in flight.
-            if (weightDirty || repsDirty || unitDirty || typeDirty || pendingCompleted != null) pendingSave = true
+            if (weightDirty || repsDirty || unitDirty || typeDirty || durationDirty || distanceDirty || pendingCompleted != null) pendingSave = true
             return
         }
-        val changed = weightValue != set.weight || repsValue != set.reps || unit != set.unit ||
-            type != set.setType || pendingCompleted != null
+        val changed = !currentDraft().matches(set) || pendingCompleted != null
         if (!changed) { pendingSave = false; return }
         pendingSave = true
         val completed = pendingCompleted
         pendingSave = false
         pendingCompleted = null
         model.updateSet(set.id, UpdateSetEntryRequest().apply {
-            setWeight(weightValue!!)
-            setReps(repsValue!!)
+            if (tracking.tracksWeight()) setWeight(weightValue!!)
+            if (tracking.tracksReps()) setReps(repsValue!!)
             setUnit(unit)
             setSetType(type)
+            if (tracking.tracksDuration()) setDurationSeconds(durationValue)
+            if (tracking.tracksDistance()) setDistanceMeters(distanceValue)
             if (completed != null) setCompleted(completed)
         })
     }
@@ -441,14 +455,14 @@ private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set:
                         }, onClick = { typeMenu = false; saveIfChanged(); onMore() })
                 }
             }
-            Column(Modifier.weight(0.95f).testTag("previous-set-" + set.id)) {
+            if (tracking == TrackingType.WEIGHT_REPS) Column(Modifier.weight(0.95f).testTag("previous-set-" + set.id)) {
                 if (previous == null) Text("—", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 else {
                     Text(workoutNumber(previous.weight) + " " + previous.unit.name.lowercase() + " × " + previous.reps,
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            Box(Modifier.weight(1f)) {
+            if (tracking.tracksWeight()) Box(Modifier.weight(1f)) {
                 InlineNumberField(weight, { weight = it; weightDirty = true }, !validWeight, KeyboardType.Decimal,
                     "Weight for set " + set.setNumber + " for $exerciseName",
                     Modifier.testTag("inline-weight-" + set.id), onDone = {
@@ -471,13 +485,31 @@ private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set:
                     }
                 }
             }
-            InlineNumberField(reps, { reps = it; repsDirty = true }, !validReps, KeyboardType.Number,
+            if (tracking.tracksReps()) InlineNumberField(reps, { reps = it; repsDirty = true }, !validReps, KeyboardType.Number,
                 "Reps for set " + set.setNumber + " for $exerciseName",
                 Modifier.weight(0.65f).testTag("inline-reps-" + set.id),
                 onDone = {
                     if (focusWithinRow) skipNextBlur = true
                     saveIfChanged(); focus.clearFocus(); keyboard?.hide()
                 })
+            if (tracking.tracksDuration()) Column(Modifier.weight(1f)) {
+                Text("TIME (seconds)", style = MaterialTheme.typography.labelSmall)
+                InlineNumberField(duration, { duration = it; durationDirty = true }, !validDuration, KeyboardType.Number,
+                    "Time in seconds for set ${set.setNumber} for $exerciseName",
+                    Modifier.testTag("inline-duration-${set.id}"), onDone = {
+                        if (focusWithinRow) skipNextBlur = true
+                        saveIfChanged(); focus.clearFocus(); keyboard?.hide()
+                    })
+            }
+            if (tracking.tracksDistance()) Column(Modifier.weight(1f)) {
+                Text("DISTANCE (meters)", style = MaterialTheme.typography.labelSmall)
+                InlineNumberField(distance, { distance = it; distanceDirty = true }, !validDistance, KeyboardType.Decimal,
+                    "Distance in meters for set ${set.setNumber} for $exerciseName",
+                    Modifier.testTag("inline-distance-${set.id}"), onDone = {
+                        if (focusWithinRow) skipNextBlur = true
+                        saveIfChanged(); focus.clearFocus(); keyboard?.hide()
+                    })
+            }
             Checkbox(checked = set.isCompleted, enabled = !busy && valid,
                 onCheckedChange = { checked ->
                     if (focusWithinRow) skipNextBlur = true
@@ -489,9 +521,14 @@ private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set:
                     contentDescription = "Complete set " + set.setNumber + " for $exerciseName"
                 })
         }
-        if (!valid) Text("Enter nonnegative weight and whole-number reps.", style = MaterialTheme.typography.bodySmall,
+        if (tracking != TrackingType.WEIGHT_REPS && previous != null) Text(
+            "Previous: " + (previous.measurementDetails() +
+                (if (tracking.tracksWeight()) listOf("${workoutNumber(previous.weight)} ${previous.unit.name.lowercase()}") else emptyList()) +
+                (if (tracking.tracksReps()) listOf("${previous.reps} reps") else emptyList())).joinToString(" · "),
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        if (!valid) Text("Enter nonnegative values; reps and seconds must be whole numbers.", style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.error)
-        else if (weightValue != set.weight || repsValue != set.reps || unit != set.unit || type != set.setType) {
+        else if (!draft.matches(set)) {
             Text(if (busy) "Saving…" else "Unsaved changes · tap ✓ or Done to save",
                 style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -581,11 +618,15 @@ private fun previousDate(value: Long): String = DateTimeFormatter.ofPattern("MMM
 private fun Enum<*>.label(): String = name.lowercase().replace('_', ' ').replaceFirstChar { it.titlecase() }
 
 /** The session compares these saved drafts with current storage, even when a row scrolls offscreen. */
-data class InlineSetDraft(val weightText: String, val repsText: String, val unit: WeightUnit, val type: SetType) {
+data class InlineSetDraft(val weightText: String, val repsText: String, val unit: WeightUnit, val type: SetType,
+    val durationText: String? = null, val distanceText: String? = null) {
     fun matches(set: ActiveSetEntry): Boolean {
         val weight = weightText.replace(',', '.').toDoubleOrNull()
         val reps = repsText.toIntOrNull()
         return weight != null && weight.isFinite() && weight >= 0 && reps != null && reps >= 0 &&
-            weight == set.weight && reps == set.reps && unit == set.unit && type == set.setType
+            weight == set.weight && reps == set.reps && unit == set.unit && type == set.setType &&
+            (durationText == null || (durationText.toIntOrNull()?.let { it >= 0 && it == (set.durationSeconds ?: 0) } == true)) &&
+            (distanceText == null || (distanceText.replace(',', '.').toDoubleOrNull()?.let {
+                it.isFinite() && it >= 0 && it == (set.distanceMeters ?: 0.0) } == true))
     }
 }

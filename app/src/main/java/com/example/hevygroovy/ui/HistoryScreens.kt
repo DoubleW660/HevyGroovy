@@ -339,6 +339,7 @@ private fun HistorySetRow(set: ActiveSetEntry) {
     }
     val extras = buildList {
         add(type)
+        addAll(set.measurementDetails())
         set.rpe?.let { add("RPE ${historyPreciseNumber(it.toString().toDouble())}") }
         set.restSeconds?.let { add("Rest ${historyDuration(it.toLong(), includeSeconds = true)}") }
     }.joinToString(" · ")

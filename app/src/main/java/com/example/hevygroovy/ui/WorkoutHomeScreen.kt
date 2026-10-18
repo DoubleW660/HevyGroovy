@@ -181,13 +181,17 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
 }
 
 private val InlineSetDraftMapSaver = listSaver<SnapshotStateMap<Long, InlineSetDraft>, String>(
-    save = { drafts -> drafts.entries.flatMap { (id, draft) ->
-        listOf(id.toString(), draft.weightText, draft.repsText, draft.unit.name, draft.type.name)
+    save = { drafts -> listOf("v2") + drafts.entries.flatMap { (id, draft) ->
+        listOf(id.toString(), draft.weightText, draft.repsText, draft.unit.name, draft.type.name,
+            draft.durationText ?: "~", draft.distanceText ?: "~")
     } },
     restore = { values -> mutableStateMapOf<Long, InlineSetDraft>().apply {
-        values.chunked(5).forEach { fields ->
+        val extended = values.firstOrNull() == "v2"
+        (if (extended) values.drop(1) else values).chunked(if (extended) 7 else 5).forEach { fields ->
             put(fields[0].toLong(), InlineSetDraft(fields[1], fields[2],
-                WeightUnit.valueOf(fields[3]), SetType.valueOf(fields[4])))
+                WeightUnit.valueOf(fields[3]), SetType.valueOf(fields[4]),
+                if (extended) fields[5].takeUnless { it == "~" } else null,
+                if (extended) fields[6].takeUnless { it == "~" } else null))
         }
     } },
 )

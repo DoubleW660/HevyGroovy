@@ -87,6 +87,10 @@ class HistoryViewModel(
 
     fun closeDetail() {
         if (state.deleting) return
+        resetNavigation()
+    }
+
+    fun resetNavigation() {
         ++detailGeneration
         savedState[SELECTED_WORKOUT_ID] = null
         state = state.copy(selectedWorkoutId = null, detail = null, detailLoading = false, detailError = null, deleteError = null)

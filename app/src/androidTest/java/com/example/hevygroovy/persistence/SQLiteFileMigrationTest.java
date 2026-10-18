@@ -42,7 +42,7 @@ public class SQLiteFileMigrationTest {
         assertEquals(0, completed(db, 1));
         assertEquals(1, completed(db, 2));
         assertEquals("0", completionDefault(db));
-        assertEquals(8, db.getVersion());
+        assertEquals(9, db.getVersion());
     }
 
     @Test
@@ -125,7 +125,7 @@ public class SQLiteFileMigrationTest {
         db.setVersion(4);
         helper.close();
         db = openCurrent();
-        assertEquals(8, db.getVersion());
+        assertEquals(9, db.getVersion());
         try (Cursor row = db.rawQuery("SELECT description,archived FROM exercise WHERE id=1", null)) {
             assertTrue(row.moveToFirst()); assertEquals("Keep my notes", row.getString(0)); assertEquals(1, row.getInt(1));
         }
@@ -152,7 +152,7 @@ public class SQLiteFileMigrationTest {
         db.setVersion(5);
         helper.close();
         db = openCurrent();
-        assertEquals(8, db.getVersion());
+        assertEquals(9, db.getVersion());
         try (Cursor row = db.rawQuery("SELECT source_id FROM exercise_catalog_entry WHERE catalog_key='existing'", null)) {
             assertTrue(row.moveToFirst()); assertEquals("source", row.getString(0));
         }
@@ -176,7 +176,7 @@ public class SQLiteFileMigrationTest {
         db.setVersion(7);
         helper.close();
         db = openCurrent();
-        assertEquals(8, db.getVersion());
+        assertEquals(9, db.getVersion());
         try (Cursor rows = db.rawQuery("SELECT unilateral FROM exercise ORDER BY id", null)) {
             assertTrue(rows.moveToNext()); assertEquals(1, rows.getInt(0));
             assertTrue(rows.moveToNext()); assertEquals(1, rows.getInt(0));
@@ -191,6 +191,27 @@ public class SQLiteFileMigrationTest {
         try (SQLiteAppStorage storage = new SQLiteAppStorage(context, name, true)) {
             assertFalse(storage.getExercises().getExercise(1).isUnilateral());
             assertEquals(2380 * 0.45359237, storage.getHistory().getWorkoutHistoryDetail(1, 1).getTotalVolume(), 0.000001);
+        }
+    }
+
+    @Test public void versionEightAddsTrackingAndMeasurementsWithoutChangingSavedSets() {
+        helper = new WorkoutDatabase(context, name);
+        SQLiteDatabase db = helper.getWritableDatabase();
+        db.execSQL("INSERT INTO exercise(id,title,unilateral) VALUES(1,'Carry',1)");
+        db.execSQL("INSERT INTO logged_workout(id,user_id,started_at) VALUES(1,1,100)");
+        db.execSQL("INSERT INTO workout_exercise(id,logged_workout_id,exercise_id,order_index) VALUES(1,1,1,0)");
+        db.execSQL("INSERT INTO set_entry(workout_exercise_id,set_number,reps,weight,unit,set_type,created_at,completed) VALUES(1,1,5,45,'LB','WARMUP',100,1)");
+        db.execSQL("ALTER TABLE exercise DROP COLUMN tracking_type");
+        db.execSQL("ALTER TABLE set_entry DROP COLUMN duration_seconds");
+        db.execSQL("ALTER TABLE set_entry DROP COLUMN distance_meters");
+        db.setVersion(8); helper.close(); db = openCurrent();
+        assertEquals(9, db.getVersion());
+        try (Cursor exercise = db.rawQuery("SELECT unilateral,tracking_type FROM exercise", null)) {
+            assertTrue(exercise.moveToFirst()); assertEquals(1, exercise.getInt(0)); assertEquals("WEIGHT_REPS", exercise.getString(1));
+        }
+        try (Cursor set = db.rawQuery("SELECT reps,weight,completed,duration_seconds,distance_meters FROM set_entry", null)) {
+            assertTrue(set.moveToFirst()); assertEquals(5, set.getInt(0)); assertEquals(45, set.getDouble(1), 0);
+            assertEquals(1, set.getInt(2)); assertTrue(set.isNull(3)); assertTrue(set.isNull(4));
         }
     }
 

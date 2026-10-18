@@ -14,6 +14,7 @@ public final class AppContainer implements AutoCloseable {
     private final HistoryGateway history;
     private final ProfileGateway profile;
     private final RecordGateway records;
+    private final HistoryImportGateway historyImport;
 
     public AppContainer(Context context) { this(context, "hevy_groovy.db", true, true); }
 
@@ -37,6 +38,7 @@ public final class AppContainer implements AutoCloseable {
         history = new ServiceHistoryGateway(appWorker);
         profile = new ServiceProfileGateway(appWorker, preferences);
         records = new ServiceRecordGateway(appWorker);
+        historyImport = new ServiceHistoryImportGateway(appWorker, app.getContentResolver());
     }
 
     public WorkoutGateway getWorkouts() { return workouts; }
@@ -44,6 +46,7 @@ public final class AppContainer implements AutoCloseable {
     public HistoryGateway getHistory() { return history; }
     public ProfileGateway getProfile() { return profile; }
     public RecordGateway getRecords() { return records; }
+    public HistoryImportGateway getHistoryImport() { return historyImport; }
 
     /** For explicit shutdown outside main; normal app storage lives until process exit. */
     @Override

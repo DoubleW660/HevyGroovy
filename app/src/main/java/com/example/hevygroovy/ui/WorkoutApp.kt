@@ -12,6 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextOverflow
@@ -35,15 +37,18 @@ private enum class AppTab(val title: String, val icon: NavigationIcon, val tag: 
 fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, history: HistoryViewModel,
     profile: ProfileViewModel, records: ExerciseRecordsViewModel? = null,
     restTimer: RestTimerController? = null, openWorkoutId: Long? = null,
-    onWorkoutOpened: () -> Unit = {}) {
+    onWorkoutOpened: () -> Unit = {}, imports: HistoryImportViewModel? = null) {
     ReportOperationDrawn(workouts.performanceTiming)
     ReportOperationDrawn(library.performanceTiming)
     var tab by rememberSaveable(key = "main-destination-v2") { mutableStateOf(AppTab.Home) }
+    var tabVisit by rememberSaveable { mutableLongStateOf(0L) }
     var sessionOpen by rememberSaveable(key = "session-editor-open") { mutableStateOf(false) }
     var exerciseName by rememberSaveable { mutableStateOf("Exercise") }
     var exerciseInitialTab by rememberSaveable { mutableStateOf(0) }
     var previousWorkoutId by remember { mutableStateOf(workouts.state.activeWorkout?.workoutId) }
     val savedScreens = rememberSaveableStateHolder()
+    val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
     val active = workouts.state.activeWorkout
     val exerciseId = records?.state?.selectedExerciseId
     val showSession = sessionOpen && (active != null || workouts.state.loading)
@@ -77,8 +82,14 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
     }
 
     fun selectTab(destination: AppTab) {
+        focus.clearFocus()
+        keyboard?.hide()
+        savedScreens.removeState("${tab.name}-$tabVisit")
+        tabVisit++
         if (records?.state?.selectedExerciseId != null) records.close()
-        if (tab == destination) return
+        sessionOpen = false
+        history.resetNavigation()
+        library.showTemplateList()
         when (destination) {
             AppTab.Home -> workouts.refresh()
             AppTab.Workout, AppTab.Exercises -> library.refresh()
@@ -93,6 +104,7 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
         exerciseInitialTab = initialTab
         // A fresh visit honors its shortcut; rotation still restores the current page.
         savedScreens.removeState("exercise-$id-$initialTab")
+        if (!library.state.loading) library.refresh()
         records.refresh(id)
     }
     fun openHistory(id: Long) {
@@ -122,6 +134,14 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                 snapshotFlow { history.state.loading }.first { !it }
                 history.refresh()
             }
+        }
+    }
+    LaunchedEffect(imports?.state?.changes) {
+        if ((imports?.state?.changes ?: 0) > 0) {
+            records?.invalidate()
+            snapshotFlow { workouts.state.loading }.first { !it }; workouts.refresh()
+            snapshotFlow { library.state.loading }.first { !it }; library.refresh()
+            snapshotFlow { history.state.loading || history.state.deleting }.first { !it }; history.refresh()
         }
     }
     LaunchedEffect(active?.workoutId, workouts.state.savedChanges) {
@@ -208,11 +228,12 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                 val route = when {
                     exerciseId != null -> "exercise-$exerciseId-$exerciseInitialTab"
                     showSession -> "session-${active?.workoutId ?: "starting"}"
-                    else -> tab.name
+                    else -> "${tab.name}-$tabVisit"
                 }
-                savedScreens.SaveableStateProvider(route) {
+                key(route) { savedScreens.SaveableStateProvider(route) {
                     if (exerciseId != null) {
-                        ExerciseDetailScreen(records, exerciseName, onBack = records::close, initialTab = exerciseInitialTab)
+                        ExerciseDetailScreen(records, exerciseName, onBack = records::close,
+                            initialTab = exerciseInitialTab, library = library)
                     } else if (showSession) {
                         WorkoutHomeScreen(workouts, showHistory = false, onMinimize = { sessionOpen = false },
                             onOpenExercise = { id, name -> openExercise(id, name) })
@@ -234,9 +255,9 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                         AppTab.History -> HistoryScreen(history,
                             onOpenExercise = { id, name -> openExercise(id, name) }) { selectTab(AppTab.Workout) }
                         AppTab.Profile -> ProfileScreen(profile,
-                            onHistory = ::showHistoryList, onExercises = { selectTab(AppTab.Exercises) })
+                            onHistory = ::showHistoryList, onExercises = { selectTab(AppTab.Exercises) }, imports = imports)
                     }
-                }
+                } }
             }
         }
     }

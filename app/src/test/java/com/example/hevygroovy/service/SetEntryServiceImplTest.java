@@ -85,6 +85,31 @@ public class SetEntryServiceImplTest {
         verify(setEntryRepository, never()).save(previous);
     }
 
+    @Test void timeAndDistanceSupportPartialEditsAndClearingAndRejectInvalidMeasurements() {
+        LoggedWorkout workout = new LoggedWorkout(); workout.setId(20); workout.setUserId(1);
+        WorkoutExercise exercise = new WorkoutExercise(); exercise.setId(10); exercise.setLoggedWorkoutId(20);
+        SetEntry set = new SetEntry(); set.setId(5); set.setWorkoutExerciseId(10); set.setDurationSeconds(90); set.setDistanceMeters(100.0);
+        when(setEntryRepository.findById(5L)).thenReturn(Optional.of(set));
+        when(workoutExerciseRepository.findById(10L)).thenReturn(Optional.of(exercise));
+        when(loggedWorkoutRepository.findById(20L)).thenReturn(Optional.of(workout));
+        when(setEntryRepository.save(any())).thenAnswer(call -> call.getArgument(0));
+        UpdateSetEntryRequest update = new UpdateSetEntryRequest(); update.setWeight(25.0);
+        setEntryService.updateSet(1, 5, update);
+        Assertions.assertEquals(90, set.getDurationSeconds()); Assertions.assertEquals(100.0, set.getDistanceMeters());
+        update = new UpdateSetEntryRequest(); update.setDurationSeconds(120); update.setDistanceMeters(250.5);
+        setEntryService.updateSet(1, 5, update);
+        Assertions.assertEquals(120, set.getDurationSeconds()); Assertions.assertEquals(250.5, set.getDistanceMeters());
+        UpdateSetEntryRequest invalidTime = new UpdateSetEntryRequest(); invalidTime.setDurationSeconds(-1);
+        assertThrows(IllegalArgumentException.class, () -> setEntryService.updateSet(1, 5, invalidTime));
+        for (double invalid : new double[]{-1.0, Double.NaN, Double.POSITIVE_INFINITY}) {
+            UpdateSetEntryRequest invalidDistance = new UpdateSetEntryRequest(); invalidDistance.setDistanceMeters(invalid);
+            assertThrows(IllegalArgumentException.class, () -> setEntryService.updateSet(1, 5, invalidDistance));
+        }
+        update = new UpdateSetEntryRequest(); update.setDurationSeconds(null); update.setDistanceMeters(null);
+        setEntryService.updateSet(1, 5, update);
+        Assertions.assertNull(set.getDurationSeconds()); Assertions.assertNull(set.getDistanceMeters());
+    }
+
     @Test
     void addSet_missingSelectedUnitFailsBeforeAnyWrite() {
         assertThrows(IllegalArgumentException.class, () -> setEntryService.addSet(1L, 10L, null));

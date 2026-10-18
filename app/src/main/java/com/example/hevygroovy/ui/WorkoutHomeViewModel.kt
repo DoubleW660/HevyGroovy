@@ -86,6 +86,11 @@ class WorkoutHomeViewModel(private val gateway: WorkoutGateway,
         execute { gateway.createExercise(title, muscle, it) }
     }
 
+    fun createExercise(request: com.example.hevygroovy.dto.CreateExerciseRequest) {
+        if (request.title.isNullOrBlank()) { state = state.copy(error = "Enter an exercise name."); return }
+        execute { gateway.createExercise(request, it) }
+    }
+
     fun addExercise(exerciseId: Long) {
         val id = state.activeWorkout?.workoutId ?: return
         execute { gateway.addExercise(id, exerciseId, it) }

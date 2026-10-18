@@ -6,6 +6,7 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.example.hevygroovy.app.AppContainer
 import com.example.hevygroovy.app.LocalUserIdentity
 import com.example.hevygroovy.dto.CreateExerciseRequest
+import com.example.hevygroovy.dto.CreateTemplateRequest
 import com.example.hevygroovy.dto.UpdateSetEntryRequest
 import com.example.hevygroovy.entity.enums.MuscleGroup
 import com.example.hevygroovy.persistence.SQLiteAppStorage
@@ -40,7 +41,8 @@ class ExerciseNavigationFlowTest {
             val active = storage.workoutSessions.startEmptyWorkout(user).id
             val row = storage.workoutSessions.addExerciseToWorkout(user, active, exercise).id
             val set = storage.setEntries.addSet(user, row).id
-            longArrayOf(exercise, row, set, previous, previousRow)
+            val template = storage.templates.createTemplate(user, CreateTemplateRequest().apply { title = "Navigation routine" }).templateWorkoutId
+            longArrayOf(exercise, row, set, previous, previousRow, template)
         }
         try {
             AppContainer(context, database).use { container ->
@@ -94,6 +96,27 @@ class ExerciseNavigationFlowTest {
                 compose.onNodeWithTag("exercise-detail-back").performClick()
                 compose.onNodeWithTag("history-detail").assertIsDisplayed()
                 compose.runOnIdle { assertEquals(fixture[3], history.state.detail!!.workoutId) }
+                // Both reselecting a tab and leaving/returning open its main page.
+                compose.onNodeWithTag("history-tab").performClick()
+                compose.onNodeWithTag("history-detail").assertDoesNotExist()
+                compose.runOnIdle { assertNull(history.state.selectedWorkoutId) }
+                compose.onNodeWithTag("exercises-tab").performClick()
+                compose.waitUntil(10_000) { !library.state.loading }
+                compose.onNodeWithTag("exercise-search").performTextReplacement("no matching name")
+                compose.onNodeWithText("No matching exercises.").assertExists()
+                compose.onNodeWithTag("exercises-tab").performClick()
+                compose.onNodeWithTag("exercise-search").assertTextContains("")
+                compose.onNodeWithTag("open-library-exercise-${fixture[0]}").assertExists()
+                compose.onNodeWithTag("templates-tab").performClick()
+                compose.waitUntil(10_000) { !library.state.loading }
+                compose.onNodeWithTag("open-template-${fixture[5]}").performScrollTo().performClick()
+                compose.waitUntil(10_000) { library.state.selectedTemplate != null && !library.state.loading }
+                compose.onNodeWithTag("templates-tab").performClick()
+                compose.runOnIdle { assertNull(library.state.selectedTemplateId) }
+                compose.onNodeWithTag("template-list-ready").performScrollTo().assertIsDisplayed()
+                compose.onNodeWithTag("history-tab").performClick()
+                compose.waitUntil(10_000) { !history.state.loading }
+                compose.onNodeWithTag("history-detail").assertDoesNotExist()
             }
         } finally { context.deleteDatabase(database) }
     }

@@ -5,6 +5,8 @@ import com.example.hevygroovy.util.OneRepMaxEstimator;
 import java.util.List;
 
 public final class ActiveWorkoutExercise {
+    private final com.example.hevygroovy.entity.enums.TrackingType trackingType;
+    public com.example.hevygroovy.entity.enums.TrackingType getTrackingType() { return trackingType; }
     private final long workoutExerciseId;
     private final long exerciseId;
     private final String exerciseNameSnapshot;
@@ -32,6 +34,7 @@ public final class ActiveWorkoutExercise {
         restTimeSeconds = exercise.getRestTimeSeconds();
         notes = exercise.getNotes();
         unilateral = exercise.isUnilateral();
+        trackingType = exercise.getTrackingType();
         this.sets = List.copyOf(sets);
         this.previousSets = List.copyOf(previousSets);
         this.previousWorkoutId = previousWorkoutId;

@@ -11,7 +11,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
     }
 
     public WorkoutDatabase(Context context, String name) {
-        super(context.getApplicationContext(), name, null, 8);
+        super(context.getApplicationContext(), name, null, 9);
         setWriteAheadLoggingEnabled(true);
     }
 
@@ -57,6 +57,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
                 + "reps INTEGER NOT NULL CHECK(reps >= 0), weight REAL NOT NULL CHECK(weight >= 0), "
                 + "unit TEXT NOT NULL CHECK(unit IN ('LB', 'KG')), "
                 + "rest_seconds INTEGER CHECK(rest_seconds >= 0), "
+                + "duration_seconds INTEGER CHECK(duration_seconds >= 0), distance_meters REAL CHECK(distance_meters >= 0), "
                 + "rpe REAL CHECK(rpe >= 0 AND rpe <= 10), "
                 + "set_type TEXT NOT NULL CHECK(set_type IN ('WARMUP', 'NORMAL', 'FAILURE', 'DROP')), "
                 + "created_at INTEGER NOT NULL, completed INTEGER NOT NULL DEFAULT 0 CHECK(completed IN (0,1)))");
@@ -64,7 +65,7 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
 
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
-        if (oldVersion < 1 || newVersion > 8 || oldVersion >= newVersion) {
+        if (oldVersion < 1 || newVersion > 9 || oldVersion >= newVersion) {
             throw new IllegalStateException("Missing database migration from " + oldVersion + " to " + newVersion);
         }
         if (oldVersion < 2 && newVersion >= 2) {
@@ -112,6 +113,19 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
                     + "FROM exercise_catalog_entry WHERE catalog_key='personal/single-leg-press-machine') "
                     + "OR lower(trim(title))='single leg press (machine)'");
         }
+        if (oldVersion < 9 && newVersion >= 9) {
+            // Older migrations can rebuild these tables using the current schema.
+            if (!hasColumn(db, "exercise", "tracking_type")) db.execSQL("ALTER TABLE exercise ADD COLUMN tracking_type TEXT NOT NULL DEFAULT 'WEIGHT_REPS'");
+            if (!hasColumn(db, "set_entry", "duration_seconds")) db.execSQL("ALTER TABLE set_entry ADD COLUMN duration_seconds INTEGER CHECK(duration_seconds >= 0)");
+            if (!hasColumn(db, "set_entry", "distance_meters")) db.execSQL("ALTER TABLE set_entry ADD COLUMN distance_meters REAL CHECK(distance_meters >= 0)");
+        }
+    }
+
+    private static boolean hasColumn(SQLiteDatabase db, String table, String name) {
+        try (android.database.Cursor cursor = db.rawQuery("PRAGMA table_info(" + table + ")", null)) {
+            while (cursor.moveToNext()) if (name.equals(cursor.getString(1))) return true;
+        }
+        return false;
     }
 
     private void createWorkoutImportTable(SQLiteDatabase db) {
@@ -142,7 +156,8 @@ public final class WorkoutDatabase extends SQLiteOpenHelper {
         db.execSQL("CREATE TABLE exercise (id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "title TEXT NOT NULL, description TEXT, primary_muscle TEXT, "
                 + "secondary_muscles TEXT NOT NULL DEFAULT '', archived INTEGER NOT NULL DEFAULT 0 "
-                + "CHECK(archived IN (0,1)), unilateral INTEGER NOT NULL DEFAULT 0 CHECK(unilateral IN (0,1)))");
+                + "CHECK(archived IN (0,1)), unilateral INTEGER NOT NULL DEFAULT 0 CHECK(unilateral IN (0,1)), "
+                + "tracking_type TEXT NOT NULL DEFAULT 'WEIGHT_REPS')");
         db.execSQL("CREATE INDEX exercise_title ON exercise(title COLLATE NOCASE)");
         db.execSQL("CREATE TABLE template_workout (id INTEGER PRIMARY KEY AUTOINCREMENT, "
                 + "user_id INTEGER NOT NULL, title TEXT NOT NULL, description TEXT, "

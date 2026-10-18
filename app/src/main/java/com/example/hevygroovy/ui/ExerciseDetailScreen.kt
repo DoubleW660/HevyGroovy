@@ -35,11 +35,21 @@ fun ExerciseDetailScreen(
     exerciseName: String,
     onBack: () -> Unit,
     initialTab: Int = 0,
+    library: LibraryViewModel? = null,
 ) {
     val state = model.state
     val exerciseId = state.selectedExerciseId
     var selectedTab by rememberSaveable(exerciseId, initialTab) { mutableIntStateOf(initialTab.coerceIn(0, 2)) }
     val tabStates = rememberSaveableStateHolder()
+    var editing by rememberSaveable(exerciseId) { mutableStateOf(false) }
+    var saving by rememberSaveable(exerciseId) { mutableStateOf(false) }
+    LaunchedEffect(library?.state?.savedChanges) {
+        if (saving) {
+            saving = false
+            editing = false
+            exerciseId?.let(model::refresh)
+        }
+    }
     BackHandler(onBack = onBack)
     LaunchedEffect(exerciseId, state.loaded) {
         if (exerciseId != null && !state.loaded && !state.loading && state.error == null) model.refresh(exerciseId)
@@ -108,11 +118,18 @@ fun ExerciseDetailScreen(
                                 }
                                 items(state.history, key = { "session-${it.workoutId}" }) { ExerciseHistoryCard(it) }
                             }
-                            2 -> exerciseInfo(state.exercise)
+                            2 -> exerciseInfo(state.exercise, library != null) { editing = true }
                         }
                     }
                 }
             }
+        }
+    }
+    if (editing && library != null && state.exercise != null) {
+        ExerciseCatalogDialog(state.exercise, library.state.busy || !library.state.loaded, library.state.error,
+            onDismiss = { editing = false; saving = false }) { title, description, primary, secondary, unilateral, tracking ->
+            saving = true
+            library.saveExercise(exerciseId, title, description, primary, secondary, unilateral, tracking)
         }
     }
 }
@@ -236,6 +253,7 @@ private fun ExercisePerformanceSetRow(set: ActiveSetEntry, number: Int) {
                 style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
         }
         val extras = buildList {
+            addAll(set.measurementDetails())
             set.rpe?.let { add("RPE ${exerciseNumber(it.toDouble())}") }
             set.restSeconds?.let { add("Rest ${it}s") }
         }
@@ -244,7 +262,7 @@ private fun ExercisePerformanceSetRow(set: ActiveSetEntry, number: Int) {
     }
 }
 
-private fun LazyListScope.exerciseInfo(exercise: CatalogExercise?) {
+private fun LazyListScope.exerciseInfo(exercise: CatalogExercise?, editable: Boolean, onEdit: () -> Unit) {
     item(key = "information") {
         Card(Modifier.fillMaxWidth().testTag("exercise-information")) {
             Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -252,12 +270,15 @@ private fun LazyListScope.exerciseInfo(exercise: CatalogExercise?) {
                 if (exercise == null) {
                     Text("Information is unavailable for this exercise.", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 } else {
-                    ExerciseInfoField("Primary muscle", exercise.primaryMuscle?.exerciseMuscleLabel() ?: "Other")
-                    ExerciseInfoField("Secondary muscles", exercise.secondaryMuscles.takeIf { it.isNotEmpty() }
+                    ExerciseInfoField("Major (primary) muscle", exercise.primaryMuscle?.exerciseMuscleLabel() ?: "Other")
+                    ExerciseInfoField("Minor (secondary) muscles", exercise.secondaryMuscles.takeIf { it.isNotEmpty() }
                         ?.joinToString { it.exerciseMuscleLabel() } ?: "None listed")
                     ExerciseInfoField("Movement", if (exercise.isUnilateral) "Unilateral" else "Bilateral")
-                    Text(if (exercise.isUnilateral) "Enter weight and reps per side. Volume counts both sides."
-                        else "Volume = weight × reps.", style = MaterialTheme.typography.bodySmall,
+                    ExerciseInfoField("Tracking", exercise.trackingType.label())
+                    if (editable) OutlinedButton(onClick = onEdit,
+                        modifier = Modifier.testTag("edit-exercise-information")) { Text("Edit categories & tracking") }
+                    Text(if (exercise.isUnilateral) "Enter measurements per side. Weight × rep volume counts both sides."
+                        else "Time is entered in seconds and distance in meters.", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (exercise.isArchived) Text("Archived exercise · saved workouts and records are retained.",
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

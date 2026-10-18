@@ -203,6 +203,8 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
             set.setUnit(previous == null ? defaultUnit : previous.getUnit());
             set.setWeight(previous == null ? 0 : previous.getWeight());
             set.setReps(previous == null ? 0 : previous.getReps());
+            set.setDurationSeconds(previous == null ? null : previous.getDurationSeconds());
+            set.setDistanceMeters(previous == null ? null : previous.getDistanceMeters());
             set.setCompleted(false);
             set.setCreatedAtEpochMillis(System.currentTimeMillis());
             setEntryRepository.save(set);

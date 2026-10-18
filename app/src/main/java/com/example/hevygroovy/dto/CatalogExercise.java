@@ -5,6 +5,8 @@ import com.example.hevygroovy.model.ExerciseModel;
 import java.util.List;
 
 public final class CatalogExercise {
+    private final com.example.hevygroovy.entity.enums.TrackingType trackingType;
+    public com.example.hevygroovy.entity.enums.TrackingType getTrackingType() { return trackingType; }
     private final long id;
     private final String title;
     private final String description;
@@ -14,6 +16,7 @@ public final class CatalogExercise {
     private final boolean unilateral;
 
     public CatalogExercise(ExerciseModel model) {
+        trackingType = model.getTrackingType();
         id = model.getExerciseId(); title = model.getTitle(); description = model.getDescription();
         primaryMuscle = model.getPrimaryMuscleGroup();
         secondaryMuscles = List.copyOf(model.getSecondaryMuscleGroups()); archived = model.isArchived();

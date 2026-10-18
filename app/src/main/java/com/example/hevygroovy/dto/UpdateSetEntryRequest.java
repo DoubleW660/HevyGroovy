@@ -5,6 +5,15 @@ import com.example.hevygroovy.entity.enums.Unit;
 
 /** Omit optional-field setters to preserve values; pass null to clear RPE/rest. */
 public class UpdateSetEntryRequest {
+    private Integer durationSeconds;
+    private Double distanceMeters;
+    private boolean durationProvided, distanceProvided;
+    public Integer getDurationSeconds() { return durationSeconds; }
+    public Double getDistanceMeters() { return distanceMeters; }
+    public boolean hasDurationSeconds() { return durationProvided; }
+    public boolean hasDistanceMeters() { return distanceProvided; }
+    public void setDurationSeconds(Integer value) { durationProvided = true; durationSeconds = value; }
+    public void setDistanceMeters(Double value) { distanceProvided = true; distanceMeters = value; }
     // Null leaves completion unchanged; false marks the set as a placeholder again.
     private Boolean completed;
 

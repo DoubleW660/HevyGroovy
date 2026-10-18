@@ -11,6 +11,31 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 
 class LibraryViewModelTest {
+    @Test fun returningToRootWhileTemplateLoadsPreventsLateDetailFromReopening() {
+        val gateway = FakeGateway()
+        val model = LibraryViewModel(gateway)
+        model.refresh(); gateway.succeed()
+        model.openTemplate(7)
+        model.showTemplateList()
+        gateway.succeed(detail())
+        assertNull(model.state.selectedTemplateId)
+        assertNull(model.state.selectedTemplate)
+        assertTrue(model.state.loaded)
+        assertFalse(model.state.busy)
+    }
+
+    @Test fun trackingAndMuscleCategoriesAreSavedAlongsideMovement() {
+        val gateway = FakeGateway()
+        val model = LibraryViewModel(gateway)
+        model.saveExercise(null, "Carry", "", MuscleGroup.FRONT_DELTS, listOf(MuscleGroup.FOREARMS),
+            true, com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_TIME)
+        assertEquals(com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_TIME, gateway.createdExercise!!.trackingType)
+        assertEquals(listOf(MuscleGroup.FOREARMS), gateway.createdExercise!!.secondaryMuscleGroups)
+        gateway.succeed()
+        model.saveExercise(9, "Carry", "", MuscleGroup.FRONT_DELTS, emptyList(), false,
+            com.example.hevygroovy.entity.enums.TrackingType.DISTANCE_TIME)
+        assertEquals(com.example.hevygroovy.entity.enums.TrackingType.DISTANCE_TIME, gateway.updatedExercise!!.trackingType)
+    }
     @Test
     fun exerciseMovementChoiceIsSavedAndSignalsDependentViewsOnlyAfterCommit() {
         val gateway = FakeGateway()

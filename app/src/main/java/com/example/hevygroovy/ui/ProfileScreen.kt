@@ -15,7 +15,8 @@ import androidx.compose.ui.unit.sp
 import com.example.hevygroovy.entity.enums.Unit as WeightUnit
 
 @Composable
-fun ProfileScreen(model: ProfileViewModel, onHistory: () -> Unit, onExercises: () -> Unit) {
+fun ProfileScreen(model: ProfileViewModel, onHistory: () -> Unit, onExercises: () -> Unit,
+    imports: HistoryImportViewModel? = null) {
     val state = model.state
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("profile-screen"),
@@ -86,6 +87,7 @@ fun ProfileScreen(model: ProfileViewModel, onHistory: () -> Unit, onExercises: (
                 }
             }
         }
+        if (imports != null) item(key = "import") { HevyImportCard(imports) }
         item(key = "shortcuts") {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Your training", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)

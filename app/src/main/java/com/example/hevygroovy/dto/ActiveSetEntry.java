@@ -6,6 +6,10 @@ import com.example.hevygroovy.entity.enums.Unit;
 
 /** Read-only copy so screen state cannot mutate a repository entity. */
 public final class ActiveSetEntry {
+    private final Integer durationSeconds;
+    private final Double distanceMeters;
+    public Integer getDurationSeconds() { return durationSeconds; }
+    public Double getDistanceMeters() { return distanceMeters; }
     private final long id;
     private final int setNumber;
     private final int reps;
@@ -18,6 +22,7 @@ public final class ActiveSetEntry {
     private final long createdAtEpochMillis;
 
     public ActiveSetEntry(SetEntry set) {
+        durationSeconds = set.getDurationSeconds(); distanceMeters = set.getDistanceMeters();
         id = set.getId();
         setNumber = set.getSetNumber();
         reps = set.getReps();

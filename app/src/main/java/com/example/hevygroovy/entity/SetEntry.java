@@ -4,6 +4,12 @@ import com.example.hevygroovy.entity.enums.SetType;
 import com.example.hevygroovy.entity.enums.Unit;
 
 public class SetEntry {
+    private Integer durationSeconds;
+    private Double distanceMeters;
+    public Integer getDurationSeconds() { return durationSeconds; }
+    public void setDurationSeconds(Integer value) { durationSeconds = value; }
+    public Double getDistanceMeters() { return distanceMeters; }
+    public void setDistanceMeters(Double value) { distanceMeters = value; }
     private boolean completed;
 
     public boolean isCompleted() { return completed; }

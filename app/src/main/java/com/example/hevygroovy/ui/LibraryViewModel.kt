@@ -49,10 +49,11 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
     })
         private set
     private var cleared = false
+    private var navigationVersion = 0L
 
     fun refresh() = execute(mutation = false) { gateway.loadLibrary(state.selectedTemplateId, it) }
     fun showTemplateList() {
-        if (state.loading) return
+        navigationVersion++
         selectTemplate(null)
         state = state.copy(selectedTemplate = null, templateHistory = emptyList())
         closeTemplateDraft()
@@ -96,21 +97,22 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
     }
 
     fun saveExercise(id: Long?, title: String, description: String, muscle: MuscleGroup, secondary: List<MuscleGroup>,
-        unilateral: Boolean? = null) {
+        unilateral: Boolean? = null, trackingType: com.example.hevygroovy.entity.enums.TrackingType? = null) {
         if (title.isBlank()) { state = state.copy(error = "Enter an exercise name."); return }
         if (id == null) {
             val request = CreateExerciseRequest().apply {
                 this.title = title; this.description = description; primaryMuscleGroup = muscle
                 secondaryMuscleGroups = secondary.toList()
                 isUnilateral = unilateral ?: false
+                this.trackingType = trackingType ?: com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_REPS
             }
             execute(exerciseMutation = true) { gateway.createCatalogExercise(request, it) }
         } else {
-            if (state.exercises.none { it.id == id }) return
             val request = UpdateExerciseRequest().apply {
                 this.title = title; this.description = description; primaryMuscleGroup = muscle
                 secondaryMuscleGroups = secondary.toList()
                 if (unilateral != null) setUnilateral(unilateral)
+                if (trackingType != null) setTrackingType(trackingType)
             }
             execute(exerciseMutation = true) { gateway.updateCatalogExercise(id, request, it) }
         }
@@ -170,18 +172,20 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
         exerciseMutation: Boolean = false,
         operation: (LibraryGateway.LibraryCallback) -> Unit) {
         if (cleared || state.loading || (mutation && state.refreshRequired)) return
+        val navigation = navigationVersion
         performanceTiming.begin(traceName)
         state = state.copy(loading = true, error = null)
         operation(object : LibraryGateway.LibraryCallback {
             override fun onSuccess(snapshot: LibraryGateway.LibrarySnapshot) {
                 if (cleared) return
-                selectTemplate(snapshot.selectedTemplate?.id)
+                val selected = if (navigation == navigationVersion) snapshot.selectedTemplate else null
+                selectTemplate(selected?.id)
                 if (mutation) closeTemplateDraft()
                 state = LibraryState(loaded = true, exercises = snapshot.exercises.toList(),
-                    templates = snapshot.templates.toList(), selectedTemplate = snapshot.selectedTemplate,
+                    templates = snapshot.templates.toList(), selectedTemplate = selected,
                     lastCompletedAtByTemplate = snapshot.lastCompletedAtByTemplate.toMap(),
-                    templateHistory = snapshot.templateHistory.toList(),
-                    selectedTemplateId = snapshot.selectedTemplate?.id, savedChanges = state.savedChanges + if (mutation) 1 else 0,
+                    templateHistory = if (selected == null) emptyList() else snapshot.templateHistory.toList(),
+                    selectedTemplateId = selected?.id, savedChanges = state.savedChanges + if (mutation) 1 else 0,
                     exerciseChanges = state.exerciseChanges + if (exerciseMutation) 1 else 0)
                 performanceTiming.ready()
             }
@@ -190,7 +194,7 @@ class LibraryViewModel(private val gateway: LibraryGateway, private val savedSta
                 performanceTiming.cancel()
                 val committed = mutation && error is CommittedRefreshException
                 if (committed) {
-                    selectTemplate((error as CommittedRefreshException).selectedTemplateId)
+                    selectTemplate(if (navigation == navigationVersion) (error as CommittedRefreshException).selectedTemplateId else null)
                     closeTemplateDraft()
                 }
                 state = state.copy(loading = false, refreshRequired = state.refreshRequired || committed,

@@ -200,12 +200,13 @@ public final class SQLiteWorkoutExerciseRepository implements WorkoutExerciseRep
         set.setRestSeconds(cursor.isNull(rest) ? null : cursor.getInt(rest));
         int rpe = cursor.getColumnIndexOrThrow("rpe");
         set.setRpe(cursor.isNull(rpe) ? null : cursor.getFloat(rpe));
+        SQLiteSetEntryRepository.readMeasurements(cursor, set);
         return set;
     }
 
     private List<WorkoutExercise> query(String selection, long id) {
         List<WorkoutExercise> result = new ArrayList<>();
-        try (Cursor cursor = db.rawQuery("SELECT we.*, COALESCE(e.unilateral,0) AS exercise_unilateral "
+        try (Cursor cursor = db.rawQuery("SELECT we.*, COALESCE(e.unilateral,0) AS exercise_unilateral, COALESCE(e.tracking_type,'WEIGHT_REPS') AS exercise_tracking "
                 + "FROM workout_exercise we LEFT JOIN exercise e ON e.id=we.exercise_id "
                 + "WHERE we." + selection + " ORDER BY we.order_index, we.id", new String[]{Long.toString(id)})) {
             while (cursor.moveToNext()) {
@@ -218,6 +219,7 @@ public final class SQLiteWorkoutExerciseRepository implements WorkoutExerciseRep
                 row.setRestTimeSeconds(cursor.getInt(cursor.getColumnIndexOrThrow("rest_time_seconds")));
                 row.setNotes(cursor.getString(cursor.getColumnIndexOrThrow("notes")));
                 row.setUnilateral(cursor.getInt(cursor.getColumnIndexOrThrow("exercise_unilateral")) != 0);
+                row.setTrackingType(com.example.hevygroovy.entity.enums.TrackingType.valueOf(cursor.getString(cursor.getColumnIndexOrThrow("exercise_tracking"))));
                 result.add(row);
             }
         }

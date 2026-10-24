@@ -17,13 +17,14 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.SystemClock
-import android.provider.Settings
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.example.hevygroovy.MainActivity
 import com.example.hevygroovy.R
 import com.example.hevygroovy.app.WorkoutRestTimer
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
@@ -34,11 +35,18 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import java.util.UUID
+import java.util.concurrent.Executor
+import java.util.concurrent.Executors
 
 /** One application-owned timer. It is created explicitly by the activity or its alarm receiver. */
-class RestTimerController private constructor(context: Context) : WorkoutRestTimer {
+class RestTimerController internal constructor(context: Context,
+    private val storage: RestTimerStorage = PreferencesRestTimerStorage(context),
+    private val storageWorker: Executor = Executors.newSingleThreadExecutor { task ->
+        Thread(task, "rest-timer-storage").apply { isDaemon = true }
+    },
+    private val completionAlert: ((RestTimerState) -> Unit)? = null,
+) : WorkoutRestTimer {
     private val app = context.applicationContext
-    private val preferences = app.getSharedPreferences("rest_timer", Context.MODE_PRIVATE)
     private val alarms = app.getSystemService(AlarmManager::class.java)
     private val notifications = app.getSystemService(NotificationManager::class.java)
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -46,6 +54,15 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
     val state: StateFlow<RestTimerState?> = mutableState.asStateFlow()
     private var ticker: Job? = null
     private var completionDismissal: Job? = null
+    // A durable clear can outlive the brief overlay. Workout changes must still cancel its alert.
+    private var pendingCompletion: RestTimerState? = null
+    private val restored = CompletableDeferred<Unit>()
+    private var revision = 0L
+    private var reconcileBeforeRestore = false
+    private var activeWorkoutBeforeRestore: Long? = null
+    private val cancelledBeforeRestore = mutableSetOf<Long>()
+    // Accessed only by storageWorker. Alarm changes follow the same order as durable saves.
+    private var persistedAlarmToken: String? = null
 
     init {
         createChannel()
@@ -55,15 +72,18 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
     @Synchronized
     override fun start(workoutId: Long, exerciseRowId: Long, setId: Long, exerciseName: String,
         seconds: Int) {
-        cancelCurrent()
+        stopCurrent()
         notifications.cancel(NOTIFICATION_ID)
-        if (seconds <= 0) return
+        revision++
+        if (seconds <= 0) {
+            enqueueSave(null)
+            return
+        }
         val now = SystemClock.elapsedRealtime()
         val timer = RestTimerState(UUID.randomUUID().toString(), workoutId, exerciseRowId,
             setId, exerciseName, now + seconds.toLong() * 1_000L, seconds)
         mutableState.value = timer
-        persist(timer)
-        schedule(timer)
+        enqueueSave(timer)
         startTicker()
     }
 
@@ -76,25 +96,37 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
         val updated = current.copy(deadlineElapsedMillis = deadline,
             remainingSeconds = RestTimerTiming.remainingSeconds(deadline, now))
         mutableState.value = updated
-        persist(updated)
-        if (deadline <= now) expire(updated.token) else schedule(updated)
+        if (deadline <= now) expire(updated.token)
+        else {
+            revision++
+            enqueueSave(updated)
+        }
     }
 
     @Synchronized
     fun skip() {
-        cancelCurrent()
+        stopCurrent()
+        revision++
+        enqueueSave(null)
         notifications.cancel(NOTIFICATION_ID)
     }
 
     @Synchronized
     override fun cancelForWorkout(workoutId: Long) {
-        if (mutableState.value?.workoutId == workoutId) skip()
+        if (!restored.isCompleted) cancelledBeforeRestore += workoutId
+        if (mutableState.value?.workoutId == workoutId ||
+            pendingCompletion?.workoutId == workoutId) skip()
         else if (notificationWorkoutId() == workoutId) notifications.cancel(NOTIFICATION_ID)
     }
 
     @Synchronized
     override fun reconcileWorkout(activeWorkoutId: Long?) {
-        if (mutableState.value?.workoutId?.let { it != activeWorkoutId } == true) skip()
+        if (!restored.isCompleted) {
+            reconcileBeforeRestore = true
+            activeWorkoutBeforeRestore = activeWorkoutId
+        }
+        if (mutableState.value?.workoutId?.let { it != activeWorkoutId } == true ||
+            pendingCompletion?.workoutId?.let { it != activeWorkoutId } == true) skip()
         if (notificationWorkoutId()?.let { it != activeWorkoutId } == true) {
             notifications.cancel(NOTIFICATION_ID)
         }
@@ -106,17 +138,28 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
         val current = mutableState.value ?: return
         if (current.isComplete) return
         if (current.deadlineElapsedMillis <= SystemClock.elapsedRealtime()) expire(current.token)
-        else schedule(current)
+        else storageWorker.execute { schedule(current) }
     }
 
-    @Synchronized
-    internal fun onAlarm(token: String) {
-        val current = mutableState.value ?: return
-        if (current.token != token || current.isComplete) return
-        // An adjustment can race with an already queued alarm. A callback may never finish a
-        // replacement timer or one whose deadline was extended after the alarm was dispatched.
-        if (current.deadlineElapsedMillis > SystemClock.elapsedRealtime()) schedule(current)
-        else expire(token)
+    internal fun onAlarm(token: String, onFinished: () -> Unit = {}) {
+        scope.launch {
+            try {
+                // The receiver can create this controller in a fresh process. Wait for its disk
+                // read, and retain goAsync until a durable completion is finished.
+                restored.await()
+                synchronized(this@RestTimerController) {
+                    val current = mutableState.value
+                    if (current?.token == token && !current.isComplete) {
+                        // A dispatched alarm cannot finish a replacement or extended rest.
+                        if (current.deadlineElapsedMillis > SystemClock.elapsedRealtime()) {
+                            storageWorker.execute { schedule(current) }
+                        } else expire(token)
+                    }
+                }
+            } finally {
+                afterPendingWork(onFinished)
+            }
+        }
     }
 
     private fun startTicker() {
@@ -143,9 +186,9 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
         val current = mutableState.value ?: return
         val now = SystemClock.elapsedRealtime()
         if (current.token != token || current.isComplete || current.deadlineElapsedMillis > now) return
-        // Claim completion durably before notifying. The UI ticker and OS receiver share this
-        // operation, so only one can alert, including when the process is restored by the alarm.
-        cancelCurrent()
+        stopCurrent()
+        val completionRevision = ++revision
+        pendingCompletion = current
         val displayMillis = RestTimerTiming.completionDisplayMillis(current.deadlineElapsedMillis, now)
         if (displayMillis > 0L) {
             mutableState.value = current.copy(remainingSeconds = 0, isComplete = true)
@@ -160,17 +203,50 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
                 }
             }
         }
-        alert(current)
+        // The ticker and alarm share one claim. Do not alert until the clear reaches disk, and
+        // suppress a queued alert if the user has since skipped or started another rest.
+        enqueueSave(null) { committed ->
+            synchronized(this@RestTimerController) {
+                if (committed && revision == completionRevision) {
+                    if (completionAlert == null) alert(current) else completionAlert.invoke(current)
+                }
+                if (pendingCompletion?.token == current.token) pendingCompletion = null
+            }
+        }
     }
 
-    private fun cancelCurrent() {
+    private fun stopCurrent() {
         ticker?.cancel()
         ticker = null
         completionDismissal?.cancel()
         completionDismissal = null
-        mutableState.value?.let { cancelAlarm(it.token) }
         mutableState.value = null
-        preferences.edit().clear().commit()
+        pendingCompletion = null
+    }
+
+    private fun enqueueSave(timer: RestTimerState?, afterWrite: ((Boolean) -> Unit)? = null) {
+        storageWorker.execute {
+            val previousToken = persistedAlarmToken
+            val committed = try {
+                (if (timer == null) storage.clear() else storage.save(timer)).also {
+                    if (!it) Log.e("RestTimer", "Could not persist the rest timer")
+                }
+            } catch (failure: RuntimeException) {
+                Log.e("RestTimer", "Could not persist the rest timer", failure)
+                false
+            }
+            if (committed) {
+                if (previousToken != null && previousToken != timer?.token) cancelAlarm(previousToken)
+                persistedAlarmToken = timer?.token
+                if (timer != null) schedule(timer)
+            }
+            if (afterWrite != null) scope.launch { afterWrite(committed) }
+        }
+    }
+
+    /** A receiver remains alive until all commands already submitted have reached disk. */
+    internal fun afterPendingWork(onFinished: () -> Unit) {
+        storageWorker.execute { scope.launch { onFinished() } }
     }
 
     private fun schedule(timer: RestTimerState) {
@@ -206,43 +282,43 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
         intent.cancel()
     }
 
-    private fun persist(timer: RestTimerState) {
-        val elapsed = SystemClock.elapsedRealtime()
-        val wall = System.currentTimeMillis()
-        preferences.edit().putString("token", timer.token)
-            .putLong("workout", timer.workoutId).putLong("exercise", timer.exerciseRowId)
-            .putLong("set", timer.setId).putString("name", timer.exerciseName)
-            .putLong("deadline_elapsed", timer.deadlineElapsedMillis)
-            .putLong("deadline_wall", wall + timer.deadlineElapsedMillis - elapsed)
-            .putLong("boot_epoch", wall - elapsed).putInt("boot_count", bootCount()).commit()
-    }
-
     private fun restore() {
-        val token = preferences.getString("token", null) ?: return
-        val now = SystemClock.elapsedRealtime()
-        val deadline = RestTimerTiming.restoredDeadline(
-            preferences.getLong("deadline_elapsed", -1L),
-            preferences.getLong("deadline_wall", -1L), preferences.getInt("boot_count", -1),
-            preferences.getLong("boot_epoch", Long.MIN_VALUE), bootCount(), now,
-            System.currentTimeMillis())
-        // An old force-stopped rest should not chime when the user opens the app much later.
-        if (deadline == null || now - deadline > MAX_ALERT_LATENESS_MILLIS) {
-            cancelAlarm(token)
-            preferences.edit().clear().commit()
-            return
+        storageWorker.execute {
+            val saved = try {
+                storage.read()
+            } catch (failure: RuntimeException) {
+                Log.e("RestTimer", "Could not restore the rest timer", failure)
+                StoredRestTimer(null, null)
+            }
+            persistedAlarmToken = saved.token
+            scope.launch {
+                synchronized(this@RestTimerController) {
+                    try {
+                        // A user action during the disk read takes precedence over the saved timer.
+                        if (revision == 0L) {
+                            val timer = saved.timer?.takeUnless {
+                                it.workoutId in cancelledBeforeRestore ||
+                                    (reconcileBeforeRestore &&
+                                        it.workoutId != activeWorkoutBeforeRestore)
+                            }
+                            if (timer == null) {
+                                if (saved.token != null) enqueueSave(null)
+                            } else {
+                                mutableState.value = timer
+                                if (timer.deadlineElapsedMillis > SystemClock.elapsedRealtime()) {
+                                    storageWorker.execute { schedule(timer) }
+                                }
+                                startTicker()
+                            }
+                        }
+                    } finally {
+                        cancelledBeforeRestore.clear()
+                        restored.complete(Unit)
+                    }
+                }
+            }
         }
-        val restored = RestTimerState(token, preferences.getLong("workout", 0L),
-            preferences.getLong("exercise", 0L), preferences.getLong("set", 0L),
-            preferences.getString("name", "Exercise").orEmpty(), deadline,
-            RestTimerTiming.remainingSeconds(deadline, now))
-        mutableState.value = restored
-        if (deadline > now) schedule(restored)
-        startTicker()
     }
-
-    private fun bootCount(): Int = try {
-        Settings.Global.getInt(app.contentResolver, Settings.Global.BOOT_COUNT, -1)
-    } catch (_: SecurityException) { -1 }
 
     private fun createChannel() {
         notifications.createNotificationChannel(NotificationChannel(CHANNEL_ID, "Rest complete",
@@ -304,7 +380,6 @@ class RestTimerController private constructor(context: Context) : WorkoutRestTim
         private const val CHANNEL_ID = "rest_complete"
         private const val NOTIFICATION_ID = 4_015
         private const val ALARM_REQUEST_CODE = 15
-        private const val MAX_ALERT_LATENESS_MILLIS = 10 * 60 * 1_000L
         @Volatile private var instance: RestTimerController? = null
 
         @JvmStatic

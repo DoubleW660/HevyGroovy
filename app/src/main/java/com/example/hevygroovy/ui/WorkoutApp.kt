@@ -104,7 +104,6 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
         exerciseInitialTab = initialTab
         // A fresh visit honors its shortcut; rotation still restores the current page.
         savedScreens.removeState("exercise-$id-$initialTab")
-        if (!library.state.loading) library.refresh()
         records.refresh(id)
     }
     fun openHistory(id: Long) {

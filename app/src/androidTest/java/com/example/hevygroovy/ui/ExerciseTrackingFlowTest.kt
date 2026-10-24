@@ -49,9 +49,11 @@ class ExerciseTrackingFlowTest {
                 compose.onNodeWithTag("resume-workout").performClick()
                 compose.onNodeWithTag("inline-weight-${fixture[2]}").performScrollTo().performTextReplacement("invalid")
                 compose.onNodeWithTag("open-active-exercise-${fixture[1]}").performScrollTo().performClick()
-                compose.waitUntil(10_000) { records.state.loaded && library.state.loaded && !library.state.loading }
+                compose.waitUntil(10_000) { records.state.loaded && !records.state.loading }
+                compose.runOnIdle { assertFalse(library.state.loaded) }
                 compose.onNodeWithTag("exercise-tab-info").performClick()
                 compose.onNodeWithTag("edit-exercise-information").performScrollTo().performClick()
+                compose.runOnIdle { assertFalse(library.state.loaded) }
                 compose.onNodeWithTag("tracking-DISTANCE_TIME").performScrollTo().performClick()
                 compose.onNodeWithTag("exercise-major-muscle").performScrollTo().performClick()
                 compose.onNodeWithTag("major-muscle-QUADRICEPS").performScrollTo().performClick()

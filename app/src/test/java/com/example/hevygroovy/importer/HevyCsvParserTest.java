@@ -50,9 +50,65 @@ class HevyCsvParserTest {
     @Test void stableReceiptMatchesLegacyHashAndHasNoOldDateCutoff() throws Exception {
         var workout = parse((HEADER + row("Bench", 0, "normal", "100", "5", "", ""))
                 .replace("14 Oct 2026", "1 Jan 2020")).get(0);
-        assertEquals(HevyCsvParser.sourceKey(workout.started, "Upper"), workout.sourceKey);
+        assertEquals(1577916000000L, workout.started);
+        assertEquals("hevy-history-v1/c9f0ebf7ac79815105341383828710aa13fdec3a5882b96208bb6918ab3dbf3e", workout.sourceKey);
+        assertEquals(workout.sourceKey, HevyCsvParser.sourceKey(workout.started, "Upper"));
         assertEquals(80, workout.sourceKey.length());
         assertNotEquals(workout.sourceKey, HevyCsvParser.sourceKey(workout.started, "Lower"));
+    }
+    @Test void groupsNoncontiguousRowsByTitleAndInstantRegardlessOfDateRepresentation() throws Exception {
+        String first = row("Bench", 0, "normal", "100", "5", "", "");
+        String anotherWorkout = row("Run", 0, "normal", "", "", "1", "300").replace("Upper,", "Lower,");
+        String resumed = row("Bench", 1, "normal", "105", "5", "", "")
+                .replace(START, "2026-10-14T21:00:00Z,2026-10-14T18:00:00-04:00");
+        var workouts = parse(HEADER + first + anotherWorkout + resumed);
+        assertEquals(2, workouts.size());
+        assertEquals("Upper", workouts.get(0).title);
+        assertEquals("Lower", workouts.get(1).title);
+        assertEquals(1, workouts.get(0).exercises.size());
+        assertEquals(2, workouts.get(0).exercises.get(0).sets.size());
+        assertEquals(105, workouts.get(0).exercises.get(0).sets.get(1).getWeight());
+        assertNotEquals(workouts.get(0).sourceKey, workouts.get(1).sourceKey);
+    }
+    @Test void keepsDifferentWorkoutStartTimesAndExactTitlesDistinct() throws Exception {
+        String first = row("Bench", 0, "normal", "100", "5", "", "");
+        String later = first.replace("14 Oct 2026", "15 Oct 2026");
+        String differentlySpelled = first.replace("Upper,", "Upper ,");
+        var workouts = parse(HEADER + first + later + differentlySpelled);
+        assertEquals(3, workouts.size());
+        assertNotEquals(workouts.get(0).sourceKey, workouts.get(1).sourceKey);
+        assertNotEquals(workouts.get(0).sourceKey, workouts.get(2).sourceKey);
+        assertEquals("Upper ", workouts.get(2).title);
+    }
+    @Test void validatesEveryRowWhenAWorkoutResumesAfterAnotherWorkout() {
+        String first = row("Bench", 0, "normal", "100", "5", "", "");
+        String anotherWorkout = first.replace("Upper,", "Lower,");
+        String resumed = row("Bench", 1, "normal", "100", "5", "", "");
+        for (String invalid : List.of(
+                resumed.replace("14 Oct 2026, 18:00", "14 Oct 2026, 19:00"),
+                resumed.replace(START + ",,", START + ",Changed notes,"),
+                resumed.replace("14 Oct 2026, 18:00", "invalid date"),
+                resumed.replace(",1,normal,", ",3,normal,"),
+                resumed.replace(",100,5,", ",-100,5,"))) {
+            var error = assertThrows(IllegalArgumentException.class, () -> parse(HEADER + first + anotherWorkout + invalid));
+            assertTrue(error.getMessage().startsWith("CSV record 4:"), error.getMessage());
+        }
+    }
+    @Test void reusingAParserDoesNotRetainWorkoutOrTimeZoneState() throws Exception {
+        var parser = new HevyCsvParser();
+        String csv = HEADER + row("Bench", 0, "normal", "100", "5", "", "");
+        var eastern = parser.parse(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), ZoneId.of("America/New_York"));
+        var utc = parser.parse(new ByteArrayInputStream(csv.getBytes(StandardCharsets.UTF_8)), ZoneId.of("UTC"));
+        assertEquals(Instant.parse("2026-10-14T21:00:00Z").toEpochMilli(), eastern.get(0).started);
+        assertEquals(Instant.parse("2026-10-14T17:00:00Z").toEpochMilli(), utc.get(0).started);
+        assertNotEquals(eastern.get(0).sourceKey, utc.get(0).sourceKey);
+        assertNotSame(eastern.get(0), utc.get(0));
+        assertEquals(1, eastern.get(0).exercises.get(0).sets.size());
+        String ambiguous = csv.replace("14 Oct 2026, 17:00", "1 Nov 2026, 01:30")
+                .replace("14 Oct 2026, 18:00", "1 Nov 2026, 02:30");
+        assertEquals(1, parser.parse(new ByteArrayInputStream(ambiguous.getBytes(StandardCharsets.UTF_8)), ZoneId.of("UTC")).size());
+        assertThrows(IllegalArgumentException.class, () -> parser.parse(
+                new ByteArrayInputStream(ambiguous.getBytes(StandardCharsets.UTF_8)), ZoneId.of("America/New_York")));
     }
     @Test void rejectsInvalidValuesQuotesIndicesDatesAndAmbiguousTime() {
         for (String bad : List.of(

@@ -11,6 +11,20 @@ import org.junit.jupiter.api.Test
 import org.mockito.Mockito
 
 class LibraryViewModelTest {
+    @Test fun exerciseInfoCanSaveItsSnapshotBeforeTheLibraryHasLoaded() {
+        val gateway = FakeGateway()
+        val model = LibraryViewModel(gateway)
+        model.saveExercise(9, "Carry", "From exercise Info", MuscleGroup.FRONT_DELTS,
+            listOf(MuscleGroup.FOREARMS), true,
+            com.example.hevygroovy.entity.enums.TrackingType.WEIGHT_TIME)
+        assertTrue(gateway.calls.isEmpty()) // No library load precedes the update.
+        assertEquals("From exercise Info", gateway.updatedExercise!!.description)
+        assertFalse(model.state.loaded)
+        gateway.succeed()
+        assertTrue(model.state.loaded)
+        assertEquals(1L, model.state.exerciseChanges)
+    }
+
     @Test fun returningToRootWhileTemplateLoadsPreventsLateDetailFromReopening() {
         val gateway = FakeGateway()
         val model = LibraryViewModel(gateway)

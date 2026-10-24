@@ -541,6 +541,8 @@ internal fun InlineNumberField(value: String, onChange: (String) -> Unit, invali
     suffix: (@Composable () -> Unit)? = null) {
     val shape = RoundedCornerShape(8.dp)
     var fieldValue by remember { mutableStateOf(TextFieldValue(value)) }
+    // The IME can repeat a text update before the parent's new value is recomposed.
+    var lastDispatchedText by remember(value) { mutableStateOf(value) }
     var isFocused by remember { mutableStateOf(false) }
     LaunchedEffect(isFocused) {
         if (isFocused) {
@@ -551,7 +553,10 @@ internal fun InlineNumberField(value: String, onChange: (String) -> Unit, invali
     }
     BasicTextField(fieldValue.copy(text = value), onValueChange = {
         fieldValue = it
-        if (it.text != value) onChange(it.text)
+        if (it.text != lastDispatchedText) {
+            lastDispatchedText = it.text
+            onChange(it.text)
+        }
     }, singleLine = true,
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center, fontWeight = FontWeight.Medium),

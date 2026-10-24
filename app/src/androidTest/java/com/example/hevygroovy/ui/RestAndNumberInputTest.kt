@@ -23,6 +23,26 @@ import org.junit.Test
 class RestAndNumberInputTest {
     @get:Rule val compose = createComposeRule()
 
+    @Test fun numberFieldAcceptsAnEarlierValueAfterAnExternalUpdateWithoutReportingSelectionChanges() {
+        var value by mutableStateOf("80")
+        val edits = mutableListOf<String>()
+        compose.setContent { HevyGroovyTheme {
+            InlineNumberField(value, { value = it; edits += it }, false,
+                KeyboardType.Decimal, "Weight", Modifier.width(140.dp).testTag("weight"), {})
+        } }
+        val field = compose.onNodeWithTag("weight")
+        field.performClick().performTextReplacement("95")
+        field.assertTextEquals("95")
+        compose.runOnIdle { value = "120"; edits.clear() }
+        field.assertTextEquals("120")
+        field.performSemanticsAction(SemanticsActions.SetSelection) { assertTrue(it(0, 3, false)) }
+        compose.runOnIdle { assertTrue(edits.isEmpty()) }
+        field.performTextInput("95")
+        field.assertTextEquals("95")
+        field.performSemanticsAction(SemanticsActions.SetSelection) { assertTrue(it(1, 1, false)) }
+        compose.runOnIdle { assertEquals(listOf("95"), edits) }
+    }
+
     @Test fun weightAndRepsSelectAllOnFocusAndAllowNormalCursorEditingWhileFocused() {
         val edits = mutableListOf<String>()
         compose.setContent {

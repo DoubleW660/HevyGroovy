@@ -33,6 +33,18 @@ public final class HevyCsvParser {
         public final List<SetEntry> sets = new ArrayList<>();
         Exercise(String title, String notes) { this.title = title; this.notes = notes; }
     }
+    private static final class WorkoutIdentity {
+        private final long started;
+        private final String title;
+        WorkoutIdentity(long started, String title) { this.started = started; this.title = title; }
+        @Override public boolean equals(Object other) {
+            if (this == other) return true;
+            if (!(other instanceof WorkoutIdentity)) return false;
+            WorkoutIdentity identity = (WorkoutIdentity) other;
+            return started == identity.started && title.equals(identity.title);
+        }
+        @Override public int hashCode() { return 31 * Long.hashCode(started) + title.hashCode(); }
+    }
 
     public List<Workout> parse(InputStream input, ZoneId zone) throws IOException {
         byte[] bytes = input.readNBytes(MAX_BYTES + 1);
@@ -57,19 +69,22 @@ public final class HevyCsvParser {
         List<String> distanceColumns = List.of("distance_meters", "distance_km", "distance_miles").stream().filter(columns::containsKey).toList();
         if (distanceColumns.size() > 1) throw invalid("The CSV contains conflicting distance units.");
         String distanceColumn = distanceColumns.isEmpty() ? null : distanceColumns.get(0);
-        Map<String, Workout> workouts = new LinkedHashMap<>();
+        Map<WorkoutIdentity, Workout> workouts = new LinkedHashMap<>();
+        // An export repeats both workout dates on every set. Keep this cache local: the
+        // same parser can be reused for exports interpreted in different time zones.
+        Map<String, Long> timestamps = new HashMap<>();
         for (int i = 1; i < records.size(); i++) {
             List<String> row = records.get(i);
             if (row.stream().allMatch(String::isBlank)) continue;
             try {
                 if (row.size() != records.get(0).size()) throw invalid("The number of values does not match the header.");
                 String title = required(cell(row, columns, "title"), "Workout title");
-                long started = timestamp(cell(row, columns, "start_time"), zone);
-                long ended = timestamp(cell(row, columns, "end_time"), zone);
+                long started = timestamps.computeIfAbsent(cell(row, columns, "start_time"), value -> timestamp(value, zone));
+                long ended = timestamps.computeIfAbsent(cell(row, columns, "end_time"), value -> timestamp(value, zone));
                 if (ended < started) throw invalid("Workout ends before it starts.");
                 String notes = optional(cell(row, columns, "description"));
-                String key = sourceKey(started, title);
-                Workout workout = workouts.computeIfAbsent(key, ignored -> new Workout(title, notes, started, ended));
+                WorkoutIdentity identity = new WorkoutIdentity(started, title);
+                Workout workout = workouts.computeIfAbsent(identity, ignored -> new Workout(title, notes, started, ended));
                 if (workout.ended != ended || !Objects.equals(workout.notes, notes)) throw invalid("Conflicting dates or notes for the same workout.");
                 String exerciseTitle = required(cell(row, columns, "exercise_title"), "Exercise title");
                 int index = integer(cell(row, columns, "set_index"), "Set index", false);
@@ -120,9 +135,14 @@ public final class HevyCsvParser {
     public static String sourceKey(long started, String title) {
         try {
             byte[] digest = MessageDigest.getInstance("SHA-256").digest((started + "\n" + title).getBytes(StandardCharsets.UTF_8));
-            StringBuilder hex = new StringBuilder("hevy-history-v1/");
-            for (byte value : digest) hex.append(String.format(Locale.ROOT, "%02x", value & 255));
-            return hex.toString();
+            char[] hex = new char[digest.length * 2];
+            String digits = "0123456789abcdef";
+            for (int i = 0; i < digest.length; i++) {
+                int value = digest[i] & 255;
+                hex[i * 2] = digits.charAt(value >>> 4);
+                hex[i * 2 + 1] = digits.charAt(value & 15);
+            }
+            return "hevy-history-v1/" + new String(hex);
         } catch (java.security.NoSuchAlgorithmException impossible) { throw new IllegalStateException(impossible); }
     }
 

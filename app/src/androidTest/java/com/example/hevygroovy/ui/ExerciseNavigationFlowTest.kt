@@ -4,6 +4,7 @@ import androidx.compose.ui.test.*
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.test.platform.app.InstrumentationRegistry
 import com.example.hevygroovy.app.AppContainer
+import com.example.hevygroovy.app.LibraryGateway
 import com.example.hevygroovy.app.LocalUserIdentity
 import com.example.hevygroovy.dto.CreateExerciseRequest
 import com.example.hevygroovy.dto.CreateTemplateRequest
@@ -12,6 +13,7 @@ import com.example.hevygroovy.entity.enums.MuscleGroup
 import com.example.hevygroovy.persistence.SQLiteAppStorage
 import com.example.hevygroovy.ui.theme.HevyGroovyTheme
 import java.util.UUID
+import java.util.concurrent.atomic.AtomicInteger
 import org.junit.Assert.*
 import org.junit.Rule
 import org.junit.Test
@@ -46,6 +48,13 @@ class ExerciseNavigationFlowTest {
         }
         try {
             AppContainer(context, database).use { container ->
+                val libraryLoads = AtomicInteger()
+                val libraryGateway = object : LibraryGateway by container.library {
+                    override fun loadLibrary(templateId: Long?, callback: LibraryGateway.LibraryCallback) {
+                        libraryLoads.incrementAndGet()
+                        container.library.loadLibrary(templateId, callback)
+                    }
+                }
                 lateinit var workouts: WorkoutHomeViewModel
                 lateinit var library: LibraryViewModel
                 lateinit var history: HistoryViewModel
@@ -53,13 +62,17 @@ class ExerciseNavigationFlowTest {
                 lateinit var records: ExerciseRecordsViewModel
                 instrumentation.runOnMainSync {
                     workouts = WorkoutHomeViewModel(container.workouts)
-                    library = LibraryViewModel(container.library)
+                    library = LibraryViewModel(libraryGateway)
                     history = HistoryViewModel(container.history)
                     profile = ProfileViewModel(container.profile)
                     records = ExerciseRecordsViewModel(container.records)
                 }
                 compose.setContent { HevyGroovyTheme { WorkoutApp(workouts, library, history, profile, records) } }
                 compose.waitUntil(10_000) { workouts.state.loaded && !workouts.state.loading }
+                compose.runOnIdle {
+                    assertEquals(0, libraryLoads.get())
+                    assertFalse(library.state.loaded)
+                }
                 compose.onNodeWithTag("resume-workout").performClick()
                 compose.onNodeWithTag("inline-weight-${fixture[2]}").performScrollTo().performTextReplacement("invalid")
                 compose.onNodeWithTag("open-active-exercise-${fixture[1]}").performScrollTo().performClick()
@@ -70,19 +83,27 @@ class ExerciseNavigationFlowTest {
                 compose.onNodeWithTag("exercise-history-${fixture[3]}").performScrollTo().assertIsDisplayed()
                 compose.onNodeWithTag("exercise-tab-info").performClick()
                 compose.onNodeWithText("Press and return.").performScrollTo().assertIsDisplayed()
+                compose.runOnIdle {
+                    assertEquals("Exercise details must use the records gateway without loading the library", 0, libraryLoads.get())
+                    assertFalse(library.state.loaded)
+                }
                 compose.onNodeWithTag("exercise-detail-back").performClick()
                 compose.onNodeWithTag("inline-weight-${fixture[2]}").performScrollTo().assertTextContains("invalid")
                 compose.onNodeWithTag("minimize-workout").performClick()
                 compose.onNodeWithTag("exercises-tab").performClick()
                 compose.waitUntil(10_000) { library.state.loaded && !library.state.loading }
+                val loadedLibraryCalls = libraryLoads.get()
+                assertTrue("Opening the Exercises tab must still load its library", loadedLibraryCalls > 0)
                 compose.onNodeWithTag("open-library-exercise-${fixture[0]}").performScrollTo().performClick()
                 compose.waitUntil(10_000) { records.state.loaded && !records.state.loading }
                 compose.onNodeWithTag("exercise-detail").assertIsDisplayed()
                 compose.onNodeWithTag("exercise-tab-overview").assertIsSelected()
+                compose.runOnIdle { assertEquals("Opening a catalog exercise must reuse the loaded library", loadedLibraryCalls, libraryLoads.get()) }
                 compose.onNodeWithTag("exercise-detail-back").performClick()
                 compose.onNodeWithTag("guide-exercise-${fixture[0]}").performScrollTo().performClick()
                 compose.waitUntil(10_000) { records.state.loaded && !records.state.loading }
                 compose.onNodeWithTag("exercise-tab-info").assertIsSelected()
+                compose.runOnIdle { assertEquals("Opening the exercise guide must not reload the library", loadedLibraryCalls, libraryLoads.get()) }
                 // The global History tab leaves the exercise page and returns to the main app.
                 compose.onNodeWithTag("history-tab").performClick()
                 compose.onNodeWithTag("exercise-detail").assertDoesNotExist()
@@ -93,6 +114,7 @@ class ExerciseNavigationFlowTest {
                 compose.onNodeWithTag("open-history-exercise-${fixture[4]}").performClick()
                 compose.waitUntil(10_000) { records.state.loaded && !records.state.loading }
                 compose.onNodeWithTag("exercise-detail").assertIsDisplayed()
+                compose.runOnIdle { assertEquals("Opening an exercise from history must not reload the library", loadedLibraryCalls, libraryLoads.get()) }
                 compose.onNodeWithTag("exercise-detail-back").performClick()
                 compose.onNodeWithTag("history-detail").assertIsDisplayed()
                 compose.runOnIdle { assertEquals(fixture[3], history.state.detail!!.workoutId) }

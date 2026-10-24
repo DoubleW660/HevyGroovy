@@ -126,7 +126,8 @@ fun ExerciseDetailScreen(
         }
     }
     if (editing && library != null && state.exercise != null) {
-        ExerciseCatalogDialog(state.exercise, library.state.busy || !library.state.loaded, library.state.error,
+        // The selected exercise comes from the records snapshot; editing needs no library-wide read.
+        ExerciseCatalogDialog(state.exercise, library.state.busy, library.state.error,
             onDismiss = { editing = false; saving = false }) { title, description, primary, secondary, unilateral, tracking ->
             saving = true
             library.saveExercise(exerciseId, title, description, primary, secondary, unilateral, tracking)

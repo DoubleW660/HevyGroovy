@@ -15,6 +15,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hevygroovy.dto.ActiveSetEntry
 import com.example.hevygroovy.dto.CatalogExercise
@@ -57,13 +59,15 @@ fun ExerciseDetailScreen(
     Scaffold(Modifier.fillMaxSize().testTag("exercise-detail"), topBar = {
         Surface {
             Column {
-                Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp),
+                Row(Modifier.fillMaxWidth().padding(horizontal = GroovyLayout.ScreenPadding, vertical = 8.dp),
                     verticalAlignment = Alignment.CenterVertically) {
-                    TextButton(onClick = onBack, modifier = Modifier.testTag("exercise-detail-back")) { Text("Back") }
+                    TextButton(onClick = onBack,
+                        modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("exercise-detail-back")) { Text("Back") }
                     Column(Modifier.weight(1f).padding(start = 8.dp, end = 12.dp)) {
                         Text("EXERCISE", style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary)
-                        Text(state.exercise?.title ?: exerciseName, style = MaterialTheme.typography.titleLarge)
+                        Text(state.exercise?.title ?: exerciseName, style = MaterialTheme.typography.titleLarge,
+                            maxLines = 2, overflow = TextOverflow.Ellipsis)
                     }
                 }
                 TabRow(selectedTabIndex = selectedTab) {
@@ -78,8 +82,8 @@ fun ExerciseDetailScreen(
         if (!state.loaded) {
             // Do not restore a saved list against the temporary loading/error items: measuring
             // a shorter list would clamp its saved position before the exercise has arrived.
-            Column(Modifier.fillMaxSize().padding(padding).padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.fillMaxSize().padding(padding).padding(GroovyLayout.ScreenPadding),
+                verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
                 if (state.loading) {
                     LinearProgressIndicator(Modifier.fillMaxWidth())
                     Text("Loading exercise…", style = MaterialTheme.typography.bodySmall)
@@ -98,7 +102,8 @@ fun ExerciseDetailScreen(
                 tabStates.SaveableStateProvider("${exerciseId ?: 0L}:$activeTab") {
                     val listState = rememberLazyListState()
                     LazyColumn(Modifier.fillMaxSize().padding(padding).testTag(listTag), state = listState,
-                        contentPadding = PaddingValues(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        contentPadding = PaddingValues(GroovyLayout.ScreenPadding),
+                        verticalArrangement = Arrangement.spacedBy(GroovyLayout.SectionGap)) {
                         when (activeTab) {
                             0 -> {
                                 item(key = "progress") { ExerciseProgressChart(exerciseId ?: 0L, state.history) }
@@ -112,9 +117,13 @@ fun ExerciseDetailScreen(
                                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                                 }
                                 if (state.history.isEmpty()) item(key = "empty") {
-                                    Text("No completed workouts yet", style = MaterialTheme.typography.titleMedium)
-                                    Text("Complete a set and finish your workout to see it here.",
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    OutlinedCard(Modifier.fillMaxWidth()) {
+                                        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                                            Text("No completed workouts yet", style = MaterialTheme.typography.titleMedium)
+                                            Text("Complete a set and finish your workout to see it here.",
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                        }
+                                    }
                                 }
                                 items(state.history, key = { "session-${it.workoutId}" }) { ExerciseHistoryCard(it) }
                             }
@@ -141,7 +150,7 @@ private fun ExercisePersonalRecords(records: List<PersonalRecord>, estimatedOneR
     Card(Modifier.fillMaxWidth().testTag("exercise-personal-records"),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.32f))) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.SectionGap)) {
             Text("Personal records", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.primary)
             if (records.isEmpty() && estimatedOneRepMaxKg <= 0) {
                 Text("No records yet", style = MaterialTheme.typography.titleMedium)
@@ -197,10 +206,10 @@ private fun LazyListScope.exerciseRepRecords(records: List<ExerciseRepRecord>) {
     items(records.filter { it.reps >= 5 }.sortedBy { it.reps }, key = { "rep-record-${it.reps}" }) { record ->
         val unit = LocalWeightUnit.current
         Card(Modifier.fillMaxWidth().testTag("exercise-rep-record-${record.reps}")) {
-            Row(Modifier.fillMaxWidth().padding(16.dp), horizontalArrangement = Arrangement.SpaceBetween,
+            Row(Modifier.fillMaxWidth().padding(GroovyLayout.CardPadding), horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                Text("${record.reps} reps", style = MaterialTheme.typography.titleMedium)
-                Column(horizontalAlignment = Alignment.End) {
+                Text("${record.reps} reps", style = MaterialTheme.typography.titleMedium, modifier = Modifier.weight(1f))
+                Column(Modifier.weight(1f), horizontalAlignment = Alignment.End) {
                     Text("${exerciseNumber(record.weightKg.inWeightUnit(unit))} ${unit.symbol}",
                         style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
                     Text(exerciseDate(record.achievedAtEpochMillis), style = MaterialTheme.typography.bodySmall,
@@ -216,7 +225,7 @@ private fun ExerciseHistoryCard(session: ExercisePerformance) {
     val unit = LocalWeightUnit.current
     Card(Modifier.fillMaxWidth().testTag("exercise-history-${session.workoutId}"),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
             Text(session.workoutName, style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary)
             Text(exerciseDateTime(session.endedAtEpochMillis), style = MaterialTheme.typography.bodySmall,
@@ -248,10 +257,11 @@ private fun ExercisePerformanceSetRow(set: ActiveSetEntry, number: Int) {
         else -> "Normal"
     }
     Column(Modifier.fillMaxWidth().testTag("exercise-history-set-${set.id}"), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text("Set $number · $type", style = MaterialTheme.typography.bodyMedium)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text("Set $number · $type", style = MaterialTheme.typography.bodyMedium, modifier = Modifier.weight(1f))
             Text("${exerciseNumber(set.weight.asKilograms(set.unit).inWeightUnit(unit))} ${unit.symbol} × ${set.reps}",
-                style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium)
+                style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Medium,
+                modifier = Modifier.weight(1f), textAlign = TextAlign.End)
         }
         val extras = buildList {
             addAll(set.measurementDetails())
@@ -266,7 +276,7 @@ private fun ExercisePerformanceSetRow(set: ActiveSetEntry, number: Int) {
 private fun LazyListScope.exerciseInfo(exercise: CatalogExercise?, editable: Boolean, onEdit: () -> Unit) {
     item(key = "information") {
         Card(Modifier.fillMaxWidth().testTag("exercise-information")) {
-            Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
                 Text("Exercise information", style = MaterialTheme.typography.titleLarge)
                 if (exercise == null) {
                     Text("Information is unavailable for this exercise.", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -277,7 +287,8 @@ private fun LazyListScope.exerciseInfo(exercise: CatalogExercise?, editable: Boo
                     ExerciseInfoField("Movement", if (exercise.isUnilateral) "Unilateral" else "Bilateral")
                     ExerciseInfoField("Tracking", exercise.trackingType.label())
                     if (editable) OutlinedButton(onClick = onEdit,
-                        modifier = Modifier.testTag("edit-exercise-information")) { Text("Edit categories & tracking") }
+                        modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)
+                            .testTag("edit-exercise-information")) { Text("Edit categories & tracking") }
                     Text(if (exercise.isUnilateral) "Enter measurements per side. Weight × rep volume counts both sides."
                         else "Time is entered in seconds and distance in meters.", style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)

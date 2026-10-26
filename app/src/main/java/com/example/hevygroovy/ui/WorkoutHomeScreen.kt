@@ -26,6 +26,7 @@ import java.text.DateFormat
 import java.util.Date
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = true,
     onMinimize: (() -> Unit)? = null, onOpenExercise: ((Long, String) -> Unit)? = null) {
     val state = viewModel.state
@@ -58,10 +59,12 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
     }
     Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) "workouts-ready" else "workouts-loading"),
         topBar = {
-            if (onMinimize != null) Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
-                verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onMinimize, modifier = Modifier.testTag("minimize-workout")) { Text("⌄  Minimize") }
-                Spacer(Modifier.weight(1f))
+            if (onMinimize != null) FlowRow(Modifier.fillMaxWidth()
+                .padding(horizontal = GroovyLayout.ScreenPadding, vertical = 8.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = onMinimize,
+                    modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("minimize-workout")) { Text("Minimize") }
                 if (active != null) FinishWorkoutButton(viewModel, active, hasUnsavedSets)
             }
         }) { padding ->
@@ -72,33 +75,29 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                     onBegin = { focus.clearFocus(); keyboard?.hide() }, onMove = viewModel::moveExercise),
             state = listState,
             userScrollEnabled = reorder.draggedId == null,
-            contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+            contentPadding = PaddingValues(GroovyLayout.ScreenPadding),
+            verticalArrangement = Arrangement.spacedBy(GroovyLayout.SectionGap),
         ) {
             item(key = "title") {
-                Text(if (showHistory) "HevyGroovy" else "Workout", style = MaterialTheme.typography.headlineLarge)
-                Text(if (showHistory) "Your workouts" else "One set at a time.", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                ScreenHeading(if (showHistory) "HevyGroovy" else "Workout",
+                    if (showHistory) "Your workouts" else "One set at a time.")
             }
             if (state.loading && !state.loaded) {
                 item(key = "loading") { LinearProgressIndicator(modifier = Modifier.fillMaxWidth()) }
             }
             state.error?.let { message ->
                 item(key = "error") {
-                    Card {
-                        Column(Modifier.padding(16.dp)) {
-                            Text(message, color = MaterialTheme.colorScheme.error)
-                            TextButton(onClick = viewModel::refresh, enabled = !state.loading) { Text("Retry") }
-                        }
-                    }
+                    ErrorCard(message, viewModel::refresh, retryEnabled = !state.loading)
                 }
             }
             if (state.loaded) {
                 item(key = "active-workout") {
                     if (active == null) {
                         Card(Modifier.fillMaxWidth()) {
-                            Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                            Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
                                 Text("Ready for your next session?", style = MaterialTheme.typography.titleLarge)
-                                Button(onClick = viewModel::startWorkout, enabled = !state.busy && state.error == null) {
+                                Button(onClick = viewModel::startWorkout, enabled = !state.busy && state.error == null,
+                                    modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)) {
                                     Text("Start empty workout")
                                 }
                             }
@@ -142,8 +141,9 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
                 }
                 if (showHistory) {
                 item(key = "recent-heading") {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text("Recent workouts", style = MaterialTheme.typography.titleLarge)
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.CenterVertically) {
+                        Text("Recent workouts", style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f))
                         TextButton(onClick = viewModel::refresh, enabled = !state.loading) { Text("Refresh") }
                     }
                 }
@@ -171,7 +171,8 @@ fun WorkoutHomeScreen(viewModel: WorkoutHomeViewModel, showHistory: Boolean = tr
             title = { Text("Discard workout?") },
             text = { Text("This removes this workout and all its sets. This cannot be undone.") },
             confirmButton = {
-                TextButton(onClick = { confirmDiscard = false; viewModel.discardWorkout() }, enabled = !state.busy) {
+                TextButton(onClick = { confirmDiscard = false; viewModel.discardWorkout() }, enabled = !state.busy,
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                     Text("Discard")
                 }
             },

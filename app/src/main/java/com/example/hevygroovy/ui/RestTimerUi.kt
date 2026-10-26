@@ -78,34 +78,42 @@ internal fun RestTimerControls(controller: RestTimerController, modifier: Modifi
 @Composable
 internal fun RestTimerBar(timer: RestTimerState, onAdjust: (Int) -> Unit, onSkip: () -> Unit,
     modifier: Modifier = Modifier, permissionAction: (() -> Unit)? = null, permissionLabel: String = "") {
-    Surface(modifier.fillMaxWidth().testTag("rest-timer"), tonalElevation = 6.dp, shadowElevation = 8.dp) {
-        Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                Column(Modifier.weight(1f)) {
-                    Text("Rest", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    Text(timer.exerciseName, style = MaterialTheme.typography.titleSmall,
-                        maxLines = 1, overflow = TextOverflow.Ellipsis)
+    Surface(modifier.fillMaxWidth().testTag("rest-timer"),
+        color = MaterialTheme.colorScheme.surfaceVariant, tonalElevation = 0.dp) {
+        Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+            Column(Modifier.widthIn(max = GroovyLayout.ContentMaxWidth).fillMaxWidth()
+                .padding(horizontal = GroovyLayout.ScreenPadding, vertical = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Column(Modifier.weight(1f)) {
+                        Text("Rest", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        Text(timer.exerciseName, style = MaterialTheme.typography.titleSmall,
+                            maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    }
+                    if (timer.isComplete) {
+                        Text("Get It!", style = MaterialTheme.typography.headlineSmall,
+                            color = MaterialTheme.colorScheme.primary, modifier = Modifier.testTag("rest-timer-complete"))
+                    } else {
+                        val seconds = timer.remainingSeconds.coerceAtLeast(0)
+                        Text(String.format(Locale.getDefault(), "%d:%02d", seconds / 60, seconds % 60),
+                            style = MaterialTheme.typography.headlineSmall, modifier = Modifier.testTag("rest-timer-remaining"))
+                    }
                 }
-                if (timer.isComplete) {
-                    Text("Get It!", style = MaterialTheme.typography.headlineMedium,
-                        color = MaterialTheme.colorScheme.primary, modifier = Modifier.testTag("rest-timer-complete"))
-                } else {
-                    val seconds = timer.remainingSeconds.coerceAtLeast(0)
-                    Text(String.format(Locale.getDefault(), "%d:%02d", seconds / 60, seconds % 60),
-                        style = MaterialTheme.typography.headlineMedium, modifier = Modifier.testTag("rest-timer-remaining"))
+                if (!timer.isComplete) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = { onAdjust(-15) },
+                        modifier = Modifier.weight(1f).heightIn(min = GroovyLayout.ButtonHeight).testTag("rest-minus-15")) { Text("−15s") }
+                    OutlinedButton(onClick = { onAdjust(15) },
+                        modifier = Modifier.weight(1f).heightIn(min = GroovyLayout.ButtonHeight).testTag("rest-plus-15")) { Text("+15s") }
+                    TextButton(onClick = onSkip,
+                        modifier = Modifier.weight(1f).heightIn(min = GroovyLayout.ButtonHeight).testTag("rest-skip")) { Text("Skip") }
                 }
-            }
-            if (!timer.isComplete) Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { onAdjust(-15) }, modifier = Modifier.testTag("rest-minus-15")) { Text("−15s") }
-                OutlinedButton(onClick = { onAdjust(15) }, modifier = Modifier.testTag("rest-plus-15")) { Text("+15s") }
-                Spacer(Modifier.weight(1f))
-                TextButton(onClick = onSkip, modifier = Modifier.testTag("rest-skip")) { Text("Skip") }
-            }
-            if (!timer.isComplete && permissionAction != null) TextButton(onClick = permissionAction,
-                contentPadding = PaddingValues(horizontal = 0.dp), modifier = Modifier.testTag("rest-alert-permission")) {
-                Text(permissionLabel, style = MaterialTheme.typography.labelMedium)
+                if (!timer.isComplete && permissionAction != null) TextButton(onClick = permissionAction,
+                    contentPadding = PaddingValues(horizontal = 0.dp),
+                    modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight).testTag("rest-alert-permission")) {
+                    Text(permissionLabel, modifier = Modifier.fillMaxWidth(), style = MaterialTheme.typography.labelMedium)
+                }
             }
         }
     }

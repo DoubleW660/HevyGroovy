@@ -11,7 +11,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -21,10 +20,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
@@ -41,6 +43,7 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun ActiveWorkoutHeader(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail, onDiscard: () -> Unit,
     hasUnsavedSets: Boolean = false, showFinish: Boolean = true) {
@@ -50,23 +53,36 @@ fun ActiveWorkoutHeader(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail
     var pickExercise by rememberSaveable(active.workoutId) { mutableStateOf(false) }
     val canFinish = active.exercises.any { exercise -> exercise.sets.any { it.isCompleted } }
     Card(Modifier.fillMaxWidth()) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text("Workout in progress", style = MaterialTheme.typography.labelLarge)
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("Workout in progress", style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.primary)
             Text(active.nameSnapshot ?: "Workout", style = MaterialTheme.typography.headlineSmall)
-            active.notes?.takeIf { it.isNotBlank() }?.let { Text(it) }
-            TextButton(onClick = { savingWorkoutDetails = false; editDetails = true }, enabled = !busy) { Text("Edit workout details") }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Button(onClick = { pickExercise = true }, enabled = !busy) { Text("Add exercise") }
+            active.notes?.takeIf { it.isNotBlank() }?.let {
+                Text(it, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                TextButton(onClick = { savingWorkoutDetails = false; editDetails = true }, enabled = !busy,
+                    contentPadding = PaddingValues(horizontal = 8.dp), modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight)) {
+                    Text("Edit workout details")
+                }
+                TextButton(onClick = onDiscard, enabled = !busy,
+                    modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("cancel-workout"),
+                    colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
+                    Text("Discard workout")
+                }
+            }
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                OutlinedButton(onClick = { pickExercise = true }, enabled = !busy,
+                    modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight)) { Text("Add exercise") }
                 if (showFinish) FinishWorkoutButton(model, active, hasUnsavedSets)
             }
-            if (!canFinish) Text("Complete at least one set to finish.")
+            if (!canFinish) Text("Complete at least one set to finish.", style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant)
             if (hasUnsavedSets) Text("Save or correct your set entries before finishing.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.testTag("finish-unsaved-set-warning"))
-            OutlinedButton(onClick = onDiscard, enabled = !busy, modifier = Modifier.testTag("cancel-workout"),
-                colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
-                Text("Cancel workout")
-            }
         }
     }
     if (editDetails) {
@@ -78,12 +94,13 @@ fun ActiveWorkoutHeader(model: WorkoutHomeViewModel, active: ActiveWorkoutDetail
         AlertDialog(
             onDismissRequest = { savingWorkoutDetails = false; editDetails = false }, title = { Text("Workout details") },
             text = {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Column(Modifier.heightIn(max = 400.dp).verticalScroll(rememberScrollState()),
+                    verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
                     model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                     OutlinedTextField(name, { name = it }, label = { Text("Workout name") }, singleLine = true,
-                        modifier = Modifier.testTag("workout-name"))
+                        modifier = Modifier.fillMaxWidth().testTag("workout-name"))
                     OutlinedTextField(notes, { notes = it }, label = { Text("Workout notes") }, maxLines = 5,
-                        modifier = Modifier.testTag("workout-notes"))
+                        modifier = Modifier.fillMaxWidth().testTag("workout-notes"))
                 }
             },
             confirmButton = {
@@ -103,7 +120,7 @@ internal fun FinishWorkoutButton(model: WorkoutHomeViewModel, active: ActiveWork
     var finish by rememberSaveable(active.workoutId) { mutableStateOf(false) }
     val busy = model.state.busy
     val canFinish = active.exercises.any { exercise -> exercise.sets.any { it.isCompleted } }
-    Button(onClick = { finish = true }, modifier = Modifier.testTag("finish-workout"),
+    Button(onClick = { finish = true }, modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("finish-workout"),
         enabled = !busy && canFinish && !hasUnsavedSets && model.state.error == null) {
         Text("Finish workout")
     }
@@ -154,13 +171,18 @@ private fun ExercisePicker(model: WorkoutHomeViewModel, onDismiss: () -> Unit) {
         title = { Text("Choose exercise") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(search, { search = it }, label = { Text("Search exercises") }, singleLine = true)
+                    OutlinedTextField(search, { search = it }, label = { Text("Search exercises") }, singleLine = true,
+                        modifier = Modifier.fillMaxWidth())
                     val options = model.state.exercises.filter { it.title.contains(search, ignoreCase = true) }
                     if (options.isEmpty()) Text("No matching exercises. Create one to get started.")
                     LazyColumn(Modifier.heightIn(max = 300.dp)) {
                         items(options, key = { it.id }) { exercise ->
                             TextButton(onClick = { submitted = true; model.addExercise(exercise.id) }, enabled = !busy,
-                                modifier = Modifier.fillMaxWidth().testTag("exercise-option-${exercise.id}")) { Text(exercise.title) }
+                                contentPadding = PaddingValues(horizontal = 12.dp, vertical = 12.dp),
+                                modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)
+                                    .testTag("exercise-option-${exercise.id}")) {
+                                Text(exercise.title, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Start)
+                            }
                         }
                     }
                 if (busy) LinearProgressIndicator(Modifier.fillMaxWidth())
@@ -202,70 +224,76 @@ fun WorkoutExerciseCard(
     val savedRows = rememberSaveableStateHolder()
     Card(Modifier.fillMaxWidth().testTag(if (collapsed) "collapsed-exercise-" + row.workoutExerciseId
         else "workout-exercise-" + row.workoutExerciseId)) {
-        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
-            Row(reorderModifier.fillMaxWidth().heightIn(min = 44.dp),
-                verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                ExerciseDragHandle()
-                Text(name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f)
-                    .testTag("open-active-exercise-" + row.workoutExerciseId)
-                    .clickable(enabled = onOpenExercise != null) {
-                        focus.clearFocus(); keyboard?.hide()
-                        onOpenExercise?.invoke(row.exerciseId, name)
-                    })
-                if (collapsed) Text((position + 1).toString(), color = MaterialTheme.colorScheme.primary)
-            }
-            if (!collapsed) savedRows.SaveableStateProvider(row.workoutExerciseId) {
-                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                    if (row.isUnilateral) Text(if (row.trackingType.tracksReps()) "Unilateral · reps per side · volume × 2"
-                        else "Unilateral · measurements per side",
-                        style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    if (records.isNotEmpty()) {
-                        TextButton(onClick = { showRecords = true },
-                            modifier = Modifier.testTag("active-records-" + row.workoutExerciseId)) {
-                            Text("★ " + records.size + " provisional records · View")
+        BoxWithConstraints(Modifier.fillMaxWidth()) {
+            val compact = maxWidth < 540.dp || LocalDensity.current.fontScale > 1.2f
+            Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(reorderModifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight),
+                    verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    ExerciseDragHandle()
+                    Text(name, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f)
+                        .testTag("open-active-exercise-" + row.workoutExerciseId)
+                        .clickable(enabled = onOpenExercise != null, role = Role.Button) {
+                            focus.clearFocus(); keyboard?.hide()
+                            onOpenExercise?.invoke(row.exerciseId, name)
+                        }.padding(vertical = 12.dp))
+                    if (collapsed) Text((position + 1).toString(), color = MaterialTheme.colorScheme.primary)
+                }
+                if (!collapsed) savedRows.SaveableStateProvider(row.workoutExerciseId) {
+                    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                        if (row.isUnilateral) Text(if (row.trackingType.tracksReps()) "Unilateral · reps per side · volume × 2"
+                            else "Unilateral · measurements per side",
+                            style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
+                        if (records.isNotEmpty()) {
+                            TextButton(onClick = { showRecords = true },
+                                modifier = Modifier.testTag("active-records-" + row.workoutExerciseId)) {
+                                Text("★ " + records.size + " provisional records · View")
+                            }
                         }
-                    }
-                    if (!row.notes.isNullOrBlank()) Text(row.notes)
-                    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        TextButton(onClick = { focus.clearFocus(); keyboard?.hide(); editRest = true }, enabled = !busy,
-                            modifier = Modifier.weight(1f).testTag("exercise-rest-" + row.workoutExerciseId)
-                                .semantics { contentDescription = "Rest for $name" }) {
-                            Text("Rest: " + restDurationLabel(row.restTimeSeconds))
+                        if (!row.notes.isNullOrBlank()) Text(row.notes)
+                        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            TextButton(onClick = { focus.clearFocus(); keyboard?.hide(); editRest = true }, enabled = !busy,
+                                modifier = Modifier.weight(1f).testTag("exercise-rest-" + row.workoutExerciseId)
+                                    .semantics { contentDescription = "Rest for $name" }) {
+                                Text("Rest: " + restDurationLabel(row.restTimeSeconds))
+                            }
+                            TextButton(onClick = { editDetails = true }, enabled = !busy) { Text("Edit notes") }
                         }
-                        TextButton(onClick = { editDetails = true }, enabled = !busy) { Text("Edit notes") }
-                    }
-                    if (row.estimatedOneRepMax > 0) {
-                        Text("Estimated 1RM: " + workoutNumber(row.estimatedOneRepMax.inWeightUnit(displayUnit)) +
-                            " ${displayUnit.symbol} · completed sets, 1–10 reps",
-                            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.testTag("active-estimated-1rm-" + row.workoutExerciseId))
-                    }
-                    Text(if (row.previousEndedAtEpochMillis != null) "Previous · " + previousDate(row.previousEndedAtEpochMillis)
-                        else "No previous sets yet", style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (row.trackingType == TrackingType.WEIGHT_REPS) InlineSetTableHeading()
-                    else Text(row.trackingType.label(), style = MaterialTheme.typography.labelMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    row.sets.forEachIndexed { index, set ->
-                        key(set.id) {
-                            val warmup = set.setType == SetType.WARMUP
-                            val ordinal = row.sets.take(index).count { (it.setType == SetType.WARMUP) == warmup }
-                            val previous = row.previousSets.filter { (it.setType == SetType.WARMUP) == warmup }.getOrNull(ordinal)
-                            val normalNumber = row.sets.take(index + 1).count { it.setType == SetType.NORMAL }.coerceAtLeast(1)
-                            InlineSetRow(model, name, set,
-                                tracking = row.trackingType,
-                                previous = previous, normalSetNumber = normalNumber,
-                                canPersist = canPersist, onDraftChanged = onDraftChanged,
-                                onMore = { savingSetOptions = false; editingSetId = set.id })
+                        if (row.estimatedOneRepMax > 0) {
+                            Text("Estimated 1RM: " + workoutNumber(row.estimatedOneRepMax.inWeightUnit(displayUnit)) +
+                                " ${displayUnit.symbol} · completed sets, 1–10 reps",
+                                style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.testTag("active-estimated-1rm-" + row.workoutExerciseId))
                         }
-                    }
-                    OutlinedButton(onClick = { model.addSet(row.workoutExerciseId) }, enabled = !busy,
-                        modifier = Modifier.fillMaxWidth().semantics { contentDescription = "Add set to $name" }) { Text("Add set") }
-                    TextButton(onClick = { remove = true }, enabled = !busy) {
-                        Text("Remove exercise", color = MaterialTheme.colorScheme.error)
+                        Text(if (row.previousEndedAtEpochMillis != null) "Previous · " + previousDate(row.previousEndedAtEpochMillis)
+                            else "No previous sets yet", style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        if (row.trackingType == TrackingType.WEIGHT_REPS && !compact) InlineSetTableHeading(compact)
+                        else Text(row.trackingType.label(), style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant)
+                        row.sets.forEachIndexed { index, set ->
+                            key(set.id) {
+                                val warmup = set.setType == SetType.WARMUP
+                                val ordinal = row.sets.take(index).count { (it.setType == SetType.WARMUP) == warmup }
+                                val previous = row.previousSets.filter { (it.setType == SetType.WARMUP) == warmup }.getOrNull(ordinal)
+                                val normalNumber = row.sets.take(index + 1).count { it.setType == SetType.NORMAL }.coerceAtLeast(1)
+                                InlineSetRow(model, name, set,
+                                    tracking = row.trackingType,
+                                    compact = compact,
+                                    previous = previous, normalSetNumber = normalNumber,
+                                    canPersist = canPersist, onDraftChanged = onDraftChanged,
+                                    onMore = { savingSetOptions = false; editingSetId = set.id })
+                            }
+                        }
+                        OutlinedButton(onClick = { model.addSet(row.workoutExerciseId) }, enabled = !busy,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)
+                                .semantics { contentDescription = "Add set to $name" }) { Text("Add set") }
+                        TextButton(onClick = { remove = true }, enabled = !busy,
+                            modifier = Modifier.align(Alignment.End).heightIn(min = GroovyLayout.ButtonHeight)) {
+                            Text("Remove exercise", color = MaterialTheme.colorScheme.error)
+                        }
                     }
                 }
-            }
+        }
         }
     }
     if (showRecords && records.isNotEmpty()) {
@@ -280,7 +308,7 @@ fun WorkoutExerciseCard(
         AlertDialog(onDismissRequest = { remove = false }, title = { Text("Remove $name?") },
             text = { Text("This removes the exercise and its sets from this workout.") },
             confirmButton = { TextButton(onClick = { remove = false; model.removeExercise(row.workoutExerciseId) },
-                enabled = !busy) { Text("Remove") } },
+                enabled = !busy, colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("Remove") } },
             dismissButton = { TextButton(onClick = { remove = false }) { Text("Cancel") } })
     }
     if (editDetails) {
@@ -292,7 +320,8 @@ fun WorkoutExerciseCard(
         AlertDialog(onDismissRequest = { editDetails = false }, title = { Text("Exercise notes") },
             text = { Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                OutlinedTextField(notes, { notes = it }, label = { Text("Exercise notes") })
+                OutlinedTextField(notes, { notes = it }, label = { Text("Exercise notes") },
+                    modifier = Modifier.fillMaxWidth(), maxLines = 5)
             } },
             confirmButton = { TextButton(onClick = {
                 savingDetails = true; model.updateExercise(row.workoutExerciseId, notes, row.restTimeSeconds)
@@ -321,24 +350,24 @@ fun WorkoutExerciseCard(
 }
 
 @Composable
-private fun InlineSetTableHeading() {
+private fun InlineSetTableHeading(compact: Boolean) {
     Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp),
         verticalAlignment = Alignment.CenterVertically) {
-        Text("SET", Modifier.width(36.dp), style = MaterialTheme.typography.labelSmall)
-        Text("PREVIOUS", Modifier.weight(0.95f), style = MaterialTheme.typography.labelSmall,
+        Text("SET", Modifier.width(48.dp), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall)
+        if (!compact) Text("PREVIOUS", Modifier.weight(0.95f), style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("WEIGHT", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
+        Text("WEIGHT", Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("REPS", Modifier.weight(0.65f), style = MaterialTheme.typography.labelSmall,
+        Text("REPS", Modifier.weight(0.65f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
-        Text("✓", Modifier.width(40.dp), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelLarge,
+        Text("✓", Modifier.width(48.dp), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelLarge,
             color = MaterialTheme.colorScheme.primary)
     }
 }
 
 @Composable
 private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set: ActiveSetEntry,
-    tracking: TrackingType,
+    tracking: TrackingType, compact: Boolean,
     previous: ActiveSetEntry?, normalSetNumber: Int, canPersist: () -> Boolean,
     onDraftChanged: (Long, InlineSetDraft) -> Unit, onMore: () -> Unit) {
     var weight by rememberSaveable(set.id) { mutableStateOf(workoutInputNumber(set.weight)) }
@@ -422,17 +451,10 @@ private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set:
         if (!busy && pendingSave) saveIfChanged()
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(3.dp)) {
-        Row(Modifier.fillMaxWidth().onFocusChanged {
-            val wasFocused = focusWithinRow
-            focusWithinRow = it.hasFocus
-            if (wasFocused && !it.hasFocus) {
-                if (skipNextBlur) skipNextBlur = false else saveIfChanged()
-            }
-        }.focusGroup(), horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
-            Box(Modifier.width(36.dp)) {
+    val typeControl: @Composable () -> Unit = {
+            Box(Modifier.width(48.dp)) {
                 Box(Modifier.fillMaxWidth().heightIn(min = 48.dp).testTag("inline-type-" + set.id)
-                    .clickable(enabled = !busy) {
+                    .clickable(enabled = !busy, role = Role.Button) {
                         if (focusWithinRow) skipNextBlur = true
                         focus.clearFocus(); keyboard?.hide(); typeMenu = true
                     }
@@ -455,43 +477,67 @@ private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set:
                         }, onClick = { typeMenu = false; saveIfChanged(); onMore() })
                 }
             }
-            if (tracking == TrackingType.WEIGHT_REPS) Column(Modifier.weight(0.95f).testTag("previous-set-" + set.id)) {
+    }
+    val unitControl: @Composable () -> Unit = {
+        Box {
+            Text(unit.name.lowercase(), style = MaterialTheme.typography.labelLarge,
+                color = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(48.dp).testTag("inline-unit-" + set.id)
+                    .clickable(enabled = !busy, role = Role.Button) {
+                        if (focusWithinRow) skipNextBlur = true
+                        focus.clearFocus(); keyboard?.hide(); unitMenu = true
+                    }.wrapContentSize(Alignment.Center)
+                    .semantics { contentDescription = "Weight unit for set " + set.setNumber + " for $exerciseName" })
+            DropdownMenu(unitMenu, onDismissRequest = { unitMenu = false; saveIfChanged() }) {
+                WeightUnit.values().forEach { value ->
+                    DropdownMenuItem(text = { Text(value.name) }, onClick = {
+                        unit = value; unitDirty = true; unitMenu = false; saveIfChanged()
+                    })
+                }
+            }
+        }
+    }
+    val completeControl: @Composable () -> Unit = {
+        Checkbox(checked = set.isCompleted, enabled = !busy && valid,
+            onCheckedChange = { checked ->
+                if (focusWithinRow) skipNextBlur = true
+                pendingCompleted = checked
+                saveIfChanged()
+                focus.clearFocus()
+                keyboard?.hide()
+            }, modifier = Modifier.width(48.dp).testTag("inline-complete-" + set.id).semantics {
+                contentDescription = "Complete set " + set.setNumber + " for $exerciseName"
+            })
+    }
+    val fields: @Composable RowScope.() -> Unit = {
+            if (tracking == TrackingType.WEIGHT_REPS && !compact) Column(Modifier.weight(0.95f).testTag("previous-set-" + set.id)) {
                 if (previous == null) Text("—", color = MaterialTheme.colorScheme.onSurfaceVariant)
                 else {
                     Text(workoutNumber(previous.weight) + " " + previous.unit.name.lowercase() + " × " + previous.reps,
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
-            if (tracking.tracksWeight()) Box(Modifier.weight(1f)) {
+            if (tracking.tracksWeight()) Column(Modifier.weight(1f)) {
+                if (compact) Text("WEIGHT (${unit.name.lowercase()})", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
                 InlineNumberField(weight, { weight = it; weightDirty = true }, !validWeight, KeyboardType.Decimal,
                     "Weight for set " + set.setNumber + " for $exerciseName",
                     Modifier.testTag("inline-weight-" + set.id), onDone = {
                         if (focusWithinRow) skipNextBlur = true
                         saveIfChanged(); focus.clearFocus(); keyboard?.hide()
-                    }, suffix = {
-                        Text(unit.name.lowercase(), style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.testTag("inline-unit-" + set.id).clickable(enabled = !busy) {
-                                if (focusWithinRow) skipNextBlur = true
-                                focus.clearFocus(); keyboard?.hide()
-                                unitMenu = true
-                            }.semantics { contentDescription = "Weight unit for set " + set.setNumber + " for $exerciseName" })
-                    })
-                DropdownMenu(unitMenu, onDismissRequest = { unitMenu = false; saveIfChanged() }) {
-                    WeightUnit.values().forEach { value ->
-                        DropdownMenuItem(text = { Text(value.name) }, onClick = {
-                            unit = value; unitDirty = true; unitMenu = false; saveIfChanged()
-                        })
-                    }
-                }
+                    }, suffix = if (compact) null else unitControl)
             }
-            if (tracking.tracksReps()) InlineNumberField(reps, { reps = it; repsDirty = true }, !validReps, KeyboardType.Number,
+            if (tracking.tracksReps()) Column(Modifier.weight(0.65f)) {
+                if (compact) Text("REPS", style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant)
+                InlineNumberField(reps, { reps = it; repsDirty = true }, !validReps, KeyboardType.Number,
                 "Reps for set " + set.setNumber + " for $exerciseName",
-                Modifier.weight(0.65f).testTag("inline-reps-" + set.id),
+                Modifier.testTag("inline-reps-" + set.id),
                 onDone = {
                     if (focusWithinRow) skipNextBlur = true
                     saveIfChanged(); focus.clearFocus(); keyboard?.hide()
                 })
+            }
             if (tracking.tracksDuration()) Column(Modifier.weight(1f)) {
                 Text("TIME (seconds)", style = MaterialTheme.typography.labelSmall)
                 InlineNumberField(duration, { duration = it; durationDirty = true }, !validDuration, KeyboardType.Number,
@@ -510,16 +556,40 @@ private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set:
                         saveIfChanged(); focus.clearFocus(); keyboard?.hide()
                     })
             }
-            Checkbox(checked = set.isCompleted, enabled = !busy && valid,
-                onCheckedChange = { checked ->
-                    if (focusWithinRow) skipNextBlur = true
-                    pendingCompleted = checked
-                    saveIfChanged()
-                    focus.clearFocus()
-                    keyboard?.hide()
-                }, modifier = Modifier.width(40.dp).testTag("inline-complete-" + set.id).semantics {
-                    contentDescription = "Complete set " + set.setNumber + " for $exerciseName"
-                })
+    }
+    Column(Modifier.fillMaxWidth().onFocusChanged {
+        val wasFocused = focusWithinRow
+        focusWithinRow = it.hasFocus
+        if (wasFocused && !it.hasFocus) {
+            if (skipNextBlur) skipNextBlur = false else saveIfChanged()
+        }
+    }.focusGroup(), verticalArrangement = Arrangement.spacedBy(3.dp)) {
+        if (compact) {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                Text("Set", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                typeControl()
+                Spacer(Modifier.weight(1f))
+                if (tracking.tracksWeight()) unitControl()
+                completeControl()
+            }
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.Bottom, content = fields)
+        } else {
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(6.dp),
+                verticalAlignment = Alignment.CenterVertically) {
+                typeControl()
+                fields()
+                completeControl()
+            }
+        }
+        if (compact && tracking == TrackingType.WEIGHT_REPS && previous != null) {
+            Row(Modifier.testTag("previous-set-" + set.id),
+                horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                Text("Previous", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(workoutNumber(previous.weight) + " " + previous.unit.name.lowercase() + " × " + previous.reps,
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
         if (tracking != TrackingType.WEIGHT_REPS && previous != null) Text(
             "Previous: " + (previous.measurementDetails() +
@@ -539,7 +609,7 @@ private fun InlineSetRow(model: WorkoutHomeViewModel, exerciseName: String, set:
 internal fun InlineNumberField(value: String, onChange: (String) -> Unit, invalid: Boolean,
     keyboardType: KeyboardType, description: String, modifier: Modifier, onDone: () -> Unit,
     suffix: (@Composable () -> Unit)? = null) {
-    val shape = RoundedCornerShape(8.dp)
+    val shape = MaterialTheme.shapes.small
     var fieldValue by remember { mutableStateOf(TextFieldValue(value)) }
     // The IME can repeat a text update before the parent's new value is recomposed.
     var lastDispatchedText by remember(value) { mutableStateOf(value) }
@@ -558,18 +628,23 @@ internal fun InlineNumberField(value: String, onChange: (String) -> Unit, invali
             onChange(it.text)
         }
     }, singleLine = true,
+        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
         textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface,
             textAlign = TextAlign.Center, fontWeight = FontWeight.Medium),
         keyboardOptions = KeyboardOptions(keyboardType = keyboardType, imeAction = ImeAction.Done),
         keyboardActions = KeyboardActions(onDone = { onDone() }),
         modifier = modifier.heightIn(min = 48.dp).background(MaterialTheme.colorScheme.surfaceVariant, shape)
-            .border(1.dp, if (invalid) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.outlineVariant, shape)
-            .padding(horizontal = 5.dp, vertical = 12.dp).onFocusChanged { isFocused = it.isFocused }
+            .border(if (isFocused) 2.dp else 1.dp, when {
+                invalid -> MaterialTheme.colorScheme.error
+                isFocused -> MaterialTheme.colorScheme.primary
+                else -> MaterialTheme.colorScheme.outlineVariant
+            }, shape)
+            .padding(horizontal = 5.dp).onFocusChanged { isFocused = it.isFocused }
             .semantics { contentDescription = description },
         decorationBox = { inner ->
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(3.dp),
+            Row(Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight), horizontalArrangement = Arrangement.spacedBy(3.dp),
                 verticalAlignment = Alignment.CenterVertically) {
-                Box(Modifier.weight(1f)) { inner() }
+                Box(Modifier.weight(1f).padding(vertical = 12.dp)) { inner() }
                 suffix?.invoke()
             }
         })
@@ -587,7 +662,8 @@ private fun SetOptionsDialog(set: ActiveSetEntry, busy: Boolean, error: String?,
     if (delete) {
         AlertDialog(onDismissRequest = { delete = false }, title = { Text("Delete set " + set.setNumber + "?") },
             text = { Text("This permanently removes this set from the workout.") },
-            confirmButton = { TextButton(onClick = onDelete, enabled = !busy) { Text("Delete") } },
+            confirmButton = { TextButton(onClick = onDelete, enabled = !busy,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("Delete") } },
             dismissButton = { TextButton(onClick = { delete = false }) { Text("Keep set") } })
         return
     }
@@ -596,12 +672,13 @@ private fun SetOptionsDialog(set: ActiveSetEntry, busy: Boolean, error: String?,
             error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             OutlinedTextField(rpe, { rpe = it }, label = { Text("RPE (optional, 0–10)") }, singleLine = true,
                 isError = !validRpe, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                modifier = Modifier.testTag("set-rpe-" + set.id))
+                modifier = Modifier.fillMaxWidth().testTag("set-rpe-" + set.id))
             OutlinedButton(onClick = { editRest = true }, enabled = !busy,
-                modifier = Modifier.testTag("set-rest-" + set.id)) {
+                modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight).testTag("set-rest-" + set.id)) {
                 Text("Rest: " + (rest?.let(::restDurationLabel) ?: "Use exercise rest"))
             }
-            TextButton(onClick = { delete = true }, enabled = !busy) { Text("Delete set") }
+            TextButton(onClick = { delete = true }, enabled = !busy,
+                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) { Text("Delete set") }
         } },
         confirmButton = {
             TextButton(modifier = Modifier.testTag("save-set"), enabled = !busy && validRpe, onClick = {

@@ -13,8 +13,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.testTagsAsResourceId
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.style.TextAlign
@@ -49,6 +52,8 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
     val savedScreens = rememberSaveableStateHolder()
     val focus = LocalFocusManager.current
     val keyboard = LocalSoftwareKeyboardController.current
+    val screenWidth = LocalConfiguration.current.screenWidthDp
+    val compactNavigation = screenWidth < 360 || (screenWidth < 480 && LocalDensity.current.fontScale > 1.2f)
     val active = workouts.state.activeWorkout
     val exerciseId = records?.state?.selectedExerciseId
     val showSession = sessionOpen && (active != null || workouts.state.loading)
@@ -175,7 +180,9 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                     color = MaterialTheme.colorScheme.primaryContainer,
                     modifier = Modifier.fillMaxWidth().testTag("resume-workout"),
                 ) {
-                    Row(Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                    Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    Row(Modifier.widthIn(max = GroovyLayout.ContentMaxWidth).fillMaxWidth()
+                        .padding(horizontal = GroovyLayout.ScreenPadding, vertical = 12.dp),
                         verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
                         NavigationGlyph(NavigationIcon.Workout)
                         Column(Modifier.weight(1f)) {
@@ -186,19 +193,28 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                         }
                         Text("Resume", color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelLarge)
                     }
+                    }
                 }
-                NavigationBar(containerColor = MaterialTheme.colorScheme.surfaceVariant, tonalElevation = 0.dp) {
+                Surface(color = MaterialTheme.colorScheme.surfaceVariant) {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                NavigationBar(modifier = Modifier.widthIn(max = GroovyLayout.ContentMaxWidth).fillMaxWidth(),
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant, tonalElevation = 0.dp) {
                     AppTab.entries.forEach { destination ->
                         NavigationBarItem(
                             selected = tab == destination,
                             onClick = { selectTab(destination) },
                             icon = { NavigationGlyph(destination.icon) },
                             label = {
-                                Text(destination.title, maxLines = 2, textAlign = TextAlign.Center,
+                                val label = if (compactNavigation) when (destination) {
+                                    AppTab.Exercises -> "Library"
+                                    AppTab.Workout -> "Train"
+                                    else -> destination.title
+                                } else destination.title
+                                Text(label, maxLines = 1, softWrap = false, overflow = TextOverflow.Ellipsis, textAlign = TextAlign.Center,
                                     fontSize = 11.sp, letterSpacing = 0.sp,
                                     style = MaterialTheme.typography.labelMedium)
                             },
-                            modifier = Modifier.testTag(destination.tag),
+                            modifier = Modifier.testTag(destination.tag).semantics { contentDescription = destination.title },
                             colors = NavigationBarItemDefaults.colors(
                                 indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
@@ -209,19 +225,17 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                         )
                     }
                 }
+                }
+                }
             }
             }
         },
     ) { padding ->
-        Column(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding)) {
+        Box(Modifier.fillMaxSize().padding(padding).consumeWindowInsets(padding), contentAlignment = Alignment.TopCenter) {
+        Column(Modifier.widthIn(max = GroovyLayout.ContentMaxWidth).fillMaxSize()) {
             if (!showSession && tab == AppTab.Workout) workouts.state.error?.let { message ->
-                Card(Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 8.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                    Column(Modifier.padding(16.dp)) {
-                        Text(message)
-                        TextButton(onClick = workouts::refresh, enabled = !workouts.state.loading) { Text("Retry") }
-                    }
-                }
+                ErrorCard(message, onRetry = workouts::refresh, retryEnabled = !workouts.state.loading,
+                    modifier = Modifier.padding(horizontal = GroovyLayout.ScreenPadding, vertical = 8.dp))
             }
             Box(Modifier.weight(1f)) {
                 val route = when {
@@ -258,6 +272,7 @@ fun WorkoutApp(workouts: WorkoutHomeViewModel, library: LibraryViewModel, histor
                     }
                 } }
             }
+        }
         }
     }
     if (recordDetails.isNotEmpty()) {

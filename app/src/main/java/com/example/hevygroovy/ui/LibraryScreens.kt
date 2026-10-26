@@ -1,7 +1,10 @@
+@file:OptIn(androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
+
 package com.example.hevygroovy.ui
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.lazy.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -17,6 +20,7 @@ import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.example.hevygroovy.dto.*
@@ -32,24 +36,45 @@ private fun LibraryPage(title: String, model: LibraryViewModel, readyTag: String
     Scaffold(Modifier.testTag(if (state.loaded && !state.busy && state.error == null) readyTag else "library-loading")) { padding ->
         Box(Modifier.fillMaxSize().padding(padding)) {
         LazyColumn(Modifier.fillMaxSize().testTag("library-list").then(listModifier), state = listState,
-            userScrollEnabled = userScrollEnabled, contentPadding = PaddingValues(20.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            userScrollEnabled = userScrollEnabled, contentPadding = PaddingValues(GroovyLayout.ScreenPadding),
+            verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
             item(key = "heading") {
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text("YOUR TRAINING", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                    Text(title, style = MaterialTheme.typography.headlineLarge)
+                    ScreenHeading(title)
                 }
             }
             if (state.loading && !state.loaded) item(key = "loading") { LinearProgressIndicator(Modifier.fillMaxWidth()) }
             state.error?.let { error ->
                 item(key = "error") {
-                    Text(error, color = MaterialTheme.colorScheme.error)
-                    TextButton(onClick = model::refresh, enabled = !state.loading) { Text("Retry") }
+                    ErrorCard(error, model::refresh, retryEnabled = !state.loading)
                 }
             }
             content()
         }
         overlay()
+        }
+    }
+}
+
+@Composable
+private fun ArchivedToggle(checked: Boolean, description: String, onCheckedChange: (Boolean) -> Unit) {
+    Row(Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)
+        .toggleable(checked, role = Role.Checkbox, onValueChange = onCheckedChange)
+        .semantics { contentDescription = description },
+        verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Checkbox(checked, onCheckedChange = null)
+        Text("Show archived", style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant)
+    }
+}
+
+@Composable
+private fun LibraryEmptyState(title: String, message: String) {
+    OutlinedCard(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium)
+            Text(message, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
     }
 }
@@ -89,49 +114,54 @@ fun ExerciseLibraryScreen(model: LibraryViewModel, records: ExerciseRecordsViewM
     val canOpenExercise = onOpenExercise != null || records != null
     LibraryPage("Exercise library", model, listState = listState) {
         item(key = "controls") {
-            OutlinedTextField(search, { search = it }, label = { Text("Search exercises") },
-                singleLine = true, modifier = Modifier.fillMaxWidth().testTag("exercise-search"))
-            Row {
-                Checkbox(includeArchived, onCheckedChange = { includeArchived = it },
-                    modifier = Modifier.semantics { contentDescription = "Show archived exercises" })
-                Text("Show archived", Modifier.padding(top = 12.dp))
+            Column(verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
+                OutlinedTextField(search, { search = it }, label = { Text("Search exercises") },
+                    singleLine = true, modifier = Modifier.fillMaxWidth().testTag("exercise-search"))
+                Button(onClick = { creating = true }, enabled = !state.busy,
+                    modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)) { Text("New exercise") }
+                ArchivedToggle(includeArchived, "Show archived exercises") { includeArchived = it }
             }
-            Button(onClick = { creating = true }, enabled = !state.busy) { Text("New exercise") }
         }
-        if (state.loaded && filtered.isEmpty()) item(key = "empty") { Text("No matching exercises.") }
+        if (state.loaded && filtered.isEmpty()) item(key = "empty") {
+            LibraryEmptyState("No matching exercises.", "Try another search or create an exercise to add it to your library.")
+        }
         items(filtered, key = { it.id }) { exercise ->
-            Card(Modifier.fillMaxWidth().testTag("open-library-exercise-" + exercise.id)
-                .clickable(enabled = canOpenExercise) { openExercise(exercise) },
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(exercise.title, style = MaterialTheme.typography.titleLarge)
+            Card(Modifier.fillMaxWidth(),
+                colors = groovyCardColors()) {
+                Column(Modifier.fillMaxWidth().testTag("open-library-exercise-" + exercise.id)
+                    .then(if (canOpenExercise) Modifier.clickable(role = Role.Button,
+                        onClickLabel = "View ${exercise.title}") { openExercise(exercise) } else Modifier)
+                    .padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text(exercise.title, style = MaterialTheme.typography.titleLarge,
+                        modifier = Modifier.semantics(mergeDescendants = true) {}
+                            .testTag("records-exercise-${exercise.id}"))
                     Text(exercise.primaryMuscle?.displayName() ?: "Other", style = MaterialTheme.typography.labelLarge,
                         color = MaterialTheme.colorScheme.primary)
                     Text((if (exercise.isUnilateral) "Unilateral" else "Bilateral") + " · " + exercise.trackingType.label(),
                         style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (!exercise.description.isNullOrBlank()) Text(exercise.description,
-                        maxLines = 3, overflow = TextOverflow.Ellipsis)
-                    if (exercise.isArchived) Text("Archived")
-                    if (canOpenExercise) {
-                        TextButton(onClick = { openExercise(exercise) },
-                            modifier = Modifier.testTag("records-exercise-${exercise.id}").semantics {
-                                contentDescription = "View records for ${exercise.title}"
-                            }) { Text("Records") }
-                    }
-                    Row {
-                        if (canOpenExercise && !exercise.description.isNullOrBlank()) {
-                            TextButton(onClick = { openExercise(exercise, 2) },
-                                modifier = Modifier.testTag("guide-exercise-${exercise.id}").semantics {
+                        maxLines = 2, overflow = TextOverflow.Ellipsis, style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (exercise.isArchived) Text("Archived", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                FlowRow(Modifier.fillMaxWidth().padding(horizontal = 8.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    if (canOpenExercise && !exercise.description.isNullOrBlank()) {
+                        TextButton(onClick = { openExercise(exercise, 2) },
+                            modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight)
+                                .testTag("guide-exercise-${exercise.id}").semantics {
                                     contentDescription = "Read guide for ${exercise.title}"
                                 }) { Text("Guide") }
-                        }
-                        TextButton(onClick = { editingId = exercise.id }, enabled = !state.busy,
-                            modifier = Modifier.testTag("edit-exercise-${exercise.id}")) { Text("Edit exercise") }
-                        TextButton(onClick = {
-                            if (exercise.isArchived) model.archiveExercise(exercise.id, false) else archiveId = exercise.id
-                        }, enabled = !state.busy, modifier = Modifier.testTag("archive-exercise-${exercise.id}")) {
-                            Text(if (exercise.isArchived) "Restore" else "Archive")
-                        }
+                    }
+                    TextButton(onClick = { editingId = exercise.id }, enabled = !state.busy,
+                        modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("edit-exercise-${exercise.id}")) { Text("Edit exercise") }
+                    TextButton(onClick = {
+                        if (exercise.isArchived) model.archiveExercise(exercise.id, false) else archiveId = exercise.id
+                    }, enabled = !state.busy, modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight)
+                        .testTag("archive-exercise-${exercise.id}")) {
+                        Text(if (exercise.isArchived) "Restore" else "Archive")
                     }
                 }
             }
@@ -166,14 +196,14 @@ internal fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, er
     var secondaryMenu by remember { mutableStateOf(false) }
     AlertDialog(onDismissRequest = onDismiss, title = { Text(if (exercise == null) "New exercise" else "Edit exercise") },
         text = {
-            Column(Modifier.verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
                 error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 OutlinedTextField(title, { title = it }, label = { Text("Exercise name") }, singleLine = true,
-                    modifier = Modifier.testTag("catalog-exercise-name"))
+                    modifier = Modifier.fillMaxWidth().testTag("catalog-exercise-name"))
                 OutlinedTextField(description, { description = it }, label = { Text("Description") },
-                    modifier = Modifier.testTag("catalog-exercise-description"))
+                    modifier = Modifier.fillMaxWidth().testTag("catalog-exercise-description"))
                 Text("Movement type", style = MaterialTheme.typography.titleSmall)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     FilterChip(!unilateral, onClick = { unilateral = false }, enabled = !busy, label = { Text("Bilateral") },
                         modifier = Modifier.testTag("catalog-bilateral"))
                     FilterChip(unilateral, onClick = { unilateral = true }, enabled = !busy, label = { Text("Unilateral") },
@@ -186,7 +216,7 @@ internal fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, er
                 TrackingTypeSelector(tracking, !busy) { tracking = it }
                 Box {
                     OutlinedButton(onClick = { primaryMenu = true }, enabled = !busy,
-                        modifier = Modifier.testTag("exercise-major-muscle")) { Text("Major (primary): ${primary.displayName()}") }
+                        modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight).testTag("exercise-major-muscle")) { Text("Major (primary): ${primary.displayName()}") }
                     DropdownMenu(primaryMenu, { primaryMenu = false }) {
                         MuscleGroup.values().forEach { group -> DropdownMenuItem(text = { Text(group.displayName()) },
                             modifier = Modifier.testTag("major-muscle-${group.name}"),
@@ -195,7 +225,7 @@ internal fun ExerciseCatalogDialog(exercise: CatalogExercise?, busy: Boolean, er
                 }
                 Box {
                     OutlinedButton(onClick = { secondaryMenu = true }, enabled = !busy,
-                        modifier = Modifier.testTag("exercise-minor-muscles")) { Text("Minor (secondary) muscles (${secondary.size})") }
+                        modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight).testTag("exercise-minor-muscles")) { Text("Minor (secondary) muscles (${secondary.size})") }
                     DropdownMenu(secondaryMenu, { secondaryMenu = false }) {
                         DropdownMenuItem(text = { Text("Done") }, onClick = { secondaryMenu = false })
                         MuscleGroup.values().filter { it != primary }.forEach { group -> DropdownMenuItem(text = { Text(group.displayName()) },
@@ -234,40 +264,50 @@ fun TemplateLibraryScreen(model: LibraryViewModel, workoutBlocked: Boolean,
     LibraryPage("Workout", model) {
         if (header != null) item(key = "quick-start") { header() }
         item(key = "controls") {
-            Text("My routines", style = MaterialTheme.typography.titleLarge)
-            Spacer(Modifier.height(12.dp))
-            Box {
-                OutlinedButton(onClick = { sortMenu = true }, modifier = Modifier.testTag("template-sort")) {
-                    Text("Sort: " + model.templateSort.label)
-                }
-                DropdownMenu(sortMenu, { sortMenu = false }) {
-                    TemplateSort.entries.forEach { sort ->
-                        DropdownMenuItem(text = { Text(sort.label) }, modifier = Modifier.testTag("template-sort-" + sort.name),
-                            onClick = { model.selectTemplateSort(sort); sortMenu = false })
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("My routines", style = MaterialTheme.typography.titleLarge)
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    OutlinedButton(onClick = model::beginTemplateDetails, enabled = !state.busy,
+                        modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight)
+                            .testTag(if (state.loaded && !state.busy) "template-list-ready" else "template-list-loading")) { Text("New routine") }
+                    Box {
+                        OutlinedButton(onClick = { sortMenu = true },
+                            modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("template-sort")) {
+                            Text("Sort: " + model.templateSort.label)
+                        }
+                        DropdownMenu(sortMenu, { sortMenu = false }) {
+                            TemplateSort.entries.forEach { sort ->
+                                DropdownMenuItem(text = { Text(sort.label) }, modifier = Modifier.testTag("template-sort-" + sort.name),
+                                    onClick = { model.selectTemplateSort(sort); sortMenu = false })
+                            }
+                        }
                     }
                 }
-            }
-            Button(onClick = model::beginTemplateDetails, enabled = !state.busy,
-                modifier = Modifier.testTag(if (state.loaded && !state.busy) "template-list-ready" else "template-list-loading")) { Text("New routine") }
-            Row {
-                Checkbox(includeArchived, onCheckedChange = { includeArchived = it },
-                    modifier = Modifier.semantics { contentDescription = "Show archived routines" })
-                Text("Show archived", Modifier.padding(top = 12.dp))
+                ArchivedToggle(includeArchived, "Show archived routines") { includeArchived = it }
             }
         }
-        if (state.loaded && visible.isEmpty()) item(key = "empty") { Text("Build a routine with your favorite exercises.") }
+        if (state.loaded && visible.isEmpty()) item(key = "empty") {
+            LibraryEmptyState("No routines yet", "Build a routine with your favorite exercises.")
+        }
         items(visible, key = { it.id }) { template ->
-            Card(Modifier.fillMaxWidth().testTag("template-card-" + template.id), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                Column(Modifier.padding(16.dp)) {
+            Card(modifier = Modifier.fillMaxWidth().testTag("template-card-" + template.id),
+                colors = groovyCardColors()) {
+                Column(Modifier.fillMaxWidth().testTag("open-template-${template.id}")
+                    .clickable(enabled = !state.busy, role = Role.Button, onClickLabel = "Open ${template.title}") {
+                        model.openTemplate(template.id)
+                    }.padding(GroovyLayout.CardPadding),
+                    verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(template.title, style = MaterialTheme.typography.titleLarge)
                     val completed = state.lastCompletedAtByTemplate[template.id]
                     Text(if (completed == null) "Never completed" else "Last completed: " +
                         DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(completed)),
                         style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-                    if (!template.description.isNullOrBlank()) Text(template.description, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    if (template.isArchived) Text("Archived")
-                    TextButton(onClick = { model.openTemplate(template.id) }, enabled = !state.busy,
-                        modifier = Modifier.testTag("open-template-${template.id}")) { Text("Open routine") }
+                    if (!template.description.isNullOrBlank()) Text(template.description,
+                        maxLines = 2, overflow = TextOverflow.Ellipsis,
+                        style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    if (template.isArchived) Text("Archived", style = MaterialTheme.typography.labelMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -293,30 +333,39 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
             onBegin = { focus.clearFocus(); keyboard?.hide() }, onMove = model::moveExercise),
         userScrollEnabled = reorder.draggedId == null,
         overlay = { ExerciseDragPreview(reorder, byId[reorder.draggedId]?.title) }) {
-        item(key = "progress") { RoutineProgressChart(template.id, model.state.templateHistory) }
         item(key = "controls") {
-            TextButton(onClick = model::showTemplateList, enabled = !busy,
-                modifier = Modifier.testTag("template-list-back")) { Text("All routines") }
-            if (!template.description.isNullOrBlank()) Text(template.description)
-            if (template.isArchived) {
-                Text("Archived routine")
-                Button(onClick = { model.archiveTemplate(false) }, enabled = !busy) { Text("Restore routine") }
-            } else {
-                Row {
-                    TextButton(onClick = model::beginTemplateDetails, enabled = !busy) { Text("Edit routine") }
-                    TextButton(onClick = { archiving = true }, enabled = !busy) { Text("Archive routine") }
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = model::showTemplateList, enabled = !busy,
+                    modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("template-list-back")) { Text("All routines") }
+                if (!template.description.isNullOrBlank()) Text(template.description,
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                if (template.isArchived) {
+                    Text("Archived routine", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    Button(onClick = { model.archiveTemplate(false) }, enabled = !busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)) { Text("Restore routine") }
+                } else {
+                    Button(onClick = { onStart(template.id) }, enabled = !busy && !workoutBlocked,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)) { Text("Start this workout") }
+                    if (workoutBlocked) Text("Finish or discard your current workout before starting another.",
+                        style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    OutlinedButton(onClick = model::beginTemplateExercise, enabled = !busy,
+                        modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)) { Text("Add routine exercise") }
+                    FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        TextButton(onClick = model::beginTemplateDetails, enabled = !busy) { Text("Edit routine") }
+                        TextButton(onClick = { archiving = true }, enabled = !busy) { Text("Archive routine") }
+                    }
                 }
-                Button(onClick = { onStart(template.id) }, enabled = !busy && !workoutBlocked) { Text("Start this workout") }
-                if (workoutBlocked) Text("Finish or discard your current workout before starting another.")
-                OutlinedButton(onClick = model::beginTemplateExercise, enabled = !busy) { Text("Add routine exercise") }
             }
         }
-        if (template.exercises.isEmpty()) item(key = "empty") { Text("Add exercises to build your routine.") }
+        item(key = "progress") { RoutineProgressChart(template.id, model.state.templateHistory) }
+        if (template.exercises.isEmpty()) item(key = "empty") {
+            LibraryEmptyState("Your routine is ready to build", "Add exercises to build your routine.")
+        }
         itemsIndexed(rows, key = { _, row -> row.id }) { index, row ->
             ExerciseReorderItem(reorder, row.id, index, rows.size) {
             Card(Modifier.fillMaxWidth().testTag("template-exercise-" + row.id)) {
-                Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Row(Modifier.fillMaxWidth().heightIn(min = 44.dp).testTag("reorder-template-exercise-" + row.id)
+                Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Row(Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight).testTag("reorder-template-exercise-" + row.id)
                         .exerciseReorderHeader(reorder, row.id).semantics {
                             contentDescription = if (template.isArchived) row.title else "Reorder " + row.title + ". Touch and hold, then drag."
                             if (!template.isArchived) customActions = buildList {
@@ -329,21 +378,26 @@ private fun TemplateEditorScreen(model: LibraryViewModel, template: TemplateEdit
                             }
                         }, horizontalArrangement = Arrangement.spacedBy(10.dp), verticalAlignment = Alignment.CenterVertically) {
                         if (!template.isArchived) ExerciseDragHandle()
-                        Text(row.title, style = MaterialTheme.typography.titleLarge, modifier = Modifier.weight(1f)
+                        Box(Modifier.weight(1f).heightIn(min = GroovyLayout.ButtonHeight)
                             .testTag("open-template-exercise-" + row.id)
-                            .clickable(enabled = onOpenExercise != null) {
+                            .clickable(enabled = onOpenExercise != null, role = Role.Button,
+                                onClickLabel = "View ${row.title}") {
                                 focus.clearFocus(); keyboard?.hide()
                                 onOpenExercise?.invoke(row.exerciseId, row.title)
-                            })
+                            }, contentAlignment = Alignment.CenterStart) {
+                            Text(row.title, style = MaterialTheme.typography.titleLarge)
+                        }
                     }
-                    Text("Rest: ${row.restSeconds} seconds")
+                    Text("Rest: " + restDurationLabel(row.restSeconds), style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant)
                     if (!template.isArchived) {
-                        Row {
+                        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             TextButton(onClick = { model.beginTemplateRest(row) }, enabled = !busy,
                                 modifier = Modifier.testTag("template-rest-${row.id}")) { Text("Edit rest") }
+                            TextButton(onClick = { removing = row.id }, enabled = !busy,
+                                colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error),
+                                modifier = Modifier.testTag("template-remove-${row.id}")) { Text("Remove") }
                         }
-                        TextButton(onClick = { removing = row.id }, enabled = !busy,
-                            modifier = Modifier.testTag("template-remove-${row.id}")) { Text("Remove") }
                     }
                 }
             }
@@ -370,12 +424,13 @@ private fun TemplateDetailsDialog(model: LibraryViewModel) {
     val draft = model.templateDraft ?: return
     AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text(if (draft.templateId == null) "New routine" else "Edit routine") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
                 model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
                 OutlinedTextField(draft.title, { model.updateTemplateDraft(title = it) }, label = { Text("Routine name") }, singleLine = true,
-                    modifier = Modifier.testTag("template-name"))
+                    modifier = Modifier.fillMaxWidth().testTag("template-name"))
                 OutlinedTextField(draft.description, { model.updateTemplateDraft(description = it) }, label = { Text("Description") },
-                    modifier = Modifier.testTag("template-description"))
+                    modifier = Modifier.fillMaxWidth().testTag("template-description"))
             }
         },
         confirmButton = { TextButton(onClick = { model.saveTemplate(draft.templateId, draft.title, draft.description) },
@@ -394,17 +449,22 @@ private fun TemplateExercisePicker(model: LibraryViewModel) {
     val options = model.state.exercises.filter { !it.isArchived && it.title.contains(search, true) }
     AlertDialog(onDismissRequest = model::closeTemplateDraft, title = { Text("Choose routine exercise") },
         text = {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
                 model.state.error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
-                OutlinedTextField(search, { model.updateTemplateDraft(search = it) }, label = { Text("Search exercises") }, singleLine = true)
+                OutlinedTextField(search, { model.updateTemplateDraft(search = it) }, label = { Text("Search exercises") },
+                    singleLine = true, modifier = Modifier.fillMaxWidth())
                 OutlinedButton(onClick = { focus.clearFocus(); keyboard?.hide(); editRest = true }, enabled = !model.state.busy,
-                    modifier = Modifier.testTag("template-new-exercise-rest")) { Text("Rest: " + restDurationLabel(restValue)) }
+                    modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)
+                        .testTag("template-new-exercise-rest")) { Text("Rest: " + restDurationLabel(restValue)) }
                 if (options.isEmpty()) Text("No matching exercises. Add exercises in the Exercises tab.")
-                LazyColumn(Modifier.heightIn(max = 240.dp)) {
+                LazyColumn(Modifier.fillMaxWidth().heightIn(max = 240.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     items(options, key = { it.id }) { exercise ->
                         TextButton(onClick = { model.addExercise(exercise.id, restValue) },
                             enabled = !model.state.busy && restValue >= 0,
-                            modifier = Modifier.fillMaxWidth().testTag("template-picker-${exercise.id}")) { Text(exercise.title) }
+                            modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)
+                                .testTag("template-picker-${exercise.id}"), contentPadding = PaddingValues(12.dp)) {
+                            Text(exercise.title, modifier = Modifier.fillMaxWidth())
+                        }
                     }
                 }
             }
@@ -418,6 +478,8 @@ private fun Confirmation(title: String, message: String, action: String, busy: B
     onDismiss: () -> Unit, onConfirm: () -> Unit) {
     AlertDialog(onDismissRequest = onDismiss, title = { Text(title) }, text = { Text(message) },
         confirmButton = { TextButton(onClick = onConfirm, enabled = !busy,
+            colors = ButtonDefaults.textButtonColors(contentColor = if (action == "Remove")
+                MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.primary),
             modifier = Modifier.testTag("confirm-library-action")) { Text(action) } },
         dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } })
 }

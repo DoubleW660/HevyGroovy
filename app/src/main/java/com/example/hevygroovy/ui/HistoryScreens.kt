@@ -2,12 +2,10 @@ package com.example.hevygroovy.ui
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -20,7 +18,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.hevygroovy.dto.ActiveSetEntry
@@ -52,19 +54,18 @@ fun HistoryScreen(model: HistoryViewModel, onOpenExercise: ((Long, String) -> Un
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("history-list"),
         state = listState,
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        contentPadding = PaddingValues(GroovyLayout.ScreenPadding),
+        verticalArrangement = Arrangement.spacedBy(GroovyLayout.SectionGap),
     ) {
         item(key = "heading") {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(5.dp)) {
                     Text("YOUR TRAINING LOG", style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.primary, letterSpacing = 1.6.sp)
-                    Text("History", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
-                    Text("Every session, saved.", style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    ScreenHeading("History", "Every session, saved.")
                 }
-                TextButton(onClick = model::refresh, enabled = !state.loading && !state.loadingMore) { Text("Refresh") }
+                TextButton(onClick = model::refresh, enabled = !state.loading && !state.loadingMore,
+                    modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight)) { Text("Refresh") }
             }
         }
         if (state.loading) {
@@ -81,12 +82,14 @@ fun HistoryScreen(model: HistoryViewModel, onOpenExercise: ((Long, String) -> Un
         }
         if (state.loaded && state.items.isEmpty() && !state.loading && state.error == null) {
             item(key = "empty") {
-                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp)) {
-                    Column(Modifier.padding(24.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
+                Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
+                    colors = groovyCardColors()) {
+                    Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
                         Text("No workouts yet", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                         Text("Finish a workout to see your exercises, sets, and progress here.",
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Button(onClick = onStartWorkout) { Text("Start a workout") }
+                        Button(onClick = onStartWorkout,
+                            modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight)) { Text("Start a workout") }
                     }
                 }
             }
@@ -105,7 +108,7 @@ fun HistoryScreen(model: HistoryViewModel, onOpenExercise: ((Long, String) -> Un
                             color = MaterialTheme.colorScheme.onSurfaceVariant)
                     } else if (state.hasMore && state.moreError == null) {
                         OutlinedButton(onClick = model::loadMore, enabled = !state.loading,
-                            modifier = Modifier.fillMaxWidth().testTag("history-load-more")) {
+                            modifier = Modifier.fillMaxWidth().heightIn(min = GroovyLayout.ButtonHeight).testTag("history-load-more")) {
                             Text("Load older workouts")
                         }
                     } else if (!state.hasMore) {
@@ -124,11 +127,11 @@ private fun HistoryWorkoutCard(workout: WorkoutHistory, onClick: () -> Unit) {
     Card(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth().testTag("history-card-${workout.workoutId}"),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = MaterialTheme.shapes.medium,
+        colors = groovyCardColors(),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant),
     ) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(historyDate(workout.startedAtEpochMillis), modifier = Modifier.weight(1f),
                     style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -148,28 +151,30 @@ private fun HistoryWorkoutCard(workout: WorkoutHistory, onClick: () -> Unit) {
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 private fun HistoryDetailScreen(model: HistoryViewModel, onOpenExercise: ((Long, String) -> Unit)? = null) {
     val state = model.state
     val detail = state.detail
     var confirmDelete by rememberSaveable(state.selectedWorkoutId) { mutableStateOf(false) }
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("history-detail"),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 12.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(18.dp),
+        contentPadding = PaddingValues(start = GroovyLayout.ScreenPadding, end = GroovyLayout.ScreenPadding,
+            top = 8.dp, bottom = GroovyLayout.ScreenPadding),
+        verticalArrangement = Arrangement.spacedBy(GroovyLayout.SectionGap),
     ) {
         item(key = "back") {
-            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween,
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 TextButton(onClick = model::closeDetail, enabled = !state.deleting,
                     contentPadding = PaddingValues(start = 0.dp, end = 16.dp),
-                    modifier = Modifier.testTag("history-back")) {
+                    modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("history-back")) {
                     Text("‹", fontSize = 26.sp)
                     Spacer(Modifier.width(8.dp))
                     Text("History")
                 }
-                Spacer(Modifier.weight(1f))
                 if (detail != null) TextButton(onClick = { confirmDelete = true },
                     enabled = !state.deleting && !state.detailLoading,
-                    modifier = Modifier.testTag("history-delete-button"),
+                    modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("history-delete-button"),
                     colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                     Text("Delete workout")
                 }
@@ -206,8 +211,9 @@ private fun HistoryDetailScreen(model: HistoryViewModel, onOpenExercise: ((Long,
             }
             detail.notes?.takeIf { it.isNotBlank() }?.let { notes ->
                 item(key = "notes") {
-                    Card(Modifier.fillMaxWidth().testTag("history-detail-notes"), shape = RoundedCornerShape(18.dp)) {
-                        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Card(Modifier.fillMaxWidth().testTag("history-detail-notes"), shape = MaterialTheme.shapes.medium,
+                        colors = groovyCardColors()) {
+                        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             Text("Workout notes", style = MaterialTheme.typography.titleSmall,
                                 color = MaterialTheme.colorScheme.primary)
                             Text(notes, style = MaterialTheme.typography.bodyLarge)
@@ -237,12 +243,12 @@ private fun HistoryDetailScreen(model: HistoryViewModel, onOpenExercise: ((Long,
                 state.deleteError?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             } },
             confirmButton = { TextButton(onClick = model::deleteWorkout, enabled = !state.deleting,
-                modifier = Modifier.testTag("history-confirm-delete"),
+                modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("history-confirm-delete"),
                 colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.error)) {
                 Text(if (state.deleting) "Deleting…" else "Delete")
             } },
             dismissButton = { TextButton(onClick = { confirmDelete = false }, enabled = !state.deleting,
-                modifier = Modifier.testTag("history-keep-workout")) { Text("Keep workout") } },
+                modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("history-keep-workout")) { Text("Keep workout") } },
         )
     }
 }
@@ -250,9 +256,9 @@ private fun HistoryDetailScreen(model: HistoryViewModel, onOpenExercise: ((Long,
 @Composable
 private fun HistoryDetailTotals(detail: WorkoutHistoryDetail) {
     val unit = LocalWeightUnit.current
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)) {
-        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(20.dp)) {
+    Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
+        colors = groovyCardColors()) {
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.SectionGap)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(20.dp)) {
                 HistoryMetric("Duration", historyDuration(detail.durationSeconds), Modifier.weight(1f))
                 HistoryMetric("Volume (${unit.symbol})", historyNumber(detail.totalVolume.inWeightUnit(unit)),
@@ -281,17 +287,15 @@ private fun HistoryMetric(label: String, value: String, modifier: Modifier = Mod
 private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<PersonalRecord>,
     onOpenExercise: ((Long, String) -> Unit)? = null) {
     val unit = LocalWeightUnit.current
-    Card(Modifier.fillMaxWidth().testTag("history-exercise-${exercise.workoutExerciseId}"),
-        shape = RoundedCornerShape(20.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(14.dp)) {
-            Text(exercise.exerciseName, style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.SemiBold, color = MaterialTheme.colorScheme.primary,
-                modifier = Modifier.testTag("open-history-exercise-" + exercise.workoutExerciseId)
-                    .clickable(enabled = onOpenExercise != null) {
-                        onOpenExercise?.invoke(exercise.exerciseId, exercise.exerciseName)
-                    })
+    val content: @Composable ColumnScope.() -> Unit = {
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(exercise.exerciseName, style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold, modifier = Modifier.weight(1f),
+                    color = if (onOpenExercise != null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface)
+                if (onOpenExercise != null) Text("›", fontSize = 24.sp, color = MaterialTheme.colorScheme.primary)
+            }
             PersonalRecordBadge(records)
             if (exercise.isUnilateral) Text("Unilateral · reps per side · volume × 2",
                 style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
@@ -314,15 +318,26 @@ private fun HistoryExerciseCard(exercise: WorkoutExerciseHistory, records: List<
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
                     Text("WEIGHT", Modifier.weight(1f), style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Text("REPS", Modifier.width(42.dp), style = MaterialTheme.typography.labelSmall,
+                    Text("REPS", Modifier.width(56.dp), style = MaterialTheme.typography.labelSmall, textAlign = TextAlign.End,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    Spacer(Modifier.width(76.dp))
                 }
                 exercise.sets.forEach { set ->
                     HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                     key(set.id) { HistorySetRow(set) }
                 }
             }
+        }
+    }
+    Box(Modifier.fillMaxWidth().testTag("history-exercise-${exercise.workoutExerciseId}")) {
+        val cardModifier = Modifier.fillMaxWidth().testTag("open-history-exercise-${exercise.workoutExerciseId}")
+        val colors = groovyCardColors()
+        val border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
+        if (onOpenExercise != null) {
+            Card(onClick = { onOpenExercise(exercise.exerciseId, exercise.exerciseName) }, modifier = cardModifier,
+                shape = MaterialTheme.shapes.medium, colors = colors, border = border, content = content)
+        } else {
+            Card(modifier = cardModifier, shape = MaterialTheme.shapes.medium, colors = colors,
+                border = border, content = content)
         }
     }
 }
@@ -352,25 +367,22 @@ private fun HistorySetRow(set: ActiveSetEntry) {
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
             Text("${historyPreciseNumber(set.weight)} $unit", Modifier.weight(1f),
                 style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Medium)
-            Text(set.reps.toString(), Modifier.width(42.dp), style = MaterialTheme.typography.bodyLarge,
+            Text(set.reps.toString(), Modifier.width(56.dp), style = MaterialTheme.typography.bodyLarge, textAlign = TextAlign.End,
                 fontWeight = FontWeight.Medium)
-            Text(status, Modifier.width(76.dp), style = MaterialTheme.typography.labelSmall,
-                color = if (set.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Text(extras, Modifier.padding(start = 36.dp), style = MaterialTheme.typography.bodySmall,
+        Text(buildAnnotatedString {
+            withStyle(SpanStyle(color = if (set.isCompleted) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.Medium)) { append(status) }
+            append(" · ")
+            append(extras)
+        }, Modifier.padding(start = 36.dp), style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
 
 @Composable
 private fun HistoryErrorCard(message: String, enabled: Boolean, onRetry: () -> Unit) {
-    Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text(message, color = MaterialTheme.colorScheme.onErrorContainer)
-            TextButton(onClick = onRetry, enabled = enabled) { Text("Retry") }
-        }
-    }
+    ErrorCard(message, onRetry = onRetry, retryEnabled = enabled)
 }
 
 private fun historyCount(count: Int, name: String): String = "$count $name${if (count == 1) "" else "s"}"

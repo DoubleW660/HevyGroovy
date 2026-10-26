@@ -65,7 +65,7 @@ internal fun ExerciseProgressChart(exerciseId: Long, history: List<ExercisePerfo
     val grid = MaterialTheme.colorScheme.outlineVariant
     val background = MaterialTheme.colorScheme.surface
     Card(Modifier.fillMaxWidth().testTag("exercise-progress")) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
             Text("Progress", style = MaterialTheme.typography.titleLarge)
             Text("Completed workouts across all routines", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -73,7 +73,7 @@ internal fun ExerciseProgressChart(exerciseId: Long, history: List<ExercisePerfo
                 horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 ExerciseMetric.entries.forEach { option ->
                     FilterChip(metric == option, onClick = { metric = option }, label = { Text(option.label) },
-                        modifier = Modifier.testTag("exercise-metric-${option.tag}"))
+                        modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("exercise-metric-${option.tag}"))
                 }
             }
             Text(metric.label, style = MaterialTheme.typography.labelLarge)

@@ -30,6 +30,7 @@ private enum class RoutineMetric(val label: String, val tag: String) {
 }
 
 @Composable
+@OptIn(ExperimentalLayoutApi::class)
 fun RoutineProgressChart(templateId: Long, history: List<WorkoutHistory>) {
     var metric by rememberSaveable(templateId) { mutableStateOf(RoutineMetric.Volume) }
     var selectedWorkout by rememberSaveable(templateId) { mutableStateOf<Long?>(null) }
@@ -47,14 +48,15 @@ fun RoutineProgressChart(templateId: Long, history: List<WorkoutHistory>) {
     val grid = MaterialTheme.colorScheme.outlineVariant
     val background = MaterialTheme.colorScheme.surface
     Card(Modifier.fillMaxWidth().testTag("routine-progress")) {
-        Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
             Text("Routine progress", style = MaterialTheme.typography.titleLarge)
             Text("Last 12 completed workouts", style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 RoutineMetric.entries.forEach { option ->
                     FilterChip(metric == option, onClick = { metric = option }, label = { Text(option.label) },
-                        modifier = Modifier.testTag("routine-metric-" + option.tag))
+                        modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("routine-metric-" + option.tag))
                 }
             }
             Text(label, style = MaterialTheme.typography.labelLarge)
@@ -62,7 +64,8 @@ fun RoutineProgressChart(templateId: Long, history: List<WorkoutHistory>) {
                 Text("Finish this routine to see your progress here.", Modifier.padding(vertical = 24.dp),
                     color = MaterialTheme.colorScheme.onSurfaceVariant)
             } else {
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                FlowRow(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text(chartNumber(values[selected]) + " " + suffix, style = MaterialTheme.typography.headlineSmall,
                         color = ink, modifier = Modifier.testTag("routine-chart-value"))
                     Text(chartDate(sessions[selected].endedAtEpochMillis!!), style = MaterialTheme.typography.bodyMedium)
@@ -131,9 +134,9 @@ fun RoutineProgressChart(templateId: Long, history: List<WorkoutHistory>) {
                 }
                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                     TextButton(onClick = { selectedWorkout = sessions[selected - 1].workoutId }, enabled = selected > 0,
-                        modifier = Modifier.testTag("routine-chart-previous")) { Text("Previous") }
+                        modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("routine-chart-previous")) { Text("Previous") }
                     TextButton(onClick = { selectedWorkout = sessions[selected + 1].workoutId }, enabled = selected < sessions.lastIndex,
-                        modifier = Modifier.testTag("routine-chart-next")) { Text("Next") }
+                        modifier = Modifier.heightIn(min = GroovyLayout.ButtonHeight).testTag("routine-chart-next")) { Text("Next") }
                 }
             }
         }

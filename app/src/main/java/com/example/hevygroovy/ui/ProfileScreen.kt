@@ -3,7 +3,6 @@ package com.example.hevygroovy.ui
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -15,31 +14,32 @@ import androidx.compose.ui.unit.sp
 import com.example.hevygroovy.entity.enums.Unit as WeightUnit
 
 @Composable
+@OptIn(ExperimentalMaterial3Api::class)
 fun ProfileScreen(model: ProfileViewModel, onHistory: () -> Unit, onExercises: () -> Unit,
     imports: HistoryImportViewModel? = null) {
     val state = model.state
     LazyColumn(
         modifier = Modifier.fillMaxSize().testTag("profile-screen"),
-        contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 28.dp),
-        verticalArrangement = Arrangement.spacedBy(22.dp),
+        contentPadding = PaddingValues(GroovyLayout.ScreenPadding),
+        verticalArrangement = Arrangement.spacedBy(GroovyLayout.SectionGap),
     ) {
         item(key = "heading") {
             Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
                 Text("MAKE IT YOURS", style = MaterialTheme.typography.labelSmall,
                     color = MaterialTheme.colorScheme.primary, letterSpacing = 1.6.sp)
-                Text("Profile", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Bold)
+                ScreenHeading("Profile")
             }
         }
         item(key = "athlete") {
-            Row(Modifier.fillMaxWidth().padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically,
+            Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(16.dp)) {
-                Surface(Modifier.size(66.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
+                Surface(Modifier.size(56.dp), shape = CircleShape, color = MaterialTheme.colorScheme.primaryContainer) {
                     Box(contentAlignment = Alignment.Center) {
                         Text("YOU", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.primary)
                     }
                 }
-                Column(verticalArrangement = Arrangement.spacedBy(5.dp)) {
+                Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("Local athlete", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.SemiBold)
                     Text("Your profile on this phone", style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -51,12 +51,13 @@ fun ProfileScreen(model: ProfileViewModel, onHistory: () -> Unit, onExercises: (
         }
         state.error?.let { message ->
             item(key = "error") {
-                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
+                Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer)) {
-                    Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(message, color = MaterialTheme.colorScheme.onErrorContainer)
                         TextButton(onClick = model::retry, enabled = !state.loading,
-                            modifier = Modifier.testTag("profile-retry")) { Text("Retry") }
+                            modifier = Modifier.align(Alignment.End).heightIn(min = GroovyLayout.ButtonHeight)
+                                .testTag("profile-retry")) { Text("Retry") }
                     }
                 }
             }
@@ -64,19 +65,21 @@ fun ProfileScreen(model: ProfileViewModel, onHistory: () -> Unit, onExercises: (
         item(key = "settings") {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text("Workout settings", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
-                Card(Modifier.fillMaxWidth(), shape = RoundedCornerShape(20.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-                    Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                Card(Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
+                    colors = groovyCardColors()) {
+                    Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.ItemGap)) {
                         Text("Default weight unit", style = MaterialTheme.typography.titleSmall)
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            listOf(WeightUnit.KG, WeightUnit.LB).forEach { unit ->
-                                FilterChip(
+                        SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
+                            listOf(WeightUnit.KG, WeightUnit.LB).forEachIndexed { index, unit ->
+                                SegmentedButton(
+                                    shape = SegmentedButtonDefaults.itemShape(index, count = 2),
                                     selected = state.loaded && state.unit == unit,
                                     onClick = { model.setDefaultUnit(unit) },
                                     enabled = state.loaded && !state.loading,
-                                    modifier = Modifier.weight(1f).testTag("profile-unit-${unit.name}"),
+                                    modifier = Modifier.weight(1f).heightIn(min = GroovyLayout.ButtonHeight)
+                                        .testTag("profile-unit-${unit.name}"),
                                     label = {
-                                        Text(if (unit == WeightUnit.KG) "Kilograms (kg)" else "Pounds (lb)")
+                                        Text(if (unit == WeightUnit.KG) "Kilograms" else "Pounds")
                                     },
                                 )
                             }
@@ -108,9 +111,9 @@ fun ProfileScreen(model: ProfileViewModel, onHistory: () -> Unit, onExercises: (
 
 @Composable
 private fun ProfileShortcut(title: String, subtitle: String, onClick: () -> Unit) {
-    Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)) {
-        Row(Modifier.fillMaxWidth().padding(18.dp), verticalAlignment = Alignment.CenterVertically,
+    Card(onClick = onClick, modifier = Modifier.fillMaxWidth(), shape = MaterialTheme.shapes.medium,
+        colors = groovyCardColors()) {
+        Row(Modifier.fillMaxWidth().padding(GroovyLayout.CardPadding), verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(16.dp)) {
             Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(title, style = MaterialTheme.typography.titleSmall)

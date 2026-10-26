@@ -43,11 +43,11 @@ fun PersonalRecordSection(
     val displayUnit = LocalWeightUnit.current
     Card(
         modifier = modifier.fillMaxWidth().testTag("personal-record-section"),
-        shape = RoundedCornerShape(20.dp),
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.08f)),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.32f)),
     ) {
-        Column(Modifier.padding(18.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+        Column(Modifier.padding(GroovyLayout.CardPadding), verticalArrangement = Arrangement.spacedBy(GroovyLayout.SectionGap)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
                 RecordTrophy()
                 Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold,
